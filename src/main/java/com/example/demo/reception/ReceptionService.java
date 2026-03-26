@@ -24,10 +24,30 @@ public class ReceptionService {
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
         ReceptionDto receptionDto= ReceptionDto.builder()
-                .status("received")
+                .status(ReceptionStatus.RECEIVED)
                 .build();
         receptionRepository.save(receptionDto.toEntity(reservation,patient));
 
         return receptionDto.getReceptionId();
+    }
+
+    public Long ReceptionConsulting(ReceptionDto receptionDto){
+        Long receptionId=receptionDto.getReceptionId();
+        Reception reception=receptionRepository.findById(receptionId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        reception.setStatus(ReceptionStatus.CONSULTING);
+
+        return reception.getReceptionId();
+    }
+
+    public Long ReceptionCompleted(ReceptionDto receptionDto){
+        Long receptionId=receptionDto.getReceptionId();
+        Reception reception=receptionRepository.findById(receptionId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        reception.setStatus(ReceptionStatus.COMPLETED);
+
+        return reception.getReceptionId();
     }
 }

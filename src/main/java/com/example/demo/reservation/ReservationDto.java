@@ -19,6 +19,8 @@ public class ReservationDto {
     private Long patientId;
     private Long doctorId;
     private LocalDateTime reservationDatetime;
+    private String symptom;
+    private LocalDateTime preferredTime;
     private String status;
     private LocalDateTime createdAt;
 

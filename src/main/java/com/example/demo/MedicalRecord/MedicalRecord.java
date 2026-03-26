@@ -1,8 +1,7 @@
-package com.example.demo.reservation;
+package com.example.demo.MedicalRecord;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.staff.Staff;
-import com.example.demo.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,25 +14,27 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
-public class Reservation {
+public class MedicalRecord {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reservationId;
+    private Long medicalRecordId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patientId")
     private Patient patient;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staffId")
+    @JoinColumn(name = "doctorId")
     private Staff staff;
-
     private String symptom;
-    private LocalDateTime preferredTime;
-
-    private LocalDateTime reservationDatetime;
-    private String status;
+    private String diseaseCode;
+    private String diagnosis;
+    private Boolean isSensitive;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDateTime createAt;
+    private Boolean isFinal;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supervisorId")
+    private Staff supervisor;
 }

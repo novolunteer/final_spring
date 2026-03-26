@@ -2,7 +2,8 @@ package com.example.demo.security.filter;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
-import com.example.demo.user.UserDto;
+import com.example.demo.security.security.CustomUserDetails;
+import com.example.demo.security.security.CustomUserDetailsService;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -19,9 +20,11 @@ import java.util.Map;
 
 public class JWTCheckFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JWTCheckFilter(JWTUtil jwtUtil){
+    public JWTCheckFilter(JWTUtil jwtUtil, CustomUserDetailsService customUserDetailsService){
         this.jwtUtil=jwtUtil;
+        this.customUserDetailsService=customUserDetailsService;
     }
 
     //필터가 동작되지 않을 경로 설정
@@ -54,13 +57,15 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             //사용자 정보 꺼내와서 UserDetails 객체에 저장
             String email=claims.getSubject();
-            UserDto userDto=new UserDto(null,email,"",null,null);
+            CustomUserDetails details=
+                    (CustomUserDetails) customUserDetailsService.loadUserByUsername(email);
 
             //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
             UsernamePasswordAuthenticationToken authenticationToken=
                     new UsernamePasswordAuthenticationToken(
-                            userDto,
-                            ""
+                            details,
+                            null,
+                            details.getAuthorities()
                     );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
@@ -69,6 +74,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             e.printStackTrace();
             Gson gson=new Gson();
             String jsonStr=gson.toJson(Map.of("error","ERROR_ACCESS_TOKEN"));
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=utf-8");
             PrintWriter printWriter=response.getWriter();
             printWriter.println(jsonStr);

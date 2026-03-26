@@ -24,8 +24,6 @@ public class Staff {
     @JoinColumn(name = "departmentId")
     private Department department;
 
-    private String position;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "managerId")
     private Staff manager;

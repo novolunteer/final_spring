@@ -34,7 +34,6 @@ public class PatientUserResponse {
         data.put("rrn",rrn);
         data.put("name",name);
         data.put("email",email);
-        data.put("password",password);
         return data;
     }
 }

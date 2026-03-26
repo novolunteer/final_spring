@@ -34,7 +34,6 @@ public class StaffUserResponse {
         data.put("name",name);
         data.put("position",position);
         data.put("email",email);
-        data.put("password",password);
         return data;
     }
 }

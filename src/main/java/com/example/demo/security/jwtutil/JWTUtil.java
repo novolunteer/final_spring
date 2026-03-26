@@ -23,7 +23,7 @@ public class JWTUtil {
         String jwtStr= Jwts.builder()
                 .header().type("JWT")
                 .and()
-                .subject(String.valueOf(value.get("email"))) //토큰 주인
+                .subject(String.valueOf(value.get("userId"))) //토큰 주인
                 .claims(value) //주인 추가 정보
                 .issuedAt(Date.from(ZonedDateTime.now().toInstant())) //토큰 생성된 시간
                 .expiration(Date.from(ZonedDateTime.now().plusMinutes(min).toInstant())) //토큰 만료 시간

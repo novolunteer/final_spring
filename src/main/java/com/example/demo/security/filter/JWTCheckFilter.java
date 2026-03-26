@@ -1,0 +1,62 @@
+package com.example.demo.security.filter;
+
+import com.example.demo.security.jwtutil.CustomJWTException;
+import com.example.demo.security.jwtutil.JWTUtil;
+import com.google.gson.Gson;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Map;
+
+public class JWTCheckFilter extends OncePerRequestFilter {
+    private final JWTUtil jwtUtil;
+
+    public JWTCheckFilter(JWTUtil jwtUtil){
+        this.jwtUtil=jwtUtil;
+    }
+
+    //필터가 동작되지 않을 경로 설정
+    //true: 필터 수행 안 함
+    //false: 필터 수행함
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path=request.getRequestURI();
+        if (path.startsWith("/none")){
+            return true;
+        }
+
+        return false;
+    }
+
+    //필터가 수행하는 작업 -> 유효한 jwt 토큰 값인지 검사
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        try{
+            String authorizationStr=request.getHeader("Authorization");
+            if (authorizationStr == null || !authorizationStr.startsWith("Bearer ")){
+                throw new CustomJWTException("NO_AUTH_HEADER");
+            }
+
+            //토큰 값
+            String accessToken=authorizationStr.substring(7);
+
+            //유효한 토큰인지 검사
+            Claims claims=jwtUtil.validateToken(accessToken);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Gson gson=new Gson();
+            String jsonStr=gson.toJson(Map.of("error","ERROR_ACCESS_TOKEN"));
+            response.setContentType("application/json;charset=utf-8");
+            PrintWriter printWriter=response.getWriter();
+            printWriter.println(jsonStr);
+            printWriter.close();
+        }
+    }
+}

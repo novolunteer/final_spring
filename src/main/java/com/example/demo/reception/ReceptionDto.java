@@ -22,7 +22,7 @@ public class ReceptionDto {
     private Long receptionId;
     private Long reservationId;
     private Long patientId;
-    private String status;
+    private ReceptionStatus status;
     private LocalDateTime receptionTime;
 
     public ReceptionDto(Reception reception){

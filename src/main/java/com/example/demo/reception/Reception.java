@@ -26,7 +26,8 @@ public class Reception {
     @JoinColumn(name = "patientId")
     private Patient patient;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ReceptionStatus status;
 
     @CreationTimestamp
     private LocalDateTime receptionTime;

@@ -26,13 +26,5 @@ public class ChatRoom {
     @Column(nullable = false)
     private Integer createdBy;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "message_id")
-    private ChatMessage lastMessageId;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_at")
-    private ChatMessage lastMessageAt;
-
     private LocalDateTime createdAt;
 }

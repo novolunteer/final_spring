@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -18,7 +19,7 @@ public class StaffUserResponse {
     private Long userId;
     private Long departmentId;
     private String name;
-    private String position;
+    private List<Long> roles;
     private Long managerId;
     private String phone;
     private String address;
@@ -32,7 +33,6 @@ public class StaffUserResponse {
         data.put("staffId",staffId);
         data.put("departmentId",departmentId);
         data.put("name",name);
-        data.put("position",position);
         data.put("email",email);
         return data;
     }

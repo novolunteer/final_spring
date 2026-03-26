@@ -2,12 +2,15 @@ package com.example.demo.security.filter;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.user.UserDto;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -49,6 +52,19 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             //유효한 토큰인지 검사
             Claims claims=jwtUtil.validateToken(accessToken);
 
+            //사용자 정보 꺼내와서 UserDetails 객체에 저장
+            String email=claims.getSubject();
+            UserDto userDto=new UserDto(null,email,"",null,null);
+
+            //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
+            UsernamePasswordAuthenticationToken authenticationToken=
+                    new UsernamePasswordAuthenticationToken(
+                            userDto,
+                            ""
+                    );
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
             e.printStackTrace();
             Gson gson=new Gson();

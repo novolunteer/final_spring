@@ -1,6 +1,9 @@
 package com.example.demo.user;
 
 import com.example.demo.userRole.UserRole;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
@@ -8,10 +11,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class UserDto{
-    private Long userId;
+    private Integer userId;
     private String email;
     private String password;
     private LocalDateTime createdAt;
@@ -25,15 +29,5 @@ public class UserDto{
         this.createdAt=user.getCreatedAt();
         this.status= user.getStatus();
         this.roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
-    }
-
-    public Map<String,Object> getClaims(){ //JWT 관련
-        Map<String,Object> dataMap=new HashMap<>();
-        dataMap.put("userId", userId);
-        dataMap.put("email", email);
-        dataMap.put("createdAt", createdAt);
-        dataMap.put("status", status);
-        dataMap.put("roles",roles);
-        return dataMap;
     }
 }

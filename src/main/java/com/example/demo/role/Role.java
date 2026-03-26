@@ -12,7 +12,7 @@ import lombok.*;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long roleId;
+    private Integer roleId;
 
     @Column(nullable = false)
     private String roleName;

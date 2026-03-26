@@ -3,6 +3,7 @@ package com.example.demo.reservation;
 import com.example.demo.patient.Patient;
 import com.example.demo.staff.Staff;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class ReservationDto {
     private Long reservationId;
     private Long patientId;

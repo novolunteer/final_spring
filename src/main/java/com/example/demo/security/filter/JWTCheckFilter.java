@@ -33,11 +33,11 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path=request.getRequestURI();
-        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/join")){
-            return true;
-        }
+//        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/join")){
+//            return true;
+//        }
 
-        return false;
+        return true;
     }
 
     //필터가 수행하는 작업 -> 유효한 jwt 토큰 값인지 검사

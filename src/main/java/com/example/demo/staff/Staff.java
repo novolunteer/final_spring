@@ -14,7 +14,7 @@ import lombok.*;
 public class Staff {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long staffId;
+    private Integer staffId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")

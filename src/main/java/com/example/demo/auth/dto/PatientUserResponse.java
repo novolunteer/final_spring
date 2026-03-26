@@ -13,9 +13,9 @@ import java.util.Objects;
 @NoArgsConstructor
 @Data
 public class PatientUserResponse {
-    private Long patientId;
-    private Long userId;
-    private Long role;
+    private Integer patientId;
+    private Integer userId;
+    private Integer role;
     private String rrn;
     private String name;
     private String phone;

@@ -2,6 +2,6 @@ package com.example.demo.role;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface RoleRepository extends JpaRepository<Role, Long> {
-    Role findByRoleId(Long roleId);
+public interface RoleRepository extends JpaRepository<Role, Integer> {
+    Role findByRoleId(Integer roleId);
 }

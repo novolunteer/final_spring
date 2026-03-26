@@ -18,7 +18,7 @@ import java.util.List;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Integer userId;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -31,15 +31,19 @@ public class User {
 
     private String status;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @Builder.Default
     private List<UserRole> userRoles=new ArrayList<>();
 
     public void addRole(UserRole role){
         userRoles.add(role);
+        role.setUser(this);
     }
 
     public void clearRole(){
+        for (UserRole role : userRoles){
+            role.setUser(null);
+        }
         userRoles.clear();
     }
 

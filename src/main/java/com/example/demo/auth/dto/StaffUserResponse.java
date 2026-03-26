@@ -1,9 +1,6 @@
 package com.example.demo.auth.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -15,12 +12,12 @@ import java.util.Map;
 @Data
 @Builder
 public class StaffUserResponse {
-    private Long staffId;
-    private Long userId;
-    private Long departmentId;
+    private Integer staffId;
+    private Integer userId;
+    private Integer departmentId;
     private String name;
-    private List<Long> roles;
-    private Long managerId;
+    private List<Integer> roles;
+    private Integer managerId;
     private String phone;
     private String address;
     private String email;

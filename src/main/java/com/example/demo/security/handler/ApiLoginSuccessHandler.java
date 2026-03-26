@@ -1,6 +1,7 @@
 package com.example.demo.security.handler;
 
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.user.UserDto;
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
@@ -24,9 +25,9 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        UserDto userDto=(UserDto) authentication.getPrincipal();
+        CustomUserDetails details=(CustomUserDetails) authentication.getPrincipal();
 
-        Map<String,Object> claims=userDto.getClaims();
+        Map<String,Object> claims=details.getClaims();
 
         String accessToken=jwtUtil.generateToken(claims,5);
         String refreshToken= jwtUtil.generateToken(claims,60*2);

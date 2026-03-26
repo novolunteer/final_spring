@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CustomUserDetails implements UserDetails {
     private final User user;
@@ -15,7 +17,7 @@ public class CustomUserDetails implements UserDetails {
         this.user=user;
     }
 
-    public Long getUserId(){
+    public Integer getUserId(){
         return user.getUserId();
     }
 
@@ -41,5 +43,14 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         return user.getEmail();
+    }
+
+    public Map<String,Object> getClaims(){ //JWT 관련
+        Map<String,Object> dataMap=new HashMap<>();
+        dataMap.put("userId", user.getUserId());
+        dataMap.put("email", user.getEmail());
+        dataMap.put("status", user.getStatus());
+        dataMap.put("roles",user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList());
+        return dataMap;
     }
 }

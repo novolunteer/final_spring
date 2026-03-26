@@ -11,4 +11,5 @@ import java.util.Optional;
 
 public interface StaffRepository extends JpaRepository<Staff,Long> {
     Optional<List<Staff>> findByDepartment(Department department, Sort sort);
+    Staff findByStaffId(Integer staffId);
 }

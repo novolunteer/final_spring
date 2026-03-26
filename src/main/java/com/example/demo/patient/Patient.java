@@ -13,7 +13,7 @@ import lombok.*;
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long patientId;
+    private Integer patientId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")

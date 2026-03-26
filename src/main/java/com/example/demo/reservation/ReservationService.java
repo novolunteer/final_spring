@@ -2,18 +2,25 @@ package com.example.demo.reservation;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
+import com.example.demo.staff.Staff;
+import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final StaffRepository staffRepository;
 
     public Long reservationReceived(ReservationDto reservationDto){
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
@@ -35,7 +42,15 @@ public class ReservationService {
         return reservation.getReservationId();
     }
 
-    public int reservationConfirmed(){
+    public Long reservationConfirmed(ReservationDto reservationDto){
+        Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
+                .orElseThrow(() -> new RuntimeException("Not exist"));
 
+        Staff staff=staffRepository.findById(reservationDto.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+        reservation.setStaff(staff);
+        reservation.setReservationDatetime(reservationDto.getReservationDatetime());
+
+        return reservationDto.getReservationId();
     }
 }

@@ -17,7 +17,7 @@ public class ReceptionService {
     private final ReservationRepository reservationRepository;
     private final PatientRepository patientRepository;
 
-    public Long ReceptionReceived(ReservationDto reservationDto){
+    public Integer ReceptionReceived(ReservationDto reservationDto){
         Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
         Patient patient=patientRepository.findById(reservationDto.getPatientId())
@@ -31,8 +31,8 @@ public class ReceptionService {
         return receptionDto.getReceptionId();
     }
 
-    public Long ReceptionConsulting(ReceptionDto receptionDto){
-        Long receptionId=receptionDto.getReceptionId();
+    public Integer ReceptionConsulting(ReceptionDto receptionDto){
+        Integer receptionId=receptionDto.getReceptionId();
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
@@ -41,8 +41,8 @@ public class ReceptionService {
         return reception.getReceptionId();
     }
 
-    public Long ReceptionCompleted(ReceptionDto receptionDto){
-        Long receptionId=receptionDto.getReceptionId();
+    public Integer ReceptionCompleted(ReceptionDto receptionDto){
+        Integer receptionId=receptionDto.getReceptionId();
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 

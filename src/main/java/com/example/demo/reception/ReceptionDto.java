@@ -19,9 +19,9 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ReceptionDto {
-    private Long receptionId;
-    private Long reservationId;
-    private Long patientId;
+    private Integer receptionId;
+    private Integer reservationId;
+    private Integer patientId;
     private ReceptionStatus status;
     private LocalDateTime receptionTime;
 

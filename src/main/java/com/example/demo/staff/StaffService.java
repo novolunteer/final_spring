@@ -26,6 +26,7 @@ public class StaffService {
                 .orElseThrow(() -> new RuntimeException("Not exist"))
                 .stream()
                 .map(doc -> StaffDto.builder()
+                        .staffId(doc.getStaffId())
                         .name(doc.getName())
                         .build())
                 .toList();

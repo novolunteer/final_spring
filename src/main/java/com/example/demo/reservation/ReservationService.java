@@ -23,13 +23,11 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
 
-    public Long reservationReceived(ReservationDto reservationDto){
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
-                                                .getContext()
-                                                .getAuthentication()
-                                                .getPrincipal();
+    public Integer reservationReceived(ReservationDto reservationDto,
+                                       CustomUserDetails customUserDetails){
 
-        Long userId = userDetails.getUserId();
+        //Integer userId=customUserDetails.getUserId();
+        Integer userId=4;
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -37,13 +35,19 @@ public class ReservationService {
 
         Reservation reservation = reservationDto.toEntity(patient);
         reservation.setStatus("RECEIVED");
+        reservation.setSymptom(reservationDto.getSymptom());
+        reservation.setPreferredDate(reservationDto.getPreferredDate());
+        if(reservationDto.getDoctorId()!=null){
+            Staff staff=staffRepository.findByStaffId(reservationDto.getDoctorId());
+            reservation.setStaff(staff);
+        }
 
         reservationRepository.save(reservation);
 
         return reservation.getReservationId();
     }
 
-    public Long reservationConfirmed(ReservationDto reservationDto){
+    public Integer reservationConfirmed(ReservationDto reservationDto){
         Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 

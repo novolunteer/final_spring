@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ReservationDto {
-    private Long reservationId;
-    private Long patientId;
-    private Long doctorId;
+    private Integer reservationId;
+    private Integer patientId;
+    private Integer doctorId;
     private LocalDateTime reservationDatetime;
     private String symptom;
-    private LocalDateTime preferredTime;
+    private LocalDateTime preferredDate;
     private String status;
     private LocalDateTime createdAt;
 

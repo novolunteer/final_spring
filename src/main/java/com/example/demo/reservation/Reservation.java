@@ -18,18 +18,18 @@ import java.time.LocalDateTime;
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reservationId;
+    private Integer reservationId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patientId")
     private Patient patient;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staffId")
+    @JoinColumn(name = "doctorId")
     private Staff staff;
 
     private String symptom;
-    private LocalDateTime preferredTime;
+    private LocalDateTime preferredDate;
 
     private LocalDateTime reservationDatetime;
     private String status;

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class MedicalRecord {
     @Id
-    private Long medicalRecordId;
+    private Integer medicalRecordId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patientId")

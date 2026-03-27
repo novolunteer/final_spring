@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class Reception {
     @Id
-    private Long receptionId;
+    private Integer receptionId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservationId")

@@ -25,19 +25,19 @@ public class JoinServiceTest {
 
     @Test
     public void join(){
-        List<Long> roles=new ArrayList<>();
-        roles.add(2L);
-        roles.add(7L);
+        List<Integer> roles=new ArrayList<>();
+        roles.add(2);
+        roles.add(7);
 
         StaffUserResponse response=StaffUserResponse.builder()
-                .email("chloe0920@gmail.com")
+                .email("anny@gmail.com")
                 .password(passwordEncoder.encode("1234"))
                 .status("Y")
                 .roles(roles)
-                .departmentId(1L)
-                .name("Chloe")
-                .phone("010-7529-5789")
-                .address("충남 천안시 동남구 성황로 40")
+                .departmentId(2)
+                .name("Anny")
+                .phone("010-1234-5678")
+                .address("서울특별시 강남구 서초동")
                 .build();
 
         UserDto user=joinService.joinTest(response);

@@ -4,6 +4,7 @@ import com.example.demo.chat.ChatMessageType;
 import com.example.demo.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -19,19 +20,20 @@ public class ChatMessage {
     private Integer messageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id")
-    @Column(nullable = false)
-    private ChatRoom chatRoom;
+    @JoinColumn(name = "room_id", nullable = false)
+    private ChatRoom room;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "sender_id")
     private User user;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private ChatMessageType chatMessageType;
+    private ChatMessageType messageType;
 
     private String content;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
 }

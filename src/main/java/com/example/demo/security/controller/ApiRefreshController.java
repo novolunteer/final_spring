@@ -35,7 +35,7 @@ public class ApiRefreshController {
         }
 
         Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
-        String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
+        String newAccessToken=jwtUtil.generateToken(claims, 30); //테스트 하려고 1분 설정
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){
             newRefreshToken= jwtUtil.generateToken(claims, 60*2);

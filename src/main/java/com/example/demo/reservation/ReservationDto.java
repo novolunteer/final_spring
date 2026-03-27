@@ -18,7 +18,7 @@ public class ReservationDto {
     private Integer reservationId;
     private Integer patientId;
     private Integer doctorId;
-    private LocalDateTime reservationDatetime;
+    private LocalDateTime reservationDate;
     private String symptom;
     private LocalDateTime preferredDate;
     private String status;
@@ -28,7 +28,7 @@ public class ReservationDto {
         reservationId=reservation.getReservationId();
         patientId=reservation.getPatient().getPatientId();
         doctorId=reservation.getStaff().getStaffId();
-        reservationDatetime=reservation.getReservationDatetime();
+        reservationDate=reservation.getReservationDate();
         status=reservation.getStatus();
         createdAt=reservation.getCreatedAt();
     }
@@ -38,7 +38,7 @@ public class ReservationDto {
                 .reservationId(reservationId)
                 .patient(patient)
                 .staff(staff)
-                .reservationDatetime(reservationDatetime)
+                .reservationDate(reservationDate)
                 .status(status)
                 .createdAt(createdAt)
                 .build();
@@ -48,7 +48,7 @@ public class ReservationDto {
         return Reservation.builder()
                 .reservationId(reservationId)
                 .patient(patient)
-                .reservationDatetime(reservationDatetime)
+                .reservationDate(reservationDate)
                 .status(status)
                 .createdAt(createdAt)
                 .build();

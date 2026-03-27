@@ -22,10 +22,6 @@ public class Reception {
     @JoinColumn(name = "reservationId")
     private Reservation reservation;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patientId")
-    private Patient patient;
-
     @Enumerated(EnumType.STRING)
     private ReceptionStatus status;
 

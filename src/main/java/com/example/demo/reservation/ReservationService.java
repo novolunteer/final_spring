@@ -2,6 +2,7 @@ package com.example.demo.reservation;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
+import com.example.demo.reception.ReceptionService;
 import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
@@ -22,6 +23,7 @@ public class ReservationService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
+    private final ReceptionService receptionService;
 
     public Integer reservationReceived(ReservationDto reservationDto,
                                        CustomUserDetails customUserDetails){
@@ -54,7 +56,11 @@ public class ReservationService {
         Staff staff=staffRepository.findById(reservationDto.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
         reservation.setStaff(staff);
-        reservation.setReservationDatetime(reservationDto.getReservationDatetime());
+        reservation.setReservationDate(reservationDto.getReservationDate());
+        reservation.setStatus("CONFIRMED");
+
+        reservationRepository.save(reservation);
+        receptionService.receptionInsert(reservation);
 
         return reservationDto.getReservationId();
     }

@@ -31,7 +31,7 @@ public class Reservation {
     private String symptom;
     private LocalDateTime preferredDate;
 
-    private LocalDateTime reservationDatetime;
+    private LocalDateTime reservationDate;
     private String status;
 
     @CreationTimestamp

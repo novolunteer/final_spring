@@ -25,4 +25,12 @@ public class ReservationController {
         map.put("reservationId",reservationId);
         return map;
     }
+
+    @PostMapping("/api/reservation/confirmed")
+    public Map<String,Object> reservationConfirmed(@RequestBody ReservationDto reservationDto){
+        Map<String,Object> map=new HashMap<>();
+        Integer reservationId=reservationService.reservationConfirmed(reservationDto);
+        map.put("reservationId",reservationId);
+        return map;
+    }
 }

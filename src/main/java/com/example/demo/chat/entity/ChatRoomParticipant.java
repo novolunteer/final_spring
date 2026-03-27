@@ -1,6 +1,5 @@
 package com.example.demo.chat.entity;
 
-import com.example.demo.chat.ChatRoomType;
 import com.example.demo.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,23 +13,25 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
-public class ChatRoom {
+public class ChatRoomParticipant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer roomId;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ChatRoomType roomType;
-
-    private String roomName;
+    private Integer participantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
+    @JoinColumn(name = "room_id", nullable = false)
+    private ChatRoom room;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private Integer lastMessageId;
-    private LocalDateTime lastMessageAt;
+    @CreationTimestamp
+    private LocalDateTime joinedAt;
+
+    private Integer lastReadMessageId;
+    private LocalDateTime lastReadAt;
+    private String customRoomName;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

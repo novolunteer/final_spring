@@ -11,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -37,7 +38,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             return true;
         }
 
-        return true;
+        return false;
     }
 
     //필터가 수행하는 작업 -> 유효한 jwt 토큰 값인지 검사

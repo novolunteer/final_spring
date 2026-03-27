@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public interface StaffRepository extends JpaRepository<Staff,Long> {
+public interface StaffRepository extends JpaRepository<Staff,Integer> {
     Optional<List<Staff>> findByDepartment(Department department, Sort sort);
     Staff findByStaffId(Integer staffId);
 }

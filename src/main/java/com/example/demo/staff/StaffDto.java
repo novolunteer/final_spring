@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class StaffDto {
-    private Long staffId;
+    private Integer staffId;
     private User user;
     private Department department;
     private Staff manager;

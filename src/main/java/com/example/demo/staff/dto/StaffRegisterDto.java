@@ -1,4 +1,4 @@
-package com.example.demo.staff;
+package com.example.demo.staff.dto;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +10,7 @@ public class StaffRegisterDto {
     private Integer departmentId;
     private Integer managerId;
 
+    private String position;
     private String jobType;
     private String name;
     private String phone;

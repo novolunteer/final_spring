@@ -27,7 +27,7 @@ public class Staff {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "managerId")
     private Staff manager;
-
+    private String position;
     private String jobType;
     private String name;
     private String phone;

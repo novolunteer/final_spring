@@ -38,5 +38,6 @@ public class ChatWebSocketController {
 
         ChatMessageDto saveMessage=messageService.sendUserMessage(request, userId);
         messagingTemplate.convertAndSend("/topic/chat/room/" + request.getRoomId(), saveMessage);
+        messagingTemplate.convertAndSend("/topic/chat/list", saveMessage);
     }
 }

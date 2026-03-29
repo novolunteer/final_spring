@@ -14,4 +14,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Intege
     List<ChatMessage> findByMessageIdIn(List<Integer> messageIds);
     Slice<ChatMessage> findByRoom_RoomIdOrderByMessageIdDesc(Integer roomId, Pageable pageable);
     Slice<ChatMessage> findByRoom_RoomIdAndMessageIdLessThanOrderByMessageIdDesc(Integer roomId, Integer cursor, Pageable pageable);
+    Integer countByRoom_RoomId(Integer roomId);
+    Integer countByRoom_RoomIdAndMessageIdGreaterThan(Integer roomId, Integer messageId);
 }

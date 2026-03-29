@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,9 +65,16 @@ public class ChatRoomService {
         ChatRoomParticipant userCustomRoom=participantRepository.findByRoomAndUser_UserId(chatRoom, userId)
                 .orElseThrow(()-> new RuntimeException("채팅방 혹은 유저 정보가 존재하지 않습니다."));
 
-        return new ChatRoomDto(chatRoom.getRoomId(), chatRoom.getRoomType().name(), chatRoom.getRoomName(),
-                chatRoom.getUser().getUserId(), chatRoom.getLastMessageId(), message.getContent(), chatRoom.getLastMessageAt(),
-                Long.valueOf(participants.size()), userCustomRoom.getCustomRoomName());
+        return ChatRoomDto.builder()
+                .roomId(chatRoom.getRoomId())
+                .roomType(chatRoom.getRoomType().name())
+                .roomName(chatRoom.getRoomName())
+                .createdBy(chatRoom.getUser().getUserId())
+                .lastMessageId(chatRoom.getLastMessageId())
+                .lastMessageAt(chatRoom.getLastMessageAt())
+                .lastMessageText(message.getContent())
+                .participantCount(Long.valueOf(participants.size()))
+                .customRoomName(userCustomRoom.getCustomRoomName()).build();
     }
 
     public List<ChatRoomDto> chatRoomList(Integer userId){
@@ -78,7 +84,13 @@ public class ChatRoomService {
             return List.of();
         }
 
-        List<ChatRoom> chatRooms=roomRepository.findByRoomIdInOrderByLastMessageAtDesc(
+        Map<Integer, ChatRoomParticipant> myParticipantMap=participants.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getRoom().getRoomId(),
+                        p -> p
+                ));
+
+        List<ChatRoom> chatRooms = roomRepository.findByRoomIdInOrderByLastMessageAtDesc(
                 participants.stream().map(p -> p.getRoom().getRoomId()).toList()
         );
 
@@ -95,7 +107,8 @@ public class ChatRoomService {
                         p -> p.getCustomRoomName()
                 ));
 
-        List<Integer> messageIds=chatRooms.stream().map(m -> m.getLastMessageId()).toList();
+        List<Integer> messageIds=chatRooms.stream().map(m -> m.getLastMessageId())
+                .filter(id -> id != null).toList();
         List<ChatMessage> messages=messageRepository.findByMessageIdIn(messageIds);
         Map<Integer, String> lastMessages=messages.stream().filter(m -> m.getContent() != null)
                 .collect(Collectors.toMap(
@@ -103,16 +116,33 @@ public class ChatRoomService {
            m -> m.getContent()
         ));
 
-        List<ChatRoomDto> rooms=chatRooms.stream().map(c -> ChatRoomDto.builder()
-                .roomId(c.getRoomId())
-                .roomName(c.getRoomName())
-                .roomType(c.getRoomType().name())
-                .createdBy(c.getUser().getUserId())
-                .lastMessageAt(c.getLastMessageAt())
-                .lastMessageId(c.getLastMessageId())
-                .lastMessageText(lastMessages.getOrDefault(c.getLastMessageId(),null))
-                .customRoomName(customRoomNames.getOrDefault(c.getRoomId(),null))
-                .participantCount(counts.getOrDefault(c.getRoomId(),0L)).build()).toList();
+        List<ChatRoomDto> rooms=chatRooms.stream().map(c -> {
+            ChatRoomParticipant participant=myParticipantMap.get(c.getRoomId());
+
+            Integer lastReadMessageId=participant != null ? participant.getLastReadMessageId() : null;
+
+            int unreadCount;
+
+            if (lastReadMessageId == null){
+                unreadCount=messageRepository.countByRoom_RoomId(c.getRoomId());
+            } else {
+                unreadCount=messageRepository.countByRoom_RoomIdAndMessageIdGreaterThan(
+                        c.getRoomId(), lastReadMessageId
+                );
+            }
+
+            return ChatRoomDto.builder()
+                    .roomId(c.getRoomId())
+                    .roomType(c.getRoomType().name())
+                    .roomName(c.getRoomName())
+                    .createdBy(c.getUser().getUserId())
+                    .lastMessageId(c.getLastMessageId())
+                    .lastMessageText(lastMessages.getOrDefault(c.getLastMessageId(), null))
+                    .lastMessageAt(c.getLastMessageAt())
+                    .customRoomName(customRoomNames.getOrDefault(c.getRoomId(), null))
+                    .participantCount(counts.getOrDefault(c.getRoomId(), 0L))
+                    .unreadCount(unreadCount).build();
+        }).toList();
 
         return rooms;
     }

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +30,18 @@ public class ChatRoomService {
     private final UserRepository userRepository;
     private final ChatMessageRepository messageRepository;
     private final StaffRepository staffRepository;
+
+    public void markAsRead(Integer roomId, Integer userId){
+        ChatRoomParticipant participant=participantRepository
+                .findByRoom_RoomIdAndUser_UserId(roomId, userId)
+                .orElseThrow(()->new RuntimeException("채팅방 참여자 정보가 없습니다."));
+
+        ChatRoom room=roomRepository.findByRoomId(roomId)
+                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        participant.setLastReadMessageId(room.getLastMessageId());
+        participant.setLastReadAt(LocalDateTime.now());
+    }
 
     public List<ChatRoomParticipantDto> getParticipantInfo(Integer roomId, Integer userId){
         List<ChatRoomParticipant> participants=participantRepository.findByRoom_RoomId(roomId);

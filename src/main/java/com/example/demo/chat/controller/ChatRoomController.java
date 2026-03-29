@@ -70,4 +70,26 @@ public class ChatRoomController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","서버에 오류가 발생했습니다."));
         }
     }
+
+    @PostMapping("/chat/read/{roomId}")
+    public ResponseEntity<Map<String,Object>> markAsRead(@PathVariable Integer roomId,
+                                                         @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            roomService.markAsRead(roomId, userId);
+            return ResponseEntity.ok(Map.of("result","success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
 }

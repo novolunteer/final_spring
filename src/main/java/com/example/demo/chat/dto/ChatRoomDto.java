@@ -22,4 +22,5 @@ public class ChatRoomDto {
     private LocalDateTime lastMessageAt;
     private Long participantCount;
     private String customRoomName;
+    private Integer unreadCount;
 }

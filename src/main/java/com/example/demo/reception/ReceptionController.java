@@ -20,8 +20,13 @@ public class ReceptionController {
         return receptionService.receptionList();
     }
 
-    @PostMapping("/api/administration")
-    public Map<String,Object> receptionConfirmed(@RequestParam Integer reservationId){
-        return receptionService.ReceptionReceived(reservationId);
+    @GetMapping("/api/administration/recieved")
+    public Map<String,Object> receptionConfirmed(@RequestParam Integer receptionId){
+        return receptionService.ReceptionReceived(receptionId);
+    }
+
+    @GetMapping("/api/medicalrecord")
+    public Map<String,Object> receptionPendingList(){
+        return receptionService.receptionPendingList();
     }
 }

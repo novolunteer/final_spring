@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ReceptionResponse {
     private Integer reservationId;
+    private Integer receptionId;
     private Integer patientId;
     private String patientName;
     private Integer doctorId;
@@ -26,6 +27,7 @@ public class ReceptionResponse {
 
     public ReceptionResponse(Reception reception) {
         this.reservationId = reception.getReservation().getReservationId();
+        this.receptionId=reception.getReceptionId();
         this.patientId=reception.getReservation().getPatient().getPatientId();
         this.patientName = reception.getReservation().getPatient().getName();
         this.doctorId=reception.getReservation().getStaff().getStaffId();

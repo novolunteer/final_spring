@@ -1,11 +1,9 @@
 package com.example.demo.reception;
 
-import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.reservation.Reservation;
-import com.example.demo.reservation.ReservationDto;
 import com.example.demo.reservation.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,17 +46,27 @@ public class ReceptionService {
         return Map.of("content",list);
     }
 
-    public Map<String,Object> ReceptionReceived(Integer reservationId){
-        Reservation reservation=reservationRepository.findById(reservationId)
+    public Map<String,Object> receptionPendingList(){
+        LocalDate today = LocalDate.now();
+
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+        List<ReceptionResponse> list=receptionRepository.findTodayPendingReception(start, end, ReceptionStatus.RECEIVED)
+                .stream()
+                .map(ReceptionResponse::new)
+                .toList();
+        return Map.of("content",list);
+    }
+
+    public Map<String,Object> ReceptionReceived(Integer receptionId){
+        Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
-        ReceptionDto receptionDto= ReceptionDto.builder()
-                .status(ReceptionStatus.RECEIVED)
-                .build();
+        reception.setStatus(ReceptionStatus.RECEIVED);
 
-        receptionRepository.save(receptionDto.toEntity(reservation));
+        receptionRepository.save(reception);
 
-        return Map.of("receptionId",receptionDto.getReceptionId());
+        return Map.of("receptionId",receptionId);
     }
 
     public Integer ReceptionConsulting(ReceptionDto receptionDto){

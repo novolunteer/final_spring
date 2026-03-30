@@ -11,9 +11,6 @@ import com.example.demo.chat.entity.ChatRoomParticipant;
 import com.example.demo.chat.repository.ChatMessageRepository;
 import com.example.demo.chat.repository.ChatRoomParticipantRepository;
 import com.example.demo.chat.repository.ChatRoomRepository;
-import com.example.demo.department.DepartmentRepository;
-import com.example.demo.role.Role;
-import com.example.demo.role.RoleRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
@@ -21,6 +18,7 @@ import com.example.demo.user.UserRepository;
 import com.example.demo.userRole.UserRole;
 import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +38,7 @@ public class ChatRoomService {
     private final ChatMessageRepository messageRepository;
     private final StaffRepository staffRepository;
     private final UserRoleRepository userRoleRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     public List<GetStaffListResponse> getStaffList(Integer userId, String keyword){
@@ -155,6 +154,15 @@ public class ChatRoomService {
                     .user(participant).build());
         }
 
+        ChatRoomDto roomForParticipant=makeNewRoomDto(room);
+        for (int i=0;i<participantIds.size();i++){
+            ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, participantIds.get(i))
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다. (채팅방 참여자)"));
+            messagingTemplate.convertAndSend(
+                    "/topic/chat/room-created/" + participant.getUser().getUserId(), roomForParticipant
+            );
+        }
+
         Long participantCount= 1L + participantIds.size();
 
         return ChatRoomDto.builder()
@@ -164,6 +172,16 @@ public class ChatRoomService {
                 .createdBy(room.getUser().getUserId())
                 .customRoomName(master.getCustomRoomName())
                 .participantCount(participantCount).build();
+    }
+
+    public ChatRoomDto makeNewRoomDto(ChatRoom room){
+        Integer participantCount=participantRepository.countByRoom(room);
+        return ChatRoomDto.builder()
+                .roomId(room.getRoomId())
+                .roomType(room.getRoomType().name())
+                .roomName(room.getRoomName())
+                .createdBy(room.getUser().getUserId())
+                .participantCount(Long.valueOf(participantCount)).build();
     }
 
     public void markAsRead(Integer roomId, Integer userId){
@@ -206,9 +224,6 @@ public class ChatRoomService {
     public ChatRoomDto getChatRoom(Integer roomId, Integer userId){
         ChatRoom chatRoom=roomRepository.findByRoomId(roomId).orElseThrow(()->new RuntimeException("존재하지 않는 채팅방입니다."));
 
-        ChatMessage message=messageRepository.findByMessageId(chatRoom.getLastMessageId()).orElseThrow(()
-        ->new RuntimeException("존재하지 않는 메시지입니다."));
-
         List<ChatRoomParticipant> participants=participantRepository.findByRoom(chatRoom);
         ChatRoomParticipant userCustomRoom=participantRepository.findByRoomAndUser_UserId(chatRoom, userId)
                 .orElseThrow(()-> new RuntimeException("채팅방 혹은 유저 정보가 존재하지 않습니다."));
@@ -218,9 +233,6 @@ public class ChatRoomService {
                 .roomType(chatRoom.getRoomType().name())
                 .roomName(chatRoom.getRoomName())
                 .createdBy(chatRoom.getUser().getUserId())
-                .lastMessageId(chatRoom.getLastMessageId())
-                .lastMessageAt(chatRoom.getLastMessageAt())
-                .lastMessageText(message.getContent())
                 .participantCount(Long.valueOf(participants.size()))
                 .customRoomName(userCustomRoom.getCustomRoomName()).build();
     }

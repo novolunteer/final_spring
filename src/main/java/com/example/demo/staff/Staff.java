@@ -28,7 +28,6 @@ public class Staff {
     @JoinColumn(name = "managerId")
     private Staff manager;
     private String position;
-    private String jobType;
     private String name;
     private String phone;
     private String address;

@@ -47,7 +47,6 @@ public class StaffService {
                 .department(department)
                 .manager(manager)
                 .position(dto.getPosition())
-                .jobType(dto.getJobType())
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
@@ -72,7 +71,6 @@ public class StaffService {
                 .staffId(staff.getStaffId())
                 .name(staff.getName())
                 .position(staff.getPosition())
-                .jobType(staff.getJobType())
                 .phone(staff.getPhone())
                 .address(staff.getAddress())
                 .userId(staff.getUser() != null? staff.getUser().getUserId() : null)
@@ -123,7 +121,6 @@ public class StaffService {
         staff.setDepartment(department);
         staff.setManager(manager);
         staff.setPosition(dto.getPosition());
-        staff.setJobType(dto.getJobType());
         staff.setName(dto.getName());
         staff.setPhone(dto.getPhone());
         staff.setAddress(dto.getAddress());

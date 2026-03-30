@@ -1,12 +1,14 @@
-package com.example.demo.reservation;
+package com.example.demo.reservation.dto;
 
+import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
+import com.example.demo.reservation.Reservation;
+import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.staff.Staff;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -20,8 +22,9 @@ public class ReservationDto {
     private Integer doctorId;
     private LocalDateTime reservationDate;
     private String symptom;
+    private Integer departmentId;
     private LocalDateTime preferredDate;
-    private String status;
+    private ReservationStatus status;
     private LocalDateTime createdAt;
 
     public ReservationDto(Reservation reservation){
@@ -44,11 +47,12 @@ public class ReservationDto {
                 .build();
     }
 
-    public Reservation toEntity(Patient patient){
+    public Reservation toEntity(Patient patient, Department department){
         return Reservation.builder()
                 .reservationId(reservationId)
                 .patient(patient)
                 .reservationDate(reservationDate)
+                .department(department)
                 .status(status)
                 .createdAt(createdAt)
                 .build();

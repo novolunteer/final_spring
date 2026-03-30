@@ -22,7 +22,7 @@ public class StaffService {
 
     public Map<String, Object> getDoctor(DepartmentDto departmentDto) {
         Department department = departmentRepository.findByDepartmentId(departmentDto.getDepartmentId());
-        List<StaffDto> list = staffRepository.findByDepartment(department, Sort.by("name"))
+        List<StaffDto> list = staffRepository.findDoctorsByDepartment(department)
                 .orElseThrow(() -> new RuntimeException("Not exist"))
                 .stream()
                 .map(doc -> StaffDto.builder()

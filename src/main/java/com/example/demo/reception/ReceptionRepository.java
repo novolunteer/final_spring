@@ -19,4 +19,16 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
             @Param("end") LocalDateTime end
     );
 
+    @Query("""
+    SELECT r FROM Reception r
+    JOIN FETCH r.reservation v
+    WHERE v.reservationDate BETWEEN :start AND :end
+    AND r.status = :status    
+    """)
+    List<Reception> findTodayPendingReception(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("status") ReceptionStatus status
+    );
+
 }

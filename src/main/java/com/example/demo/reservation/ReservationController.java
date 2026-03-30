@@ -1,15 +1,14 @@
 package com.example.demo.reservation;
 
+import com.example.demo.reservation.dto.ReservationDto;
+import com.example.demo.reservation.dto.ReservationResponse;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -33,4 +32,34 @@ public class ReservationController {
         map.put("reservationId",reservationId);
         return map;
     }
+
+    @GetMapping("/api/reservation")
+    public Map<String,Object> reservationList(){
+        Map<String,Object> map=new HashMap<>();
+        List<ReservationResponse> reservation=reservationService.reservationList();
+        reservation.forEach(System.out::println);
+        map.put("content",reservation);
+        return map;
+    }
+
+    @GetMapping("/api/reservation/pending")
+    public Map<String,Object> reservationPendingList(){
+        Map<String,Object> map=new HashMap<>();
+        List<ReservationResponse> reservation=reservationService.reservationPendingList();
+        map.put("content",reservation);
+        return map;
+    }
+
+    @GetMapping("/api/reservation/confirmed")
+    public Map<String,Object> reservationConfirmedList(){
+        Map<String,Object> map=new HashMap<>();
+        List<ReservationResponse> reservation=reservationService.reservationconfirmedList();
+        map.put("content",reservation);
+        return map;
+    }
+
+//    @GetMapping("/api/reservation/schedule")
+//    public Map<String,Object> reservationSchedule(@RequestParam Integer doctorId){
+//
+//    }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.reservation;
 
+import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
 import com.example.demo.staff.Staff;
 import com.example.demo.user.User;
@@ -28,11 +29,17 @@ public class Reservation {
     @JoinColumn(name = "doctorId")
     private Staff staff;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departmentId")
+    private Department department;
+
     private String symptom;
     private LocalDateTime preferredDate;
 
     private LocalDateTime reservationDate;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private ReservationStatus status;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

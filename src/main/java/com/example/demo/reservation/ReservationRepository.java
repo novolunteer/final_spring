@@ -15,10 +15,11 @@ public interface ReservationRepository extends JpaRepository<Reservation,Integer
     @Query("""
     SELECT r FROM Reservation r
     JOIN FETCH r.patient p
-    JOIN FETCH r.staff s
-    WHERE r.reservationDate BETWEEN :start AND :end""")
+    JOIN FETCH r.staff s""")
     List<Reservation> findAllWithPatientAndStaff(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    List<Reservation> findByStatus(ReservationStatus reservationStatus);
 }

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -38,6 +39,10 @@ public class ChatWebSocketController {
 
         ChatMessageDto saveMessage=messageService.sendUserMessage(request, userId);
         messagingTemplate.convertAndSend("/topic/chat/room/" + request.getRoomId(), saveMessage);
-        messagingTemplate.convertAndSend("/topic/chat/list", saveMessage);
+
+        List<Integer> participants=saveMessage.getParticipantIds();
+        for (Integer id:participants){
+            messagingTemplate.convertAndSend("/topic/chat/list/"+ id, saveMessage);
+        }
     }
 }

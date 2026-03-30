@@ -23,5 +23,6 @@ public class ChatMessageDto {
     private Integer unreadCount;
     private boolean mine;
     private List<ChatAttachmentDto> attachments;
+    private List<Integer> participantIds;
 }
 

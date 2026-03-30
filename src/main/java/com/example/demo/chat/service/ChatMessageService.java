@@ -67,6 +67,8 @@ public class ChatMessageService {
         Staff staff=staffRepository.findByUser(sender)
                 .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
+        List<ChatRoomParticipant> participants=participantRepository.findByRoom_RoomId(message.getRoomId());
+
         return ChatMessageDto.builder()
                 .messageId(saveMessage.getMessageId())
                 .roomId(room.getRoomId())
@@ -74,7 +76,8 @@ public class ChatMessageService {
                 .senderName(staff.getName())
                 .messageType(saveMessage.getMessageType().name())
                 .content(saveMessage.getContent())
-                .createdAt(saveMessage.getCreatedAt()).build();
+                .createdAt(saveMessage.getCreatedAt())
+                .participantIds(participants.stream().map(p -> p.getUser().getUserId()).toList()).build();
     }
 
     public MessageSlice getMessages(Integer roomId, Integer cursor, int size, Integer userId){

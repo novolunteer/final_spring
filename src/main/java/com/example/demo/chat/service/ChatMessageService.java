@@ -46,7 +46,7 @@ public class ChatMessageService {
 
         ChatRoomParticipant participantWhoSent=participantRepository
                 .findByRoomAndUser_UserId(room, userId).orElseThrow(()->new RuntimeException(
-                        "채팅방 또는 참가자가 존재하지 않습니다."
+                        "채팅방 참가자가 아닙니다."
                 ));
 
         if (message.getContent() == null || message.getContent().trim().isEmpty()) {

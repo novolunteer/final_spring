@@ -1,9 +1,6 @@
 package com.example.demo.chat.controller;
 
-import com.example.demo.chat.dto.ChatRoomDetailResponse;
-import com.example.demo.chat.dto.ChatRoomDto;
-import com.example.demo.chat.dto.ChatRoomParticipantDto;
-import com.example.demo.chat.dto.MessageSlice;
+import com.example.demo.chat.dto.*;
 import com.example.demo.chat.service.ChatMessageService;
 import com.example.demo.chat.service.ChatRoomService;
 import com.example.demo.security.security.CustomUserDetails;
@@ -86,6 +83,50 @@ public class ChatRoomController {
         try{
             roomService.markAsRead(roomId, userId);
             return ResponseEntity.ok(Map.of("result","success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
+
+    @PostMapping("/chat/room")
+    public ResponseEntity<?> createChatRoom(@RequestBody CreateChatRoomRequest request,
+                                            @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            ChatRoomDto room=roomService.createChatRoom(userId, request);
+            return ResponseEntity.ok(room);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
+
+    @GetMapping("/chat/staff/list")
+    public ResponseEntity<?> getStaffList(@AuthenticationPrincipal CustomUserDetails details,
+                                          @RequestParam(name = "keyword", required = false) String keyword){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            List<GetStaffListResponse> responses=roomService.getStaffList(userId, keyword);
+            return ResponseEntity.ok(responses);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

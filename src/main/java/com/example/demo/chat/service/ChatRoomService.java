@@ -1,22 +1,31 @@
 package com.example.demo.chat.service;
 
+import com.example.demo.chat.ChatRoomType;
 import com.example.demo.chat.dto.ChatRoomDto;
 import com.example.demo.chat.dto.ChatRoomParticipantDto;
+import com.example.demo.chat.dto.CreateChatRoomRequest;
+import com.example.demo.chat.dto.GetStaffListResponse;
 import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
 import com.example.demo.chat.repository.ChatMessageRepository;
 import com.example.demo.chat.repository.ChatRoomParticipantRepository;
 import com.example.demo.chat.repository.ChatRoomRepository;
+import com.example.demo.department.DepartmentRepository;
+import com.example.demo.role.Role;
+import com.example.demo.role.RoleRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
+import com.example.demo.userRole.UserRole;
+import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,6 +39,132 @@ public class ChatRoomService {
     private final UserRepository userRepository;
     private final ChatMessageRepository messageRepository;
     private final StaffRepository staffRepository;
+    private final UserRoleRepository userRoleRepository;
+
+
+    public List<GetStaffListResponse> getStaffList(Integer userId, String keyword){
+        if (keyword != null && keyword.isBlank()) {
+            keyword = null;
+        }
+
+        List<Staff> staffs=staffRepository.searchStaff(userId, keyword);
+
+        //직원 역할 id 목록
+        List<UserRole> userRoles=userRoleRepository.findTopRoleByUsers(staffs.stream().map(
+                u -> u.getUser()
+        ).toList());
+
+        Map<Integer, String> roles=userRoles.stream().collect(Collectors.toMap(
+                r -> r.getUser().getUserId(),
+                r -> r.getRole().getRoleName()
+        ));
+
+        List<GetStaffListResponse> responses=staffs.stream().map(u -> GetStaffListResponse.builder()
+                .userId(u.getUser().getUserId())
+                .username(u.getName())
+                .department(u.getDepartment().getDepartmentName())
+                .role(roles.getOrDefault(u.getUser().getUserId(), null)).build()).toList();
+
+        return responses;
+    }
+
+    public ChatRoomDto createChatRoom(Integer userId, CreateChatRoomRequest request){
+        User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+
+        String roomName=null;
+        String roomType=request.getRoomType();
+        if (!"GROUP".equals(roomType) && !"DIRECT".equals(roomType)) {
+            throw new RuntimeException("채팅방 타입이 올바르지 않습니다.");
+        }
+
+        List<Integer> participants=request.getParticipantUserIds();
+        if (participants == null || participants.isEmpty()) {
+            throw new RuntimeException("채팅방 참여자를 선택하세요.");
+        }
+        List<Integer> participantIds = participants.stream()
+                .filter(id -> !id.equals(userId))
+                .distinct()
+                .toList();
+
+        if ("DIRECT".equals(roomType) && participantIds.size() != 1) {
+            throw new RuntimeException("1:1 채팅은 한 명만 선택할 수 있습니다.");
+        }
+
+        if ("GROUP".equals(roomType) && participantIds.size() < 2) {
+            throw new RuntimeException("그룹 채팅 참여자를 두 명 이상 선택하세요.");
+        }
+
+        List<String> members=new ArrayList<>();
+        ChatRoomType type;
+
+        if ("GROUP".equals(roomType)){
+            for (int i=0;i<participantIds.size();i++){
+                Staff staff=staffRepository.findByUser_UserId(participantIds.get(i))
+                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+                members.add(staff.getName());
+            }
+
+            if (request.getRoomName() != null && !request.getRoomName().isBlank()) {
+                roomName = request.getRoomName();
+            } else {
+                roomName = String.join("&", members);
+            }
+            type=ChatRoomType.GROUP;
+        } else {
+            ChatRoom existingRoom=roomRepository.findExistingDirectRoom(ChatRoomType.DIRECT, userId, participantIds.get(0))
+                    .orElse(null);
+            if (existingRoom != null){
+                ChatRoomParticipant me = participantRepository.findByRoomAndUser_UserId(existingRoom, userId)
+                        .orElseThrow(() -> new RuntimeException("채팅방 참가자가 존재하지 않습니다."));
+
+                return ChatRoomDto.builder()
+                        .roomId(existingRoom.getRoomId())
+                        .roomType(existingRoom.getRoomType().name())
+                        .roomName(existingRoom.getRoomName())
+                        .createdBy(existingRoom.getUser().getUserId())
+                        .customRoomName(me.getCustomRoomName())
+                        .participantCount(2L).build();
+            }
+
+            Staff me=staffRepository.findByUser_UserId(userId)
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다. (채팅방 생성자)"));
+            Staff you=staffRepository.findByUser_UserId(participantIds.get(0))
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+            roomName=me.getName() + "&" + you.getName();
+            type=ChatRoomType.DIRECT;
+        }
+
+        ChatRoom room=roomRepository.save(ChatRoom.builder()
+                .roomType(type)
+                .roomName(roomName)
+                .user(user).build());
+
+        ChatRoomParticipant master=participantRepository.save(
+                ChatRoomParticipant.builder()
+                        .room(room)
+                        .user(user)
+                        .customRoomName(request.getCustomRoomName() != null && !request.getCustomRoomName().isBlank()
+                                ? request.getCustomRoomName() : null).build()
+        );
+
+        for (int i=0; i<participantIds.size();i++){
+            User participant=userRepository.findByUserId(participantIds.get(i))
+                    .orElseThrow(()-> new RuntimeException("존재하지 않는 사용자입니다. (채팅방 참여자)"));
+            participantRepository.save(ChatRoomParticipant.builder()
+                    .room(room)
+                    .user(participant).build());
+        }
+
+        Long participantCount= 1L + participantIds.size();
+
+        return ChatRoomDto.builder()
+                .roomId(room.getRoomId())
+                .roomType(room.getRoomType().name())
+                .roomName(room.getRoomName())
+                .createdBy(room.getUser().getUserId())
+                .customRoomName(master.getCustomRoomName())
+                .participantCount(participantCount).build();
+    }
 
     public void markAsRead(Integer roomId, Integer userId){
         ChatRoomParticipant participant=participantRepository

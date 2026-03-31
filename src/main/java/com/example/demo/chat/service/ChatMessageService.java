@@ -21,7 +21,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -95,11 +97,13 @@ public class ChatMessageService {
         }
 
         List<ChatMessageDto> messages=slice.getContent().stream()
-                .map(message -> toDto(message, userId)).toList();
+                .map(message -> toDto(message, userId)).collect(Collectors.toList());
+
+        Collections.reverse(messages);
 
         Integer nextCursor=null;
         if (!messages.isEmpty()){
-            nextCursor=messages.get(messages.size() - 1).getMessageId();
+            nextCursor=messages.get(0).getMessageId();
         }
 
         MessageSlice messageSlice=MessageSlice.builder()

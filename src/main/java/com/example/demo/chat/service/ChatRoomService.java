@@ -1,10 +1,7 @@
 package com.example.demo.chat.service;
 
 import com.example.demo.chat.ChatRoomType;
-import com.example.demo.chat.dto.ChatRoomDto;
-import com.example.demo.chat.dto.ChatRoomParticipantDto;
-import com.example.demo.chat.dto.CreateChatRoomRequest;
-import com.example.demo.chat.dto.GetStaffListResponse;
+import com.example.demo.chat.dto.*;
 import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
@@ -192,8 +189,24 @@ public class ChatRoomService {
         ChatRoom room=roomRepository.findByRoomId(roomId)
                 .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
 
-        participant.setLastReadMessageId(room.getLastMessageId());
-        participant.setLastReadAt(LocalDateTime.now());
+        Integer lastMessageId=room.getLastMessageId();
+        if (lastMessageId == null){
+            return;
+        }
+
+        if (participant.getLastReadMessageId() == null ||
+                participant.getLastReadMessageId() < lastMessageId) {
+
+            participant.setLastReadMessageId(lastMessageId);
+            participant.setLastReadAt(LocalDateTime.now());
+
+            ReadStatusDto readStatus=ReadStatusDto.builder()
+                    .roomId(roomId).userId(userId).lastReadMessageId(lastMessageId).build();
+
+            messagingTemplate.convertAndSend(
+                    "/topic/chat/room/" + roomId + "/read", readStatus
+            );
+        }
     }
 
     public List<ChatRoomParticipantDto> getParticipantInfo(Integer roomId, Integer userId){

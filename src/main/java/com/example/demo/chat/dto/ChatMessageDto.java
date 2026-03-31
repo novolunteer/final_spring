@@ -20,7 +20,7 @@ public class ChatMessageDto {
     private String messageType;
     private String content;
     private LocalDateTime createdAt;
-    private Integer unreadCount;
+    private Long unreadCount;
     private boolean mine;
     private List<ChatAttachmentDto> attachments;
     private List<Integer> participantIds;

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,8 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
     List<Staff> findByUserIn(List<User> users);
     Optional<Staff> findByUser(User user);
     Optional<Staff> findByUser_UserId(Integer userId);
+
+    List<Staff> findByUserNotIn(Collection<User> users);
 
     @Query("""
         select distinct s

@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/schedule-type")
+@RequestMapping("/api/schedule_type")
 public class StaffScheduleTypeController {
     private final StaffScheduleTypeService staffScheduleTypeService;
 

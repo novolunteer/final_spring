@@ -24,6 +24,6 @@ public class StaffSchedule {
     private LocalDate workDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_schedule_id", nullable = false)
+    @JoinColumn(name = "schedule_type_id", nullable = false)
     private StaffScheduleType staffScheduleType;
 }

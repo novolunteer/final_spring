@@ -30,14 +30,14 @@ public class JoinServiceTest {
         roles.add(7);
 
         StaffUserResponse response=StaffUserResponse.builder()
-                .email("anny@gmail.com")
+                .email("test4@test.com")
                 .password(passwordEncoder.encode("1234"))
                 .status("Y")
                 .roles(roles)
                 .departmentId(2)
-                .name("Anny")
-                .phone("010-1234-5678")
-                .address("서울특별시 강남구 서초동")
+                .name("test")
+                .phone("010-1334-5678")
+                .address("서울특별시 강남구")
                 .build();
 
         UserDto user=joinService.joinTest(response);

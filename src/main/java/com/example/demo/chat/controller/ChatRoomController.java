@@ -133,4 +133,71 @@ public class ChatRoomController {
                     .body(Map.of("error","서버에 오류가 발생했습니다."));
         }
     }
+
+    @GetMapping("/chat/room/{roomId}/invite/staff")
+    public ResponseEntity<?> getStaffListForInvite(@PathVariable Integer roomId,
+                                                   @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            List<GetStaffListResponse> responses=roomService.getStaffListForInvite(roomId, userId);
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
+
+    @PostMapping("/chat/room/{roomId}/invite")
+    public ResponseEntity<?> inviteStaff(@PathVariable Integer roomId,
+                                         @RequestBody List<Integer> staffIds,
+                                         @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            List<Integer> response=roomService.inviteStaff(roomId, userId, staffIds);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
+
+    @DeleteMapping("/chat/room/{roomId}/leave")
+    public ResponseEntity<?> leaveChatRoom(@PathVariable Integer roomId,
+                                           @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보를 읽을 수 없습니다."));
+        }
+
+        try{
+            LeaveChatRoomResponse response=roomService.leaveChatRoom(roomId, userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error","서버에 오류가 발생했습니다."));
+        }
+    }
 }

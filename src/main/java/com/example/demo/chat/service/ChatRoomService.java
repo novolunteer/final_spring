@@ -1,5 +1,6 @@
 package com.example.demo.chat.service;
 
+import com.example.demo.chat.ChatMessageType;
 import com.example.demo.chat.ChatRoomType;
 import com.example.demo.chat.dto.*;
 import com.example.demo.chat.entity.ChatMessage;
@@ -20,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +36,150 @@ public class ChatRoomService {
     private final UserRoleRepository userRoleRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
+    public List<Integer> inviteStaff(Integer roomId, Integer inviter, List<Integer> staffIds){
+        if (staffIds == null || staffIds.isEmpty()) {
+            throw new RuntimeException("초대할 직원을 선택하세요.");
+        }
+
+        ChatRoom room=roomRepository.findByRoomId(roomId)
+                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        participantRepository.findByRoomAndUser_UserId(room, inviter)
+                .orElseThrow(()->new RuntimeException("현재 참여 중인 사용자만 초대할 수 있습니다."));
+
+        LocalDateTime now=LocalDateTime.now();
+        List<Integer> result=new ArrayList<>();
+        List<String> names=new ArrayList<>();
+        for (Integer id:staffIds){
+            Staff staff=staffRepository.findByUser_UserId(id)
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다. (채팅방 초대 실패)"));
+
+            boolean exists=participantRepository.existsByRoomAndUser_UserId(room, id);
+            if (exists) continue;
+
+            ChatRoomParticipant participant=participantRepository.save(ChatRoomParticipant.builder()
+                    .room(room)
+                    .user(staff.getUser())
+                    .joinedAt(now)
+                    .lastReadMessageId(room.getLastMessageId())
+                    .lastReadAt(now).build());
+
+            result.add(participant.getUser().getUserId());
+            names.add(staff.getName());
+        }
+
+        if (!names.isEmpty()){
+            ChatMessage systemMessage=inviteSystemMessage(room, inviter, names);
+
+            room.setLastMessageId(systemMessage.getMessageId());
+            room.setLastMessageAt(systemMessage.getCreatedAt());
+        }
+
+        List<ChatRoomParticipant> finalParticipants=participantRepository.findByRoom(room);
+        for (ChatRoomParticipant p:finalParticipants){
+            messagingTemplate.convertAndSendToUser(
+                    p.getUser().getUserId().toString(), "/queue/chat/list", Map.of("type","ROOM_LIST_REFRESH")
+            );
+        }
+
+        return result;
+    }
+
+    private ChatMessage inviteSystemMessage(ChatRoom room, Integer inviter, List<String> names){
+        Staff staff=staffRepository.findByUser_UserId(inviter)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다. (채팅방 초대 메시지 생성 실패)"));
+
+        String inviterName=staff.getName();
+        String joinNames=names.stream().map(name -> name + "님").collect(Collectors.joining(", "));
+        ChatMessage message=messageRepository.save(ChatMessage.builder()
+                .room(room).messageType(ChatMessageType.SYSTEM)
+                .content(inviterName + "님이 " + joinNames + "을 초대했습니다.").build());
+
+        return message;
+    }
+
+    public LeaveChatRoomResponse leaveChatRoom(Integer roomId, Integer userId){
+        ChatRoom room=roomRepository.findByRoomId(roomId)
+                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, userId)
+                .orElseThrow(()->new RuntimeException("현재 참여 중인 채팅방이 아닙니다."));
+
+        Integer participantCount=participantRepository.countByRoom(room);
+        if (participantCount == 1){
+            messageRepository.deleteByRoom(room);
+            participantRepository.deleteByRoom(room);
+            roomRepository.delete(room);
+
+            messagingTemplate.convertAndSendToUser(
+                    userId.toString(), "/queue/chat/list", Map.of("type","ROOM_LIST_REFRESH")
+            );
+
+            return LeaveChatRoomResponse.builder().left(true).roomDelete(true).build();
+        }
+
+        ChatMessage systemMessage=leaveSystemMessage(room, userId);
+
+        room.setLastMessageId(systemMessage.getMessageId());
+        room.setLastMessageAt(systemMessage.getCreatedAt());
+
+        participantRepository.delete(participant);
+
+        Set<Integer> targetUserIds = new HashSet<>();
+        targetUserIds.add(userId);
+
+        List<ChatRoomParticipant> finalParticipants = participantRepository.findByRoom(room);
+        for (ChatRoomParticipant p : finalParticipants) {
+            targetUserIds.add(p.getUser().getUserId());
+        }
+
+        for (Integer targetUserId : targetUserIds) {
+            messagingTemplate.convertAndSendToUser(
+                    targetUserId.toString(),
+                    "/queue/chat/list",
+                    Map.of("type", "ROOM_LIST_REFRESH")
+            );
+        }
+
+        return LeaveChatRoomResponse.builder().left(true).roomDelete(false).build();
+    }
+
+    private ChatMessage leaveSystemMessage(ChatRoom room, Integer userId){
+        Staff staff=staffRepository.findByUser_UserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다. (채팅방 퇴장 메시지 생성 실패)"));
+        ChatMessage message=messageRepository.save(ChatMessage.builder()
+                .room(room)
+                .messageType(ChatMessageType.SYSTEM)
+                .content(staff.getName() + "님이 퇴장했습니다.").build());
+        return message;
+    }
+
+    public List<GetStaffListResponse> getStaffListForInvite(Integer roomId, Integer userId){
+        participantRepository.findByRoom_RoomIdAndUser_UserId(roomId, userId)
+                .orElseThrow(()->new RuntimeException("현재 참여 중인 사용자만 직원 목록을 조회할 수 있습니다."));
+
+        List<User> users=participantRepository.findByRoom_RoomId(roomId)
+                .stream().map(m -> m.getUser()).toList();
+        List<Staff> staffs=staffRepository.findByUserNotIn(users);
+
+        //직원 역할 id 목록
+        List<UserRole> userRoles=userRoleRepository.findTopRoleByUsers(staffs.stream().map(
+                u -> u.getUser()
+        ).toList());
+
+        Map<Integer, String> roles=userRoles.stream().collect(Collectors.toMap(
+                r -> r.getUser().getUserId(),
+                r -> r.getRole().getRoleName()
+        ));
+
+        List<GetStaffListResponse> responses=staffs.stream().map(u -> GetStaffListResponse.builder()
+                .userId(u.getUser().getUserId())
+                .username(u.getName())
+                .department(u.getDepartment().getDepartmentName())
+                .role(roles.getOrDefault(u.getUser().getUserId(), null)).build()).toList();
+
+        return responses;
+    }
 
     public List<GetStaffListResponse> getStaffList(Integer userId, String keyword){
         if (keyword != null && keyword.isBlank()) {

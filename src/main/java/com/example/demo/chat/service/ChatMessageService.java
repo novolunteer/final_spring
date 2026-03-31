@@ -21,6 +21,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -90,10 +91,19 @@ public class ChatMessageService {
         Pageable pageable= PageRequest.of(0, size);
         Slice<ChatMessage> slice;
 
+        ChatRoomParticipant participant=participantRepository.findByRoom_RoomIdAndUser_UserId(roomId, userId)
+                .orElseThrow(()->new RuntimeException("현재 참여 중인 채팅방이 아닙니다."));
+
+        LocalDateTime joinedAt=participant.getJoinedAt();
+
         if (cursor == null){
-            slice=messageRepository.findByRoom_RoomIdOrderByMessageIdDesc(roomId, pageable);
+            slice=messageRepository.findByRoom_RoomIdAndCreatedAtGreaterThanEqualOrderByMessageIdDesc(
+                    roomId, joinedAt, pageable
+            );
         } else {
-            slice=messageRepository.findByRoom_RoomIdAndMessageIdLessThanOrderByMessageIdDesc(roomId, cursor, pageable);
+            slice=messageRepository.findByRoom_RoomIdAndCreatedAtGreaterThanEqualAndMessageIdLessThanOrderByMessageIdDesc(
+                    roomId, joinedAt, cursor, pageable
+            );
         }
 
         List<ChatMessageDto> messages=slice.getContent().stream()
@@ -120,29 +130,34 @@ public class ChatMessageService {
     }
 
     private ChatMessageDto toDto(ChatMessage message, Integer loginUserId){
-        Long unreadCount=0L;
+        User sender = message.getUser();
+        Long unreadCount = 0L;
+        String senderName = null;
 
-        if (message.getMessageType() == ChatMessageType.USER && message.getUser() != null){
-            unreadCount=participantRepository.countUnreadParticipants(
-                    message.getRoom().getRoomId(), message.getUser().getUserId(),
+        if (message.getMessageType() == ChatMessageType.USER && sender != null){
+            unreadCount = participantRepository.countUnreadParticipants(
+                    message.getRoom().getRoomId(),
+                    sender.getUserId(),
                     message.getMessageId()
             );
         }
 
-        Staff staff=staffRepository.findByUser_UserId(message.getUser().getUserId())
-                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다. (메시지 발신자)"));
+        if (sender != null){
+            Staff staff = staffRepository.findByUser_UserId(sender.getUserId())
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 직원입니다. (메시지 발신자)"));
+            senderName = staff.getName();
+        }
 
         return ChatMessageDto.builder()
                 .messageId(message.getMessageId())
                 .roomId(message.getRoom().getRoomId())
-                .senderId(message.getUser() != null ? message.getUser().getUserId() : null)
-                .senderName(staff.getName())
+                .senderId(sender != null ? sender.getUserId() : null)
+                .senderName(senderName)
                 .messageType(message.getMessageType().name())
                 .content(message.getContent())
                 .createdAt(message.getCreatedAt())
                 .unreadCount(unreadCount)
-                .mine(
-                        message.getUser() != null && message.getUser().getUserId().equals(loginUserId)
-                ).build();
+                .mine(sender != null && sender.getUserId().equals(loginUserId))
+                .build();
     }
 }

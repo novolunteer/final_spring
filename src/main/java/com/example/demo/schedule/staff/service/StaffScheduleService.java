@@ -42,6 +42,51 @@ public class StaffScheduleService {
 
     //전체조회
     public List<StaffScheduleDto> selectAll(){
-        List<StaffSchedule> result=staffScheduleRepository.f
+        List<StaffSchedule> result=staffScheduleRepository.findAll();
+        return result.stream()
+                .map(this::entityToDto)
+                .toList();
+    }
+    private StaffScheduleDto entityToDto(StaffSchedule entity){
+        return StaffScheduleDto.builder()
+                .scheduleId(entity.getScheduleId())
+                .staffId(entity.getStaff().getStaffId())
+                .staffName(entity.getStaff().getName())
+                .workDate(entity.getWorkDate())
+                .scheduleTypeId(entity.getStaffScheduleType().getScheduleTypeId())
+                .typeCode(entity.getStaffScheduleType().getTypeCode())
+                .typeName(entity.getStaffScheduleType().getTypeName())
+                .build();
+    }
+
+    //조회
+    public StaffScheduleDto selectOne(Integer scheduleId){
+        StaffSchedule staffSchedule= staffScheduleRepository.findById(scheduleId)
+                .orElseThrow(()->new EntityNotFoundException("해당 스케줄이 존재하지 않습니다"));
+        return entityToDto(staffSchedule);
+    }
+
+    //수정
+    public StaffScheduleDto update(Integer scheduleId, StaffScheduleDto dto){
+        StaffSchedule staffSchedule=staffScheduleRepository.findById(scheduleId)
+                .orElseThrow(()->new EntityNotFoundException("해당 스케줄이 존재하지 않습니다"));
+        Staff staff= staffRepository.findById(dto.getStaffId())
+                .orElseThrow(()->new EntityNotFoundException("해당 직원이 존재하지 않습니다"));
+
+        StaffScheduleType staffScheduleType=staffScheduleTypeRepository.findById(dto.getScheduleTypeId())
+                .orElseThrow(()->new EntityNotFoundException("해당 근무유형이 존재하지 않습니다"));
+        staffSchedule.setStaff(staff);
+        staffSchedule.setWorkDate(dto.getWorkDate());
+        staffSchedule.setStaffScheduleType(staffScheduleType);
+
+        return entityToDto(staffSchedule);
+    }
+
+    //삭제
+    public void delete(Integer scheduleId){
+        StaffSchedule staffSchedule=staffScheduleRepository.findById(scheduleId)
+                .orElseThrow(()-> new EntityNotFoundException("스케줄이 존재하지 않습니다"));
+
+        staffScheduleRepository.delete(staffSchedule);
     }
 }

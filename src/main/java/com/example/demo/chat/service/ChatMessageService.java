@@ -37,6 +37,87 @@ public class ChatMessageService {
     private final StaffRepository staffRepository;
     private final ChatRoomService roomService;
 
+    public ChatMessageDto deleteMessage(Integer messageId, Integer userId){
+        ChatMessage message=messageRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if(!message.getUser().getUserId().equals(userId)){
+            throw new IllegalArgumentException("본인 메시지만 삭제할 수 있습니다.");
+        }
+
+        if(message.isDeleted()){
+            throw new IllegalArgumentException("이미 삭제된 메시지입니다.");
+        }
+
+        if(message.getMessageType() == ChatMessageType.SYSTEM){
+            throw new IllegalArgumentException("시스템 메시지는 삭제할 수 없습니다.");
+        }
+
+        message.setDeleted(true);
+        message.setDeletedAt(LocalDateTime.now());
+        message.setContent(null);
+        ChatMessage deleteMessage=messageRepository.save(message);
+
+        return ChatMessageDto.builder()
+                .messageId(deleteMessage.getMessageId())
+                .content("삭제된 메시지입니다.")
+                .mine(deleteMessage.getUser().getUserId().equals(userId))
+                .messageType(deleteMessage.getMessageType().name())
+                .isDeleted(deleteMessage.isDeleted())
+                .deletedAt(deleteMessage.getDeletedAt())
+                .isEdited(deleteMessage.isEdited())
+                .editedAt(deleteMessage.getEditedAt())
+                .parentMessageId(deleteMessage.getParentMessage() != null ? deleteMessage.getParentMessage().getMessageId() : null)
+                .build();
+    }
+
+    public ChatMessageDto editMessage(Integer messageId, String content, Integer userId){
+        ChatMessage message=messageRepository.findByMessageId(messageId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if(!message.getUser().getUserId().equals(userId)){
+            throw new IllegalArgumentException("본인 메시지만 수정할 수 있습니다.");
+        }
+
+        if(message.isDeleted()){
+            throw new IllegalArgumentException("삭제된 메시지는 수정할 수 없습니다.");
+        }
+
+        if(message.getMessageType() == ChatMessageType.SYSTEM){
+            throw new IllegalArgumentException("시스템 메시지는 수정할 수 없습니다.");
+        }
+
+        if(content == null || content.trim().isEmpty()){
+            throw new IllegalArgumentException("수정할 메시지 내용을 입력하세요.");
+        }
+
+        message.setEdited(true);
+        message.setEditedAt(LocalDateTime.now());
+        message.setContent(content);
+        ChatMessage editMessage=messageRepository.save(message);
+
+        String parentMessageContent=null;
+
+        if (editMessage.getParentMessage().getMessageId() != null){
+            ChatMessage parent=messageRepository.findByMessageId(editMessage.getParentMessage().getMessageId())
+                    .orElseThrow(()->new RuntimeException("부모 메시지가 존재하지 않습니다."));
+            parentMessageContent=parent.getContent();
+        }
+
+        return ChatMessageDto.builder()
+                .messageId(editMessage.getMessageId())
+                .content(editMessage.getContent())
+                .mine(editMessage.getUser().getUserId().equals(userId))
+                .messageType(editMessage.getMessageType().name())
+                .isEdited(editMessage.isEdited())
+                .editedAt(editMessage.getEditedAt())
+                .isDeleted(editMessage.isDeleted())
+                .deletedAt(editMessage.getDeletedAt())
+                .parentMessageId(editMessage.getParentMessage() != null ? editMessage.getParentMessage().getMessageId() : null)
+                .parentMessageContent(parentMessageContent != null ? parentMessageContent:null)
+                .build();
+    }
+
     public ChatMessageDto sendUserMessage(SendMessageRequest message, Integer userId){
         ChatRoom room=roomRepository.findByRoomId(message.getRoomId()).orElseThrow(
                 ()->new RuntimeException("채팅방이 존재하지 않습니다.")
@@ -158,6 +239,10 @@ public class ChatMessageService {
                 .createdAt(message.getCreatedAt())
                 .unreadCount(unreadCount)
                 .mine(sender != null && sender.getUserId().equals(loginUserId))
+                .isDeleted(message.isDeleted())
+                .deletedAt(message.getDeletedAt())
+                .isEdited(message.isEdited())
+                .parentMessageId(message.getParentMessage() != null ? message.getParentMessage().getMessageId() : null)
                 .build();
     }
 }

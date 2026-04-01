@@ -24,5 +24,11 @@ public class ChatMessageDto {
     private boolean mine;
     private List<ChatAttachmentDto> attachments;
     private List<Integer> participantIds;
+    private boolean isDeleted;
+    private LocalDateTime deletedAt;
+    private boolean isEdited;
+    private LocalDateTime editedAt;
+    private Integer parentMessageId;
+    private String parentMessageContent;
 }
 

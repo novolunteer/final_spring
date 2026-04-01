@@ -20,7 +20,7 @@ public class ChatRoomController {
     private final ChatMessageService messageService;
 
     @GetMapping("/chat/room/list")
-    public ResponseEntity<?> chatRoomList(@AuthenticationPrincipal CustomUserDetails details){
+    public ResponseEntity<Map<String,Object>> chatRoomList(@AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
         }
@@ -32,7 +32,7 @@ public class ChatRoomController {
 
         try{
             List<ChatRoomDto> list=roomService.chatRoomList(userId);
-            return ResponseEntity.ok(list);
+            return ResponseEntity.ok(Map.of("result", list));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","서버에 오류가 발생했습니다."));
@@ -40,7 +40,7 @@ public class ChatRoomController {
     }
 
     @GetMapping("/chat/room/{roomId}")
-    public ResponseEntity<?> chatRoomDetail(@PathVariable Integer roomId,
+    public ResponseEntity<Map<String,Object>> chatRoomDetail(@PathVariable Integer roomId,
                                                              @RequestParam(name = "cursor", required = false) Integer cursor,
                                                              @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -61,7 +61,7 @@ public class ChatRoomController {
 
             ChatRoomDetailResponse response=new ChatRoomDetailResponse(chatRoom, participants, messages);
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("result", response));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","서버에 오류가 발생했습니다."));
@@ -91,7 +91,7 @@ public class ChatRoomController {
     }
 
     @PostMapping("/chat/room")
-    public ResponseEntity<?> createChatRoom(@RequestBody CreateChatRoomRequest request,
+    public ResponseEntity<Map<String, Object>> createChatRoom(@RequestBody CreateChatRoomRequest request,
                                             @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
@@ -104,7 +104,7 @@ public class ChatRoomController {
 
         try{
             ChatRoomDto room=roomService.createChatRoom(userId, request);
-            return ResponseEntity.ok(room);
+            return ResponseEntity.ok(Map.of("result", room));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -113,7 +113,7 @@ public class ChatRoomController {
     }
 
     @GetMapping("/chat/staff/list")
-    public ResponseEntity<?> getStaffList(@AuthenticationPrincipal CustomUserDetails details,
+    public ResponseEntity<Map<String,Object>> getStaffList(@AuthenticationPrincipal CustomUserDetails details,
                                           @RequestParam(name = "keyword", required = false) String keyword){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
@@ -126,7 +126,7 @@ public class ChatRoomController {
 
         try{
             List<GetStaffListResponse> responses=roomService.getStaffList(userId, keyword);
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(Map.of("result", responses));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -135,7 +135,7 @@ public class ChatRoomController {
     }
 
     @GetMapping("/chat/room/{roomId}/invite/staff")
-    public ResponseEntity<?> getStaffListForInvite(@PathVariable Integer roomId,
+    public ResponseEntity<Map<String, Object>> getStaffListForInvite(@PathVariable Integer roomId,
                                                    @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
@@ -148,7 +148,7 @@ public class ChatRoomController {
 
         try{
             List<GetStaffListResponse> responses=roomService.getStaffListForInvite(roomId, userId);
-            return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(Map.of("result", responses));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -157,7 +157,7 @@ public class ChatRoomController {
     }
 
     @PostMapping("/chat/room/{roomId}/invite")
-    public ResponseEntity<?> inviteStaff(@PathVariable Integer roomId,
+    public ResponseEntity<Map<String,Object>> inviteStaff(@PathVariable Integer roomId,
                                          @RequestBody List<Integer> staffIds,
                                          @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -171,7 +171,7 @@ public class ChatRoomController {
 
         try{
             List<Integer> response=roomService.inviteStaff(roomId, userId, staffIds);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("result", response));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -180,7 +180,7 @@ public class ChatRoomController {
     }
 
     @DeleteMapping("/chat/room/{roomId}/leave")
-    public ResponseEntity<?> leaveChatRoom(@PathVariable Integer roomId,
+    public ResponseEntity<Map<String,Object>> leaveChatRoom(@PathVariable Integer roomId,
                                            @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
@@ -193,7 +193,7 @@ public class ChatRoomController {
 
         try{
             LeaveChatRoomResponse response=roomService.leaveChatRoom(roomId, userId);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("result", response));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

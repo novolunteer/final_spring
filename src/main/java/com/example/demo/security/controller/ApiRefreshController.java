@@ -19,7 +19,7 @@ public class ApiRefreshController {
 
     //토큰 유효기간 검사/재발급
     @RequestMapping("/api/user/refresh")
-    public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
+    public ResponseEntity<Map<String,Object>> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              @RequestParam("refreshToken") String refreshToken){
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");

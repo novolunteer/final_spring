@@ -32,7 +32,7 @@ public class ReceptionResponse {
         this.patientName = reception.getReservation().getPatient().getName();
         this.doctorId=reception.getReservation().getStaff().getStaffId();
         this.doctorName = reception.getReservation().getStaff().getName();
-        this.reservationDate = reception.getReservation().getReservationDate();
+        this.reservationDate = reception.getReservation().getSlot().getStartTime();
         this.status=reception.getStatus();
         this.symptom=reception.getReservation().getSymptom();
     }

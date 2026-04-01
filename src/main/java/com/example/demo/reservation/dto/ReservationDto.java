@@ -4,6 +4,7 @@ import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationStatus;
+import com.example.demo.slot.Slot;
 import com.example.demo.staff.Staff;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,7 +32,7 @@ public class ReservationDto {
         reservationId=reservation.getReservationId();
         patientId=reservation.getPatient().getPatientId();
         doctorId=reservation.getStaff().getStaffId();
-        reservationDate=reservation.getReservationDate();
+        reservationDate=reservation.getSlot().getStartTime();
         status=reservation.getStatus();
         createdAt=reservation.getCreatedAt();
     }
@@ -41,7 +42,6 @@ public class ReservationDto {
                 .reservationId(reservationId)
                 .patient(patient)
                 .staff(staff)
-                .reservationDate(reservationDate)
                 .status(status)
                 .createdAt(createdAt)
                 .build();
@@ -51,7 +51,6 @@ public class ReservationDto {
         return Reservation.builder()
                 .reservationId(reservationId)
                 .patient(patient)
-                .reservationDate(reservationDate)
                 .department(department)
                 .status(status)
                 .createdAt(createdAt)

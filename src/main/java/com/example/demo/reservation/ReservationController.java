@@ -34,26 +34,44 @@ public class ReservationController {
     }
 
     @GetMapping("/api/reservation")
-    public Map<String,Object> reservationList(){
+    public Map<String,Object> reservationList(@RequestParam(required = false) Integer department){
         Map<String,Object> map=new HashMap<>();
-        List<ReservationResponse> reservation=reservationService.reservationList();
-        reservation.forEach(System.out::println);
+        List<ReservationResponse> reservation;
+
+        if(department==null){
+            reservation = reservationService.reservationList();
+        }else{
+            reservation = reservationService.reservationList(department);
+        }
         map.put("content",reservation);
+
         return map;
     }
 
     @GetMapping("/api/reservation/pending")
-    public Map<String,Object> reservationPendingList(){
+    public Map<String,Object> reservationPendingList(@RequestParam(required = false) Integer department){
         Map<String,Object> map=new HashMap<>();
-        List<ReservationResponse> reservation=reservationService.reservationPendingList();
+        List<ReservationResponse> reservation;
+
+        if(department==null) {
+            reservation=reservationService.reservationPendingList();
+        }else{
+            reservation=reservationService.reservationPendingList(department);
+        }
         map.put("content",reservation);
         return map;
     }
 
     @GetMapping("/api/reservation/confirmed")
-    public Map<String,Object> reservationConfirmedList(){
+    public Map<String,Object> reservationConfirmedList(@RequestParam(required = false) Integer department){
         Map<String,Object> map=new HashMap<>();
-        List<ReservationResponse> reservation=reservationService.reservationconfirmedList();
+        List<ReservationResponse> reservation;
+
+        if(department==null) {
+            reservation = reservationService.reservationconfirmedList();
+        }else{
+            reservation = reservationService.reservationconfirmedList(department);
+        }
         map.put("content",reservation);
         return map;
     }

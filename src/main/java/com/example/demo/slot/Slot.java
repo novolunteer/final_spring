@@ -21,7 +21,9 @@ public class Slot {
     private Staff staff;
 
     private LocalDateTime startTime;
-    private LocalDateTime endTime;
     private Integer maxPatient;
     private Integer currentPatient;
+
+    @Enumerated(EnumType.STRING)
+    private SlotStatus type;
 }

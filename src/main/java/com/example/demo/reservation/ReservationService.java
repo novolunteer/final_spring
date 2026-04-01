@@ -9,6 +9,8 @@ import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
 import com.example.demo.reservation.dto.ReservationScheduleDto;
 import com.example.demo.security.security.CustomUserDetails;
+import com.example.demo.slot.Slot;
+import com.example.demo.slot.SlotRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
@@ -29,6 +31,7 @@ public class ReservationService {
     private final StaffRepository staffRepository;
     private final ReceptionService receptionService;
     private final DepartmentRepository departmentRepository;
+    private final SlotRepository slotRepository;
 
     public Integer reservationReceived(ReservationDto reservationDto,
                                        CustomUserDetails customUserDetails){
@@ -65,8 +68,22 @@ public class ReservationService {
 
         Staff staff=staffRepository.findById(reservationDto.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        Slot slot=slotRepository.findByStartTime(reservationDto.getReservationDate())
+                .orElseGet(() -> {
+                    Slot newSlot=Slot.builder()
+                            .currentPatient(0)
+                            .maxPatient(5)
+                            .startTime(reservationDto.getReservationDate())
+                            .staff(staff)
+                            .build();
+                    slotRepository.save(newSlot);
+                    return newSlot;
+                });
+        slot.setCurrentPatient(slot.getCurrentPatient()+1);
+
         reservation.setStaff(staff);
-        reservation.setReservationDate(reservationDto.getReservationDate());
+        reservation.setSlot(slot);
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
         reservationRepository.save(reservation);
@@ -82,6 +99,15 @@ public class ReservationService {
                 .toList();
     }
 
+    public List<ReservationResponse> reservationList(Integer departmentId){
+        Department department=departmentRepository.findByDepartmentId(departmentId);
+
+        return reservationRepository.findByStatusAndDepartment(ReservationStatus.RECEIVED,department)
+                .stream()
+                .map(ReservationResponse::new)
+                .toList();
+    }
+
     public List<ReservationResponse> reservationPendingList(){
         return reservationRepository.findByStatus(ReservationStatus.PENDING)
                 .stream()
@@ -89,8 +115,26 @@ public class ReservationService {
                 .toList();
     }
 
+    public List<ReservationResponse> reservationPendingList(Integer departmentId){
+        Department department=departmentRepository.findByDepartmentId(departmentId);
+
+        return reservationRepository.findByStatusAndDepartment(ReservationStatus.PENDING,department)
+                .stream()
+                .map(ReservationResponse::new)
+                .toList();
+    }
+
     public List<ReservationResponse> reservationconfirmedList(){
         return reservationRepository.findByStatus(ReservationStatus.CONFIRMED)
+                .stream()
+                .map(ReservationResponse::new)
+                .toList();
+    }
+
+    public List<ReservationResponse> reservationconfirmedList(Integer departmentId){
+        Department department=departmentRepository.findByDepartmentId(departmentId);
+
+        return reservationRepository.findByStatusAndDepartment(ReservationStatus.CONFIRMED,department)
                 .stream()
                 .map(ReservationResponse::new)
                 .toList();

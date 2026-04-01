@@ -45,7 +45,10 @@ public class ReservationResponse {
             this.departmentName = reservation.getDepartment().getDepartmentName();
         }
 
-        this.reservationDate = reservation.getReservationDate();
+        if (reservation.getSlot() != null) {
+            this.reservationDate = reservation.getSlot().getStartTime();
+        }
+
         this.symptom=reservation.getSymptom();
         if(reservation.getPreferredDate() != null){
             this.preferredDate=reservation.getPreferredDate();

@@ -2,6 +2,7 @@ package com.example.demo.reservation;
 
 import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
+import com.example.demo.slot.Slot;
 import com.example.demo.staff.Staff;
 import com.example.demo.user.User;
 import jakarta.persistence.*;
@@ -36,7 +37,9 @@ public class Reservation {
     private String symptom;
     private LocalDateTime preferredDate;
 
-    private LocalDateTime reservationDate;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "slotId")
+    private Slot slot;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;

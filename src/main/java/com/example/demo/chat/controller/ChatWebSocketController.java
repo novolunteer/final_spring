@@ -12,7 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -38,11 +41,24 @@ public class ChatWebSocketController {
         }
 
         ChatMessageDto saveMessage=messageService.sendUserMessage(request, userId);
+
+        //채팅방 안 메시지 실시간 전송
         messagingTemplate.convertAndSend("/topic/chat/room/" + request.getRoomId(), saveMessage);
 
+        Set<Integer> targetUserIds=new HashSet<>();
+        targetUserIds.add(userId);
+
         List<Integer> participants=saveMessage.getParticipantIds();
-        for (Integer id:participants){
-            messagingTemplate.convertAndSend("/topic/chat/list/"+ id, saveMessage);
+        if (participants != null){
+            targetUserIds.addAll(participants);
+        }
+
+        for (Integer id : targetUserIds){
+            messagingTemplate.convertAndSendToUser(
+                    id.toString(),
+                    "/queue/chat/list",
+                    Map.of("type", "ROOM_LIST_REFRESH")
+            );
         }
     }
 }

@@ -69,7 +69,12 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                                 details,
                                 null,
                                 details.getAuthorities()
-                        );
+                        ){
+                            @Override
+                            public String getName(){
+                                return String.valueOf(details.getUserId());
+                            }
+                        };
 
                 accessor.setUser(authenticationToken);
 

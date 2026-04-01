@@ -73,13 +73,22 @@ public class ChatRoomService {
 
             room.setLastMessageId(systemMessage.getMessageId());
             room.setLastMessageAt(systemMessage.getCreatedAt());
+
+            ChatMessageDto dto=ChatMessageDto.builder().roomId(roomId).messageId(systemMessage.getMessageId())
+                    .content(systemMessage.getContent()).messageType(systemMessage.getMessageType().name())
+                    .createdAt(systemMessage.getCreatedAt()).build();
+            messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, dto);
         }
 
-        List<ChatRoomParticipant> finalParticipants=participantRepository.findByRoom(room);
-        for (ChatRoomParticipant p:finalParticipants){
-            messagingTemplate.convertAndSendToUser(
-                    p.getUser().getUserId().toString(), "/queue/chat/list", Map.of("type","ROOM_LIST_REFRESH")
-            );
+        if (!result.isEmpty()) {
+            List<ChatRoomParticipant> finalParticipants = participantRepository.findByRoom(room);
+            for (ChatRoomParticipant p : finalParticipants) {
+                messagingTemplate.convertAndSendToUser(
+                        p.getUser().getUserId().toString(),
+                        "/queue/chat/list",
+                        Map.of("type", "ROOM_LIST_REFRESH")
+                );
+            }
         }
 
         return result;
@@ -122,6 +131,11 @@ public class ChatRoomService {
 
         room.setLastMessageId(systemMessage.getMessageId());
         room.setLastMessageAt(systemMessage.getCreatedAt());
+
+        ChatMessageDto dto=ChatMessageDto.builder().roomId(roomId).messageId(systemMessage.getMessageId())
+                .content(systemMessage.getContent()).messageType(systemMessage.getMessageType().name())
+                .createdAt(systemMessage.getCreatedAt()).build();
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, dto);
 
         participantRepository.delete(participant);
 
@@ -278,6 +292,8 @@ public class ChatRoomService {
                 .roomName(roomName)
                 .user(user).build());
 
+        Set<Integer> targetUserIds=new HashSet<>();
+
         ChatRoomParticipant master=participantRepository.save(
                 ChatRoomParticipant.builder()
                         .room(room)
@@ -286,21 +302,20 @@ public class ChatRoomService {
                                 ? request.getCustomRoomName() : null).build()
         );
 
+        targetUserIds.add(master.getUser().getUserId());
+
         for (int i=0; i<participantIds.size();i++){
             User participant=userRepository.findByUserId(participantIds.get(i))
                     .orElseThrow(()-> new RuntimeException("존재하지 않는 사용자입니다. (채팅방 참여자)"));
-            participantRepository.save(ChatRoomParticipant.builder()
+            ChatRoomParticipant p=participantRepository.save(ChatRoomParticipant.builder()
                     .room(room)
                     .user(participant).build());
+            targetUserIds.add(p.getUser().getUserId());
         }
 
-        ChatRoomDto roomForParticipant=makeNewRoomDto(room);
-        for (int i=0;i<participantIds.size();i++){
-            ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, participantIds.get(i))
-                    .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다. (채팅방 참여자)"));
-            messagingTemplate.convertAndSend(
-                    "/topic/chat/room-created/" + participant.getUser().getUserId(), roomForParticipant
-            );
+        for (Integer id:targetUserIds){
+            messagingTemplate.convertAndSendToUser(id.toString(), "/queue/chat/list",
+                    Map.of("type", "ROOM_LIST_REFRESH"));
         }
 
         Long participantCount= 1L + participantIds.size();

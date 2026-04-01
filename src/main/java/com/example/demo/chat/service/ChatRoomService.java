@@ -86,7 +86,7 @@ public class ChatRoomService {
                 messagingTemplate.convertAndSendToUser(
                         p.getUser().getUserId().toString(),
                         "/queue/chat/list",
-                        Map.of("type", "ROOM_LIST_REFRESH")
+                        Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
                 );
             }
         }
@@ -116,9 +116,18 @@ public class ChatRoomService {
 
         Integer participantCount=participantRepository.countByRoom(room);
         if (participantCount == 1){
-            messageRepository.deleteByRoom(room);
             participantRepository.deleteByRoom(room);
+            participantRepository.flush();
+
+            room.setLastMessageId(null);
+            room.setLastMessageAt(null);
+            roomRepository.saveAndFlush(room);
+
+            messageRepository.deleteByRoom(room);
+            messageRepository.flush();
+
             roomRepository.delete(room);
+            roomRepository.flush();
 
             messagingTemplate.convertAndSendToUser(
                     userId.toString(), "/queue/chat/list", Map.of("type","ROOM_LIST_REFRESH")
@@ -151,7 +160,7 @@ public class ChatRoomService {
             messagingTemplate.convertAndSendToUser(
                     targetUserId.toString(),
                     "/queue/chat/list",
-                    Map.of("type", "ROOM_LIST_REFRESH")
+                    Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
             );
         }
 
@@ -327,16 +336,6 @@ public class ChatRoomService {
                 .createdBy(room.getUser().getUserId())
                 .customRoomName(master.getCustomRoomName())
                 .participantCount(participantCount).build();
-    }
-
-    public ChatRoomDto makeNewRoomDto(ChatRoom room){
-        Integer participantCount=participantRepository.countByRoom(room);
-        return ChatRoomDto.builder()
-                .roomId(room.getRoomId())
-                .roomType(room.getRoomType().name())
-                .roomName(room.getRoomName())
-                .createdBy(room.getUser().getUserId())
-                .participantCount(Long.valueOf(participantCount)).build();
     }
 
     public void markAsRead(Integer roomId, Integer userId){

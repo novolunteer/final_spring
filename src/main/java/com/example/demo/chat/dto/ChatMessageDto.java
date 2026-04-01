@@ -30,5 +30,7 @@ public class ChatMessageDto {
     private LocalDateTime editedAt;
     private Integer parentMessageId;
     private String parentMessageContent;
+    private String parentMessageUserName;
+    private boolean isParentMessageDeleted;
 }
 

@@ -4,6 +4,7 @@ import com.example.demo.chat.ChatMessageType;
 import com.example.demo.chat.dto.ChatMessageDto;
 import com.example.demo.chat.dto.MessageSlice;
 import com.example.demo.chat.dto.SendMessageRequest;
+import com.example.demo.chat.dto.UpdateMessageRequest;
 import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
@@ -18,10 +19,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,10 +39,88 @@ public class ChatMessageService {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
     private final ChatRoomService roomService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ChatMessageDto replyMessage(UpdateMessageRequest request, Integer userId){
+        User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+
+        ChatRoom room=roomRepository.findByRoomId(request.getRoomId()).orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        ChatMessage parentMessage=messageRepository.findByMessageId(request.getParentMessageId())
+                .orElseThrow(()->new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if (!parentMessage.getRoom().getRoomId().equals(request.getRoomId())){
+            throw new RuntimeException("같은 채팅방의 메시지에만 답장할 수 있습니다.");
+        }
+
+        ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, userId)
+                .orElseThrow(()->new RuntimeException("채팅방의 참가자만 답장할 수 있습니다."));
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new RuntimeException("메시지 내용을 입력하세요.");
+        }
+
+        ChatMessage reply=messageRepository.save(ChatMessage.builder()
+                .room(room)
+                .user(user)
+                .content(request.getContent())
+                .messageType(ChatMessageType.USER)
+                .parentMessage(parentMessage)
+                .build());
+
+        room.setLastMessageId(reply.getMessageId());
+        room.setLastMessageAt(reply.getCreatedAt());
+
+        participant.setLastReadMessageId(reply.getMessageId());
+        participant.setLastReadAt(reply.getCreatedAt());
+
+        Staff staff=staffRepository.findByUser(user)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+
+        String parentUserName = null;
+
+        if (parentMessage.getUser() != null) {
+            Staff parent = staffRepository.findByUser(parentMessage.getUser())
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 직원입니다."));
+            parentUserName = parent.getName();
+        }
+
+        List<ChatRoomParticipant> participants=participantRepository.findByRoom(room);
+
+        Long unreadCount=participantRepository.countUnreadParticipants(room.getRoomId(), user.getUserId(),
+                reply.getMessageId());
+
+        return ChatMessageDto.builder()
+                .messageId(reply.getMessageId())
+                .roomId(room.getRoomId())
+                .senderId(user.getUserId())
+                .senderName(staff.getName())
+                .messageType(reply.getMessageType().name())
+                .content(reply.getContent())
+                .createdAt(reply.getCreatedAt())
+                .unreadCount(unreadCount)
+                .mine(true)
+                .deleted(reply.isDeleted())
+                .deletedAt(reply.getDeletedAt())
+                .edited(reply.isEdited())
+                .editedAt(reply.getEditedAt())
+                .parentMessageId(parentMessage.getMessageId())
+                .parentMessageContent(parentMessage.isDeleted() ? null : parentMessage.getContent())
+                .parentMessageIsDeleted(parentMessage.isDeleted())
+                .parentMessageUserName(parentUserName)
+                .participantIds(participants.stream().map(p -> p.getUser().getUserId()).toList()).build();
+    }
 
     public ChatMessageDto deleteMessage(Integer messageId, Integer userId){
         ChatMessage message=messageRepository.findByMessageId(messageId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if(message.getMessageType() == ChatMessageType.SYSTEM){
+            throw new IllegalArgumentException("시스템 메시지는 삭제할 수 없습니다.");
+        }
+
+        Staff staff=staffRepository.findByUser_UserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
         if(!message.getUser().getUserId().equals(userId)){
             throw new IllegalArgumentException("본인 메시지만 삭제할 수 있습니다.");
@@ -49,14 +130,17 @@ public class ChatMessageService {
             throw new IllegalArgumentException("이미 삭제된 메시지입니다.");
         }
 
-        if(message.getMessageType() == ChatMessageType.SYSTEM){
-            throw new IllegalArgumentException("시스템 메시지는 삭제할 수 없습니다.");
-        }
-
         message.setDeleted(true);
         message.setDeletedAt(LocalDateTime.now());
-        message.setContent("삭제된 메시지입니다.");
+        message.setContent(null);
         ChatMessage deleteMessage=messageRepository.save(message);
+
+        List<ChatRoomParticipant> participants=participantRepository.findByRoom(deleteMessage.getRoom());
+        List<Integer> participantIds=new ArrayList<>();
+        for (ChatRoomParticipant p:participants){
+            if (p.getUser().getUserId().equals(userId)) continue;
+            participantIds.add(p.getUser().getUserId());
+        }
 
         String parentMessageContent=null;
         String parentMessageUserName=null;
@@ -68,15 +152,18 @@ public class ChatMessageService {
             parentIsDeleted=parent.isDeleted();
 
             if (parent.getUser() != null){
-                Staff staff=staffRepository.findByUser(parent.getUser())
+                Staff parentStaff=staffRepository.findByUser(parent.getUser())
                         .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-                parentMessageUserName=staff.getName();
+                parentMessageUserName=parentStaff.getName();
             }
         }
 
         return ChatMessageDto.builder()
                 .messageId(deleteMessage.getMessageId())
-                .content("삭제된 메시지입니다.")
+                .roomId(deleteMessage.getRoom().getRoomId())
+                .senderId(deleteMessage.getUser().getUserId())
+                .senderName(staff.getName())
+                .content(null)
                 .mine(deleteMessage.getUser().getUserId().equals(userId))
                 .messageType(deleteMessage.getMessageType().name())
                 .createdAt(deleteMessage.getCreatedAt())
@@ -84,16 +171,25 @@ public class ChatMessageService {
                 .deletedAt(deleteMessage.getDeletedAt())
                 .edited(deleteMessage.isEdited())
                 .editedAt(deleteMessage.getEditedAt())
-                .parentMessageId(deleteMessage.getParentMessage() != null ? deleteMessage.getParentMessage().getMessageId() : null)
-                .parentMessageContent(parentMessageContent != null ? parentMessageContent : null)
-                .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
+                .parentMessageId(parent != null ? parent.getMessageId() : null)
+                .parentMessageContent(parentMessageContent)
+                .parentMessageUserName(parentMessageUserName)
                 .parentMessageIsDeleted(parentIsDeleted)
+                .participantIds(participantIds)
+                .lastMessage(deleteMessage.getMessageId().equals(deleteMessage.getRoom().getLastMessageId()))
                 .build();
     }
 
     public ChatMessageDto editMessage(Integer messageId, String content, Integer userId){
         ChatMessage message=messageRepository.findByMessageId(messageId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if(message.getMessageType() == ChatMessageType.SYSTEM){
+            throw new IllegalArgumentException("시스템 메시지는 수정할 수 없습니다.");
+        }
+
+        Staff sendStaff=staffRepository.findByUser_UserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
         if(!message.getUser().getUserId().equals(userId)){
             throw new IllegalArgumentException("본인 메시지만 수정할 수 있습니다.");
@@ -103,18 +199,21 @@ public class ChatMessageService {
             throw new IllegalArgumentException("삭제된 메시지는 수정할 수 없습니다.");
         }
 
-        if(message.getMessageType() == ChatMessageType.SYSTEM){
-            throw new IllegalArgumentException("시스템 메시지는 수정할 수 없습니다.");
-        }
-
         if(content == null || content.trim().isEmpty()){
             throw new IllegalArgumentException("수정할 메시지 내용을 입력하세요.");
         }
 
         message.setEdited(true);
         message.setEditedAt(LocalDateTime.now());
-        message.setContent(content);
+        message.setContent(content.trim());
         ChatMessage editMessage=messageRepository.save(message);
+
+        List<ChatRoomParticipant> participants=participantRepository.findByRoom(editMessage.getRoom());
+        List<Integer> participantIds=new ArrayList<>();
+        for (ChatRoomParticipant p:participants){
+            if (p.getUser().getUserId().equals(userId)) continue;
+            participantIds.add(p.getUser().getUserId());
+        }
 
         String parentMessageContent=null;
         String parentMessageUserName=null;
@@ -134,6 +233,9 @@ public class ChatMessageService {
 
         return ChatMessageDto.builder()
                 .messageId(editMessage.getMessageId())
+                .roomId(editMessage.getRoom().getRoomId())
+                .senderName(sendStaff.getName())
+                .senderId(editMessage.getUser().getUserId())
                 .content(editMessage.getContent())
                 .mine(editMessage.getUser().getUserId().equals(userId))
                 .messageType(editMessage.getMessageType().name())
@@ -142,10 +244,12 @@ public class ChatMessageService {
                 .editedAt(editMessage.getEditedAt())
                 .deleted(editMessage.isDeleted())
                 .deletedAt(editMessage.getDeletedAt())
-                .parentMessageId(editMessage.getParentMessage() != null ? editMessage.getParentMessage().getMessageId() : null)
-                .parentMessageContent(parentMessageContent != null ? parentMessageContent:null)
-                .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
+                .parentMessageId(parent != null ? parent.getMessageId() : null)
+                .parentMessageContent(parentMessageContent)
+                .parentMessageUserName(parentMessageUserName)
                 .parentMessageIsDeleted(parentIsDeleted)
+                .participantIds(participantIds)
+                .lastMessage(editMessage.getMessageId().equals(editMessage.getRoom().getLastMessageId()))
                 .build();
     }
 

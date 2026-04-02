@@ -8,15 +8,20 @@ import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
 public class ChatMessageController {
     private final ChatMessageService messageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/chat/send/user")
     public ResponseEntity<Map<String,Object>> sendUserMessage(@RequestBody SendMessageRequest dto,
@@ -55,6 +60,13 @@ public class ChatMessageController {
 
         try{
             ChatMessageDto message=messageService.deleteMessage(messageId, userId);
+
+            List<Integer> targetUserIds=message.getParticipantIds();
+            for (Integer id:targetUserIds){
+                messagingTemplate.convertAndSendToUser(id.toString(),
+                        "/queue/chat/room/" + message.getRoomId() + "/message/update", Map.of("result",message));
+            }
+
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,6 +91,13 @@ public class ChatMessageController {
 
         try{
             ChatMessageDto message=messageService.editMessage(messageId, request.getContent(), userId);
+
+            List<Integer> targetUserId=message.getParticipantIds();
+            for (Integer id:targetUserId){
+                messagingTemplate.convertAndSendToUser(id.toString(),
+                        "/queue/chat/room/" + message.getRoomId() + "/message/update", Map.of("result",message));
+            }
+
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {
             e.printStackTrace();

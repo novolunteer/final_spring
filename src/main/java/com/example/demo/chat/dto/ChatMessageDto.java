@@ -32,5 +32,6 @@ public class ChatMessageDto {
     private String parentMessageContent;
     private String parentMessageUserName;
     private boolean parentMessageIsDeleted;
+    private boolean lastMessage;
 }
 

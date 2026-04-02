@@ -440,10 +440,9 @@ public class ChatRoomService {
         List<Integer> messageIds=chatRooms.stream().map(m -> m.getLastMessageId())
                 .filter(id -> id != null).toList();
         List<ChatMessage> messages=messageRepository.findByMessageIdIn(messageIds);
-        Map<Integer, String> lastMessages=messages.stream().filter(m -> m.getContent() != null)
-                .collect(Collectors.toMap(
+        Map<Integer, String> lastMessages=messages.stream().collect(Collectors.toMap(
            m -> m.getMessageId(),
-           m -> m.getContent()
+           m -> m.isDeleted() ? "삭제된 메시지입니다.":m.getContent()
         ));
 
         List<ChatRoomDto> rooms=chatRooms.stream().map(c -> {

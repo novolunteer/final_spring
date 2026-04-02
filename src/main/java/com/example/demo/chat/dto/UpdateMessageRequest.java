@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class UpdateMessageRequest {
+    private Integer roomId;
     private Integer messageId;
     private String content;
     private Integer parentMessageId;

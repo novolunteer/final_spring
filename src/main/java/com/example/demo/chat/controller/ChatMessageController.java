@@ -2,6 +2,7 @@ package com.example.demo.chat.controller;
 
 import com.example.demo.chat.dto.ChatMessageDto;
 import com.example.demo.chat.dto.SendMessageRequest;
+import com.example.demo.chat.dto.UpdateMessageRequest;
 import com.example.demo.chat.service.ChatMessageService;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +65,7 @@ public class ChatMessageController {
 
     @PutMapping("/chat/edit/message/{messageId}")
     public ResponseEntity<Map<String,Object>> editMessage(@PathVariable Integer messageId,
-                                                          @RequestBody String content,
+                                                          @RequestBody UpdateMessageRequest request,
                                                           @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","로그인 후 이용하세요."));
@@ -77,7 +78,7 @@ public class ChatMessageController {
         }
 
         try{
-            ChatMessageDto message=messageService.editMessage(messageId, content, userId);
+            ChatMessageDto message=messageService.editMessage(messageId, request.getContent(), userId);
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {
             e.printStackTrace();

@@ -62,14 +62,16 @@ public class ChatMessageService {
         String parentMessageUserName=null;
         boolean parentIsDeleted=false;
 
-        if (deleteMessage.getParentMessage().getMessageId() != null){
-            ChatMessage parent=messageRepository.findByMessageId(deleteMessage.getParentMessage().getMessageId())
-                    .orElseThrow(()->new RuntimeException("부모 메시지가 존재하지 않습니다."));
+        ChatMessage parent=deleteMessage.getParentMessage();
+        if (parent != null){
             parentMessageContent=parent.getContent();
-            Staff staff=staffRepository.findByUser(parent.getUser())
-                    .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-            parentMessageUserName=staff.getName();
             parentIsDeleted=parent.isDeleted();
+
+            if (parent.getUser() != null){
+                Staff staff=staffRepository.findByUser(parent.getUser())
+                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+                parentMessageUserName=staff.getName();
+            }
         }
 
         return ChatMessageDto.builder()
@@ -77,14 +79,15 @@ public class ChatMessageService {
                 .content("삭제된 메시지입니다.")
                 .mine(deleteMessage.getUser().getUserId().equals(userId))
                 .messageType(deleteMessage.getMessageType().name())
-                .isDeleted(deleteMessage.isDeleted())
+                .createdAt(deleteMessage.getCreatedAt())
+                .deleted(deleteMessage.isDeleted())
                 .deletedAt(deleteMessage.getDeletedAt())
-                .isEdited(deleteMessage.isEdited())
+                .edited(deleteMessage.isEdited())
                 .editedAt(deleteMessage.getEditedAt())
                 .parentMessageId(deleteMessage.getParentMessage() != null ? deleteMessage.getParentMessage().getMessageId() : null)
                 .parentMessageContent(parentMessageContent != null ? parentMessageContent : null)
                 .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
-                .isParentMessageDeleted(parentIsDeleted)
+                .parentMessageIsDeleted(parentIsDeleted)
                 .build();
     }
 
@@ -117,14 +120,16 @@ public class ChatMessageService {
         String parentMessageUserName=null;
         boolean parentIsDeleted=false;
 
-        if (editMessage.getParentMessage().getMessageId() != null){
-            ChatMessage parent=messageRepository.findByMessageId(editMessage.getParentMessage().getMessageId())
-                    .orElseThrow(()->new RuntimeException("부모 메시지가 존재하지 않습니다."));
+        ChatMessage parent=editMessage.getParentMessage();
+        if (parent != null){
             parentMessageContent=parent.getContent();
-            Staff staff=staffRepository.findByUser(parent.getUser())
-                    .orElseThrow(()-> new RuntimeException("존재하지 않는 직원입니다."));
-            parentMessageUserName=staff.getName();
             parentIsDeleted=parent.isDeleted();
+
+            if (parent.getUser() != null){
+                Staff staff=staffRepository.findByUser(parent.getUser())
+                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+                parentMessageUserName=staff.getName();
+            }
         }
 
         return ChatMessageDto.builder()
@@ -132,14 +137,15 @@ public class ChatMessageService {
                 .content(editMessage.getContent())
                 .mine(editMessage.getUser().getUserId().equals(userId))
                 .messageType(editMessage.getMessageType().name())
-                .isEdited(editMessage.isEdited())
+                .createdAt(editMessage.getCreatedAt())
+                .edited(editMessage.isEdited())
                 .editedAt(editMessage.getEditedAt())
-                .isDeleted(editMessage.isDeleted())
+                .deleted(editMessage.isDeleted())
                 .deletedAt(editMessage.getDeletedAt())
                 .parentMessageId(editMessage.getParentMessage() != null ? editMessage.getParentMessage().getMessageId() : null)
                 .parentMessageContent(parentMessageContent != null ? parentMessageContent:null)
                 .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
-                .isParentMessageDeleted(parentIsDeleted)
+                .parentMessageIsDeleted(parentIsDeleted)
                 .build();
     }
 
@@ -258,14 +264,16 @@ public class ChatMessageService {
         String parentMessageUserName=null;
         boolean parentIsDeleted=false;
 
-        if (message.getParentMessage().getMessageId() != null){
-            ChatMessage parent=messageRepository.findByMessageId(message.getParentMessage().getMessageId())
-                    .orElseThrow(()->new RuntimeException("부모 메시지가 존재하지 않습니다."));
+        ChatMessage parent=message.getParentMessage();
+        if (parent != null){
             parentMessageContent=parent.getContent();
-            Staff staff=staffRepository.findByUser(parent.getUser())
-                    .orElseThrow(()-> new RuntimeException("존재하지 않는 직원입니다."));
-            parentMessageUserName=staff.getName();
             parentIsDeleted=parent.isDeleted();
+
+            if (parent.getUser() != null){
+                Staff staff=staffRepository.findByUser(parent.getUser())
+                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+                parentMessageUserName=staff.getName();
+            }
         }
 
         return ChatMessageDto.builder()
@@ -278,13 +286,13 @@ public class ChatMessageService {
                 .createdAt(message.getCreatedAt())
                 .unreadCount(unreadCount)
                 .mine(sender != null && sender.getUserId().equals(loginUserId))
-                .isDeleted(message.isDeleted())
+                .deleted(message.isDeleted())
                 .deletedAt(message.getDeletedAt())
-                .isEdited(message.isEdited())
+                .edited(message.isEdited())
                 .parentMessageId(message.getParentMessage() != null ? message.getParentMessage().getMessageId() : null)
                 .parentMessageContent(parentMessageContent != null ? parentMessageContent : null)
                 .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
-                .isParentMessageDeleted(parentIsDeleted)
+                .parentMessageIsDeleted(parentIsDeleted)
                 .build();
     }
 }

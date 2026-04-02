@@ -1,13 +1,12 @@
 package com.example.demo.chat.service;
 
 import com.example.demo.chat.ChatMessageType;
-import com.example.demo.chat.dto.ChatMessageDto;
-import com.example.demo.chat.dto.MessageSlice;
-import com.example.demo.chat.dto.SendMessageRequest;
-import com.example.demo.chat.dto.UpdateMessageRequest;
+import com.example.demo.chat.dto.*;
+import com.example.demo.chat.entity.ChatAttachment;
 import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
+import com.example.demo.chat.repository.ChatAttachmentRepository;
 import com.example.demo.chat.repository.ChatMessageRepository;
 import com.example.demo.chat.repository.ChatRoomParticipantRepository;
 import com.example.demo.chat.repository.ChatRoomRepository;
@@ -39,7 +38,55 @@ public class ChatMessageService {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
     private final ChatRoomService roomService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatAttachmentRepository attachmentRepository;
+
+//    public ChatMessageDto sendUserMessageWithAttachment(SendMessageRequest request, Integer userId){
+//        ChatRoom room=roomRepository.findByRoomId(request.getRoomId())
+//                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+//
+//        User user=userRepository.findByUserId(userId)
+//                .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+//
+//        ChatRoomParticipant participantWhoSent=participantRepository.findByRoomAndUser_UserId(room, userId)
+//                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다."));
+//
+//        boolean hasContent=request.getContent() != null && !request.getContent().trim().isEmpty();
+//        boolean hasAttachment=request.getAttachments() != null && !request.getAttachments().isEmpty();
+//
+//        if (!hasContent && !hasAttachment){
+//            throw new RuntimeException("메시지 내용 또는 첨부파일이 있어야 합니다.");
+//        }
+//
+//        ChatMessage saveMessage=messageRepository.save(ChatMessage.builder()
+//                .room(room)
+//                .user(user)
+//                .content(hasContent ? request.getContent().trim() : null)
+//                .build());
+//
+//        if (hasAttachment){
+//            List<ChatAttachment> attachmentList=request.getAttachments().stream()
+//                    .map(file -> ChatAttachment.builder()
+//                            .message(saveMessage)
+//                            .originalFileName(file.getOriginalFileName())
+//                            .storedFileName(file.getStoredFileName())
+//                            .fileUrl(file.getFileUrl())
+//                            .contentType(file.getContentType())
+//                            .fileExtension(file.getFileExtension())
+//                            .fileSize(file.getFileSize())
+//                            .thumbnailUrl(file.getThumbnailUrl())
+//                            .build()).toList();
+//
+//            attachmentRepository.saveAll(attachmentList);
+//        }
+//
+//        room.setLastMessageId(saveMessage.getMessageId());
+//        room.setLastMessageAt(saveMessage.getCreatedAt());
+//
+//        participantWhoSent.setLastReadMessageId(saveMessage.getMessageId());
+//        participantWhoSent.setLastReadAt(saveMessage.getCreatedAt());
+//
+//
+//    }
 
     public ChatMessageDto replyMessage(SendMessageRequest request, Integer userId){
         User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));

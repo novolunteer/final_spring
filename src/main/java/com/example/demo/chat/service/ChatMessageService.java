@@ -41,13 +41,17 @@ public class ChatMessageService {
     private final ChatRoomService roomService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatMessageDto replyMessage(UpdateMessageRequest request, Integer userId){
+    public ChatMessageDto replyMessage(SendMessageRequest request, Integer userId){
         User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
 
         ChatRoom room=roomRepository.findByRoomId(request.getRoomId()).orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
 
         ChatMessage parentMessage=messageRepository.findByMessageId(request.getParentMessageId())
                 .orElseThrow(()->new RuntimeException("존재하지 않는 메시지입니다."));
+
+        if (parentMessage.getMessageType() == ChatMessageType.SYSTEM) {
+            throw new RuntimeException("시스템 메시지에는 답장할 수 없습니다.");
+        }
 
         if (!parentMessage.getRoom().getRoomId().equals(request.getRoomId())){
             throw new RuntimeException("같은 채팅방의 메시지에만 답장할 수 있습니다.");
@@ -63,7 +67,7 @@ public class ChatMessageService {
         ChatMessage reply=messageRepository.save(ChatMessage.builder()
                 .room(room)
                 .user(user)
-                .content(request.getContent())
+                .content(request.getContent().trim())
                 .messageType(ChatMessageType.USER)
                 .parentMessage(parentMessage)
                 .build());
@@ -86,6 +90,7 @@ public class ChatMessageService {
         }
 
         List<ChatRoomParticipant> participants=participantRepository.findByRoom(room);
+        List<Integer> participantIds=participants.stream().map(p -> p.getUser().getUserId()).toList();
 
         Long unreadCount=participantRepository.countUnreadParticipants(room.getRoomId(), user.getUserId(),
                 reply.getMessageId());
@@ -108,7 +113,7 @@ public class ChatMessageService {
                 .parentMessageContent(parentMessage.isDeleted() ? null : parentMessage.getContent())
                 .parentMessageIsDeleted(parentMessage.isDeleted())
                 .parentMessageUserName(parentUserName)
-                .participantIds(participants.stream().map(p -> p.getUser().getUserId()).toList()).build();
+                .participantIds(participantIds).build();
     }
 
     public ChatMessageDto deleteMessage(Integer messageId, Integer userId){
@@ -286,6 +291,7 @@ public class ChatMessageService {
                 .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
         List<ChatRoomParticipant> participants=participantRepository.findByRoom_RoomId(message.getRoomId());
+        List<Integer> participantIds=participants.stream().map(p -> p.getUser().getUserId()).toList();
 
         Long unreadCount=participantRepository.countUnreadParticipants(room.getRoomId(), sender.getUserId(),
                 saveMessage.getMessageId());
@@ -300,7 +306,7 @@ public class ChatMessageService {
                 .createdAt(saveMessage.getCreatedAt())
                 .unreadCount(unreadCount)
                 .mine(true)
-                .participantIds(participants.stream().map(p -> p.getUser().getUserId()).toList()).build();
+                .participantIds(participantIds).build();
     }
 
     public MessageSlice getMessages(Integer roomId, Integer cursor, int size, Integer userId){

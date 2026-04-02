@@ -17,4 +17,7 @@ public class StaffScheduleDto {
     private Integer scheduleTypeId;
     private String typeCode;
     private String typeName;
+    private String status;
+    private Integer departmentId;
+    private String departmentName;
 }

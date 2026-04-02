@@ -37,6 +37,7 @@ public class StaffScheduleService {
                 .staff(staff)
                 .workDate(dto.getWorkDate())
                 .staffScheduleType(staffScheduleType)
+                .status(dto.getStatus())
                 .build();
     }
 
@@ -56,6 +57,9 @@ public class StaffScheduleService {
                 .scheduleTypeId(entity.getStaffScheduleType().getScheduleTypeId())
                 .typeCode(entity.getStaffScheduleType().getTypeCode())
                 .typeName(entity.getStaffScheduleType().getTypeName())
+                .departmentId(entity.getStaff().getDepartment().getDepartmentId())
+                .departmentName(entity.getStaff().getDepartment().getDepartmentName())
+                .status(entity.getStatus())
                 .build();
     }
 
@@ -85,8 +89,21 @@ public class StaffScheduleService {
     //삭제
     public void delete(Integer scheduleId){
         StaffSchedule staffSchedule=staffScheduleRepository.findById(scheduleId)
-                .orElseThrow(()-> new EntityNotFoundException("스케줄이 존재하지 않습니다"));
+                .orElseThrow(()-> new EntityNotFoundException("해당 스케줄이 존재하지 않습니다"));
 
         staffScheduleRepository.delete(staffSchedule);
+    }
+
+    //스케줄상태변경
+    public void confirm(Integer scheduleId) {
+        StaffSchedule staffSchedule = staffScheduleRepository.findById(scheduleId)
+                .orElseThrow(()->new EntityNotFoundException("해당 스케줄이 존재하지 않습니다"));
+        staffSchedule.setStatus("CONFIRMED");
+    }
+    public void bulkConfirm(List<Integer> scheduleIds){
+        List<StaffSchedule> schedules= staffScheduleRepository.findAllById(scheduleIds);
+        for (StaffSchedule schedule: schedules){
+            schedule.setStatus("CONFIRMED");
+        }
     }
 }

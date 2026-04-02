@@ -26,4 +26,5 @@ public class StaffSchedule {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_type_id", nullable = false)
     private StaffScheduleType staffScheduleType;
+    private String status;
 }

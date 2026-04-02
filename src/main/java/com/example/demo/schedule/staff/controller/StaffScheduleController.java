@@ -3,6 +3,7 @@ package com.example.demo.schedule.staff.controller;
 import com.example.demo.schedule.staff.dto.StaffScheduleDto;
 import com.example.demo.schedule.staff.service.StaffScheduleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,5 +39,18 @@ public class StaffScheduleController {
     public String delete(@PathVariable Integer scheduleId){
         staffScheduleService.delete(scheduleId);
         return "삭제완료";
+    }
+//개별스케줄 확정
+    @PutMapping("/{scheduleId}/confirm")
+    public ResponseEntity<?> confirm(@PathVariable Integer scheduleId) {
+        staffScheduleService.confirm(scheduleId);
+        return ResponseEntity.ok().build();
+    }
+
+    //선택 스케줄 일괄 확정
+    @PutMapping("/confirm/bulk")
+    public ResponseEntity<?> bulkConfirm(@RequestBody List<Integer> scheduleIds){
+        staffScheduleService.bulkConfirm(scheduleIds);
+        return ResponseEntity.ok().build();
     }
 }

@@ -3,6 +3,7 @@ package com.example.demo.chat.controller;
 import com.example.demo.chat.dto.ChatMessageDto;
 import com.example.demo.chat.dto.SendMessageRequest;
 import com.example.demo.chat.dto.UpdateMessageRequest;
+import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.service.ChatMessageService;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -41,12 +42,7 @@ public class ChatWebSocketController {
             throw new RuntimeException("사용자 정보를 찾을 수 없습니다.");
         }
 
-        ChatMessageDto saveMessage;
-        if (request.getParentMessageId() != null){
-            saveMessage=messageService.replyMessage(request, userId);
-        } else {
-            saveMessage=messageService.sendUserMessage(request, userId);
-        }
+        ChatMessageDto saveMessage=messageService.sendChatMessage(request, userId);
 
         //채팅방 안 메시지 실시간 전송
         messagingTemplate.convertAndSend("/topic/chat/room/" + request.getRoomId(), saveMessage);

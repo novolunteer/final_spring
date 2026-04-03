@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,9 +17,9 @@ import java.util.Map;
 public class ChatAttachmentController {
     private final ChatAttachmentService attachmentService;
 
-    @PostMapping("/api/chat/attachment/upload")
-    public ResponseEntity<Map<String,Object>> uploadAttachment(@RequestParam("file")MultipartFile file){
-        ChatAttachmentDto result=attachmentService.uploadFile(file);
+    @PostMapping("/chat/upload/attachment")
+    public ResponseEntity<Map<String,Object>> uploadAttachment(@RequestParam("files") List<MultipartFile> files){
+        List<ChatAttachmentDto> result=attachmentService.uploadFiles(files);
         return ResponseEntity.ok(Map.of("result", result));
     }
 }

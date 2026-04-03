@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,126 +39,88 @@ public class ChatMessageService {
     private final ChatRoomService roomService;
     private final ChatAttachmentRepository attachmentRepository;
 
-//    public ChatMessageDto sendUserMessageWithAttachment(SendMessageRequest request, Integer userId){
-//        ChatRoom room=roomRepository.findByRoomId(request.getRoomId())
-//                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
-//
-//        User user=userRepository.findByUserId(userId)
-//                .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
-//
-//        ChatRoomParticipant participantWhoSent=participantRepository.findByRoomAndUser_UserId(room, userId)
-//                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다."));
-//
-//        boolean hasContent=request.getContent() != null && !request.getContent().trim().isEmpty();
-//        boolean hasAttachment=request.getAttachments() != null && !request.getAttachments().isEmpty();
-//
-//        if (!hasContent && !hasAttachment){
-//            throw new RuntimeException("메시지 내용 또는 첨부파일이 있어야 합니다.");
-//        }
-//
-//        ChatMessage saveMessage=messageRepository.save(ChatMessage.builder()
-//                .room(room)
-//                .user(user)
-//                .content(hasContent ? request.getContent().trim() : null)
-//                .build());
-//
-//        if (hasAttachment){
-//            List<ChatAttachment> attachmentList=request.getAttachments().stream()
-//                    .map(file -> ChatAttachment.builder()
-//                            .message(saveMessage)
-//                            .originalFileName(file.getOriginalFileName())
-//                            .storedFileName(file.getStoredFileName())
-//                            .fileUrl(file.getFileUrl())
-//                            .contentType(file.getContentType())
-//                            .fileExtension(file.getFileExtension())
-//                            .fileSize(file.getFileSize())
-//                            .thumbnailUrl(file.getThumbnailUrl())
-//                            .build()).toList();
-//
-//            attachmentRepository.saveAll(attachmentList);
-//        }
-//
-//        room.setLastMessageId(saveMessage.getMessageId());
-//        room.setLastMessageAt(saveMessage.getCreatedAt());
-//
-//        participantWhoSent.setLastReadMessageId(saveMessage.getMessageId());
-//        participantWhoSent.setLastReadAt(saveMessage.getCreatedAt());
-//
-//
-//    }
-
-    public ChatMessageDto replyMessage(SendMessageRequest request, Integer userId){
+    public ChatMessageDto sendChatMessage(SendMessageRequest request, Integer userId){
         User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
-
-        ChatRoom room=roomRepository.findByRoomId(request.getRoomId()).orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
-
-        ChatMessage parentMessage=messageRepository.findByMessageId(request.getParentMessageId())
-                .orElseThrow(()->new RuntimeException("존재하지 않는 메시지입니다."));
-
-        if (parentMessage.getMessageType() == ChatMessageType.SYSTEM) {
-            throw new RuntimeException("시스템 메시지에는 답장할 수 없습니다.");
-        }
-
-        if (!parentMessage.getRoom().getRoomId().equals(request.getRoomId())){
-            throw new RuntimeException("같은 채팅방의 메시지에만 답장할 수 있습니다.");
-        }
-
-        ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, userId)
-                .orElseThrow(()->new RuntimeException("채팅방의 참가자만 답장할 수 있습니다."));
-
-        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
-            throw new RuntimeException("메시지 내용을 입력하세요.");
-        }
-
-        ChatMessage reply=messageRepository.save(ChatMessage.builder()
-                .room(room)
-                .user(user)
-                .content(request.getContent().trim())
-                .messageType(ChatMessageType.USER)
-                .parentMessage(parentMessage)
-                .build());
-
-        room.setLastMessageId(reply.getMessageId());
-        room.setLastMessageAt(reply.getCreatedAt());
-
-        participant.setLastReadMessageId(reply.getMessageId());
-        participant.setLastReadAt(reply.getCreatedAt());
 
         Staff staff=staffRepository.findByUser(user)
                 .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
-        String parentUserName = null;
+        ChatRoom room=roomRepository.findByRoomId(request.getRoomId()).orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
 
-        if (parentMessage.getUser() != null) {
-            Staff parent = staffRepository.findByUser(parentMessage.getUser())
-                    .orElseThrow(() -> new RuntimeException("존재하지 않는 직원입니다."));
-            parentUserName = parent.getName();
+        ChatRoomParticipant participant=participantRepository.findByRoomAndUser_UserId(room, userId)
+                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다."));
+
+        ParentMessageDto parentMessageDto=null;
+        ChatMessage parentMessage=null;
+        if (request.getParentMessageId() != null){
+            parentMessage=messageRepository.findByMessageId(request.getParentMessageId())
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 메시지입니다."));
+
+            if (parentMessage.getMessageType() == ChatMessageType.SYSTEM){
+                throw new RuntimeException("시스템 메시지에는 답장할 수 없습니다.");
+            }
+
+            if (!room.getRoomId().equals(parentMessage.getRoom().getRoomId())){
+                throw new RuntimeException("같은 채팅방의 메시지가 아닙니다.");
+            }
+
+            parentMessageDto=toParentMessageDto(parentMessage, false);
         }
 
-        List<ChatRoomParticipant> participants=participantRepository.findByRoom(room);
-        List<Integer> participantIds=participants.stream().map(p -> p.getUser().getUserId()).toList();
+        boolean hasContent=request.getContent() != null && !request.getContent().isBlank();
+        boolean hasAttachment=request.getAttachments() != null && !request.getAttachments().isEmpty();
+
+        if (!hasContent && !hasAttachment){
+            throw new RuntimeException("메시지 내용과 파일이 모두 존재하지 않습니다.");
+        }
+
+        ChatMessage saveMessage=messageRepository.save(ChatMessage.builder()
+                .room(room)
+                .user(user)
+                .messageType(ChatMessageType.USER)
+                .content(hasContent ? request.getContent().trim() : null)
+                .parentMessage(parentMessage).build());
+
+        room.setLastMessageId(saveMessage.getMessageId());
+        room.setLastMessageAt(saveMessage.getCreatedAt());
+
+        participant.setLastReadMessageId(saveMessage.getMessageId());
+        participant.setLastReadAt(saveMessage.getCreatedAt());
+
+        if (hasAttachment){
+            for (ChatAttachmentDto file:request.getAttachments()){
+                ChatAttachment attachment=ChatAttachment.builder()
+                        .message(saveMessage)
+                        .originalFileName(file.getOriginalFileName())
+                        .storedFileName(file.getStoredFileName())
+                        .fileUrl(file.getFileUrl())
+                        .contentType(file.getContentType())
+                        .fileExtension(file.getFileExtension())
+                        .fileSize(file.getFileSize()).build();
+                attachmentRepository.save(attachment);
+            }
+        }
+
+        List<ChatAttachmentDto> attachments=toAttachmentDto(saveMessage.getMessageId());
 
         Long unreadCount=participantRepository.countUnreadParticipants(room.getRoomId(), user.getUserId(),
-                reply.getMessageId());
+                saveMessage.getMessageId());
 
-        return ChatMessageDto.builder()
-                .messageId(reply.getMessageId())
+        List<ChatRoomParticipant> participants=participantRepository.findByRoom_RoomId(room.getRoomId());
+        List<Integer> participantIds=participants.stream().map(p -> p.getUser().getUserId()).toList();
+
+        return  ChatMessageDto.builder()
+                .messageId(saveMessage.getMessageId())
                 .roomId(room.getRoomId())
                 .senderId(user.getUserId())
                 .senderName(staff.getName())
-                .messageType(reply.getMessageType().name())
-                .content(reply.getContent())
-                .createdAt(reply.getCreatedAt())
-                .unreadCount(unreadCount)
+                .messageType(saveMessage.getMessageType().name())
+                .content(hasContent ? saveMessage.getContent():null)
+                .parentMessage(parentMessageDto)
+                .attachments(attachments)
                 .mine(true)
-                .deleted(reply.isDeleted())
-                .deletedAt(reply.getDeletedAt())
-                .edited(reply.isEdited())
-                .editedAt(reply.getEditedAt())
-                .parentMessageId(parentMessage.getMessageId())
-                .parentMessageContent(parentMessage.isDeleted() ? null : parentMessage.getContent())
-                .parentMessageIsDeleted(parentMessage.isDeleted())
-                .parentMessageUserName(parentUserName)
+                .createdAt(saveMessage.getCreatedAt())
+                .unreadCount(unreadCount)
                 .participantIds(participantIds).build();
     }
 
@@ -194,20 +155,10 @@ public class ChatMessageService {
             participantIds.add(p.getUser().getUserId());
         }
 
-        String parentMessageContent=null;
-        String parentMessageUserName=null;
-        boolean parentIsDeleted=false;
-
+        ParentMessageDto parentMessage=null;
         ChatMessage parent=deleteMessage.getParentMessage();
         if (parent != null){
-            parentMessageContent=parent.getContent();
-            parentIsDeleted=parent.isDeleted();
-
-            if (parent.getUser() != null){
-                Staff parentStaff=staffRepository.findByUser(parent.getUser())
-                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-                parentMessageUserName=parentStaff.getName();
-            }
+            parentMessage=toParentMessageDto(parent, parent.isDeleted());
         }
 
         return ChatMessageDto.builder()
@@ -223,12 +174,10 @@ public class ChatMessageService {
                 .deletedAt(deleteMessage.getDeletedAt())
                 .edited(deleteMessage.isEdited())
                 .editedAt(deleteMessage.getEditedAt())
-                .parentMessageId(parent != null ? parent.getMessageId() : null)
-                .parentMessageContent(parentMessageContent)
-                .parentMessageUserName(parentMessageUserName)
-                .parentMessageIsDeleted(parentIsDeleted)
+                .parentMessage(parentMessage)
                 .participantIds(participantIds)
                 .lastMessage(deleteMessage.getMessageId().equals(deleteMessage.getRoom().getLastMessageId()))
+                .attachments(List.of())
                 .build();
     }
 
@@ -240,9 +189,6 @@ public class ChatMessageService {
             throw new IllegalArgumentException("시스템 메시지는 수정할 수 없습니다.");
         }
 
-        Staff sendStaff=staffRepository.findByUser_UserId(userId)
-                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-
         if(!message.getUser().getUserId().equals(userId)){
             throw new IllegalArgumentException("본인 메시지만 수정할 수 있습니다.");
         }
@@ -251,9 +197,16 @@ public class ChatMessageService {
             throw new IllegalArgumentException("삭제된 메시지는 수정할 수 없습니다.");
         }
 
+        if (message.getContent() == null || message.getContent().isBlank()){
+            throw new RuntimeException("파일만 전송한 메시지는 수정할 수 없습니다.");
+        }
+
         if(content == null || content.trim().isEmpty()){
             throw new IllegalArgumentException("수정할 메시지 내용을 입력하세요.");
         }
+
+        Staff sendStaff=staffRepository.findByUser_UserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
         message.setEdited(true);
         message.setEditedAt(LocalDateTime.now());
@@ -267,20 +220,10 @@ public class ChatMessageService {
             participantIds.add(p.getUser().getUserId());
         }
 
-        String parentMessageContent=null;
-        String parentMessageUserName=null;
-        boolean parentIsDeleted=false;
-
+        ParentMessageDto parentMessage=null;
         ChatMessage parent=editMessage.getParentMessage();
         if (parent != null){
-            parentMessageContent=parent.getContent();
-            parentIsDeleted=parent.isDeleted();
-
-            if (parent.getUser() != null){
-                Staff staff=staffRepository.findByUser(parent.getUser())
-                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-                parentMessageUserName=staff.getName();
-            }
+            parentMessage=toParentMessageDto(parent, parent.isDeleted());
         }
 
         return ChatMessageDto.builder()
@@ -296,64 +239,11 @@ public class ChatMessageService {
                 .editedAt(editMessage.getEditedAt())
                 .deleted(editMessage.isDeleted())
                 .deletedAt(editMessage.getDeletedAt())
-                .parentMessageId(parent != null ? parent.getMessageId() : null)
-                .parentMessageContent(parentMessageContent)
-                .parentMessageUserName(parentMessageUserName)
-                .parentMessageIsDeleted(parentIsDeleted)
+                .parentMessage(parentMessage)
                 .participantIds(participantIds)
                 .lastMessage(editMessage.getMessageId().equals(editMessage.getRoom().getLastMessageId()))
+                .attachments(toAttachmentDto(editMessage.getMessageId()))
                 .build();
-    }
-
-    public ChatMessageDto sendUserMessage(SendMessageRequest message, Integer userId){
-        ChatRoom room=roomRepository.findByRoomId(message.getRoomId()).orElseThrow(
-                ()->new RuntimeException("채팅방이 존재하지 않습니다.")
-        );
-
-        User sender=userRepository.findByUserId(userId).orElseThrow(
-                ()->new RuntimeException("존재하지 않는 사용자입니다.")
-        );
-
-        ChatRoomParticipant participantWhoSent=participantRepository
-                .findByRoomAndUser_UserId(room, userId).orElseThrow(()->new RuntimeException(
-                        "채팅방 참가자가 아닙니다."
-                ));
-
-        if (message.getContent() == null || message.getContent().trim().isEmpty()) {
-            throw new RuntimeException("메시지 내용을 입력하세요.");
-        }
-
-        ChatMessage saveMessage=messageRepository.save(ChatMessage.builder()
-                .room(room).user(sender)
-                .messageType(ChatMessageType.USER)
-                .content(message.getContent()).build());
-
-        room.setLastMessageId(saveMessage.getMessageId());
-        room.setLastMessageAt(saveMessage.getCreatedAt());
-
-        participantWhoSent.setLastReadMessageId(saveMessage.getMessageId());
-        participantWhoSent.setLastReadAt(saveMessage.getCreatedAt());
-
-        Staff staff=staffRepository.findByUser(sender)
-                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-
-        List<ChatRoomParticipant> participants=participantRepository.findByRoom_RoomId(message.getRoomId());
-        List<Integer> participantIds=participants.stream().map(p -> p.getUser().getUserId()).toList();
-
-        Long unreadCount=participantRepository.countUnreadParticipants(room.getRoomId(), sender.getUserId(),
-                saveMessage.getMessageId());
-
-        return ChatMessageDto.builder()
-                .messageId(saveMessage.getMessageId())
-                .roomId(room.getRoomId())
-                .senderId(sender.getUserId())
-                .senderName(staff.getName())
-                .messageType(saveMessage.getMessageType().name())
-                .content(saveMessage.getContent())
-                .createdAt(saveMessage.getCreatedAt())
-                .unreadCount(unreadCount)
-                .mine(true)
-                .participantIds(participantIds).build();
     }
 
     public MessageSlice getMessages(Integer roomId, Integer cursor, int size, Integer userId){
@@ -398,6 +288,45 @@ public class ChatMessageService {
         return messageSlice;
     }
 
+    private List<ChatAttachmentDto> toAttachmentDto(Integer messageId){
+        List<ChatAttachment> attachments=attachmentRepository.findByMessage_MessageId(messageId);
+        return attachments.stream().map(
+                a -> ChatAttachmentDto.builder()
+                        .attachmentId(a.getAttachmentId())
+                        .messageId(a.getMessage().getMessageId())
+                        .originalFileName(a.getOriginalFileName())
+                        .storedFileName(a.getStoredFileName())
+                        .fileUrl(a.getFileUrl())
+                        .contentType(a.getContentType())
+                        .fileExtension(a.getFileExtension())
+                        .fileSize(a.getFileSize())
+                        .createdAt(a.getCreatedAt()).build()
+        ).toList();
+    }
+
+    private ParentMessageDto toParentMessageDto(ChatMessage parent, boolean hidden){
+        if (parent == null) return null;
+
+        ParentMessageDto dto=new ParentMessageDto();
+        dto.setParentMessageId(parent.getMessageId());
+        dto.setParentMessageContent(parent.isDeleted() ? null : parent.getContent());
+        dto.setParentMessageIsDeleted(parent.isDeleted());
+
+        if (parent.getUser() != null){
+            Staff staff=staffRepository.findByUser(parent.getUser())
+                    .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+            dto.setParentMessageUserName(staff.getName());
+        }
+
+        if (hidden && parent.isDeleted()){
+            dto.setParentMessageAttachments(List.of());
+        } else {
+            dto.setParentMessageAttachments(toAttachmentDto(parent.getMessageId()));
+        }
+
+        return dto;
+    }
+
     private ChatMessageDto toDto(ChatMessage message, Integer loginUserId){
         User sender = message.getUser();
         Long unreadCount = 0L;
@@ -417,21 +346,13 @@ public class ChatMessageService {
             senderName = staff.getName();
         }
 
-        String parentMessageContent=null;
-        String parentMessageUserName=null;
-        boolean parentIsDeleted=false;
-
+        ParentMessageDto parentMessage=null;
         ChatMessage parent=message.getParentMessage();
         if (parent != null){
-            parentMessageContent=parent.getContent();
-            parentIsDeleted=parent.isDeleted();
-
-            if (parent.getUser() != null){
-                Staff staff=staffRepository.findByUser(parent.getUser())
-                        .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
-                parentMessageUserName=staff.getName();
-            }
+            parentMessage=toParentMessageDto(parent, parent.isDeleted());
         }
+
+        List<ChatAttachmentDto> attachments=message.isDeleted() ? List.of() : toAttachmentDto(message.getMessageId());
 
         return ChatMessageDto.builder()
                 .messageId(message.getMessageId())
@@ -439,17 +360,16 @@ public class ChatMessageService {
                 .senderId(sender != null ? sender.getUserId() : null)
                 .senderName(senderName)
                 .messageType(message.getMessageType().name())
-                .content(message.getContent())
+                .content(message.isDeleted() ? null : message.getContent())
                 .createdAt(message.getCreatedAt())
                 .unreadCount(unreadCount)
                 .mine(sender != null && sender.getUserId().equals(loginUserId))
                 .deleted(message.isDeleted())
                 .deletedAt(message.getDeletedAt())
                 .edited(message.isEdited())
-                .parentMessageId(message.getParentMessage() != null ? message.getParentMessage().getMessageId() : null)
-                .parentMessageContent(parentMessageContent != null ? parentMessageContent : null)
-                .parentMessageUserName(parentMessageUserName != null ? parentMessageUserName : null)
-                .parentMessageIsDeleted(parentIsDeleted)
+                .editedAt(message.getEditedAt())
+                .parentMessage(parentMessage)
+                .attachments(attachments)
                 .build();
     }
 }

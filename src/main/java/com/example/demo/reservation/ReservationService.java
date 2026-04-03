@@ -4,6 +4,8 @@ import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
+import com.example.demo.reception.Reception;
+import com.example.demo.reception.ReceptionRepository;
 import com.example.demo.reception.ReceptionService;
 import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
@@ -69,13 +71,16 @@ public class ReservationService {
         Staff staff=staffRepository.findById(reservationDto.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
+        Department department=departmentRepository.findByDepartmentId(staff.getDepartment().getDepartmentId());
+
         Slot slot=slotRepository.findByStartTime(reservationDto.getReservationDate())
                 .orElseGet(() -> {
                     Slot newSlot=Slot.builder()
                             .currentPatient(0)
-                            .maxPatient(5)
+                            .maxPatient(3)
                             .startTime(reservationDto.getReservationDate())
                             .staff(staff)
+                            .department(department)
                             .build();
                     slotRepository.save(newSlot);
                     return newSlot;
@@ -85,6 +90,37 @@ public class ReservationService {
         reservation.setStaff(staff);
         reservation.setSlot(slot);
         reservation.setStatus(ReservationStatus.CONFIRMED);
+
+        reservationRepository.save(reservation);
+        receptionService.receptionInsert(reservation);
+
+        return reservationDto.getReservationId();
+    }
+
+    public Integer reservationPending(ReservationDto reservationDto){
+        Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        Department department=departmentRepository.findByDepartmentId(reservationDto.getDepartmentId());
+        List<Staff> doctors=staffRepository.findDoctorsByDepartment(department)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+        Integer maxPatient=doctors.size()*3;
+
+        Slot slot=slotRepository.findByStartTime(reservationDto.getReservationDate())
+                .orElseGet(() -> {
+                    Slot newSlot=Slot.builder()
+                            .currentPatient(0)
+                            .maxPatient(maxPatient)
+                            .startTime(reservationDto.getReservationDate())
+                            .department(department)
+                            .build();
+                    slotRepository.save(newSlot);
+                    return newSlot;
+                });
+        slot.setCurrentPatient(slot.getCurrentPatient()+1);
+
+        reservation.setSlot(slot);
+        reservation.setStatus(ReservationStatus.PENDING);
 
         reservationRepository.save(reservation);
         receptionService.receptionInsert(reservation);
@@ -140,12 +176,39 @@ public class ReservationService {
                 .toList();
     }
 
-//    public List<ReservationScheduleDto> reservationScheduleList(Integer doctorId){
-//        String name=staffRepository.findByStaffId(doctorId).getName();
-//
-//        ReservationScheduleDto reservationScheduleDto= ReservationScheduleDto.builder()
-//                .doctorId(doctorId)
-//                .doctorName(name)
-//                .build();
-//    }
+    public Integer reservationCancel(Integer reservationId){
+        Reservation reservation=reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        if(reservation.getSlot()!=null){
+            Slot slot=reservation.getSlot();
+            slot.setCurrentPatient(slot.getCurrentPatient()-1);
+        }
+
+        if(reservation.getStatus()==ReservationStatus.CONFIRMED){
+            receptionService.receptionCancel(reservation);
+        }
+
+        reservationRepository.delete(reservation);
+
+        return reservationId;
+    }
+
+    public Integer reservationUpdate(ReservationDto reservationDto){
+        Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+        Staff staff=staffRepository.findByStaffId(reservationDto.getDoctorId());
+        Department department=departmentRepository.findByDepartmentId(reservationDto.getDepartmentId());
+
+        Slot slot=reservation.getSlot();
+        slot.setStartTime(reservationDto.getReservationDate());
+        slot.setStaff(staff);
+        slot.setDepartment(department);
+
+        reservation.setStaff(staff);
+        reservation.setSlot(slot);
+        reservation.setDepartment(department);
+
+        return reservation.getReservationId();
+    }
 }

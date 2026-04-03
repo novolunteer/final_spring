@@ -1,6 +1,8 @@
 package com.example.demo.reservation;
 
 import com.example.demo.department.Department;
+import com.example.demo.reception.Reception;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

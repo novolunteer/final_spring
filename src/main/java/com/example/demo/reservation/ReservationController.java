@@ -25,10 +25,17 @@ public class ReservationController {
         return map;
     }
 
-    @PostMapping("/api/reservation/confirmed")
+    @PostMapping("/api/reservation/confirm")
     public Map<String,Object> reservationConfirmed(@RequestBody ReservationDto reservationDto){
         Map<String,Object> map=new HashMap<>();
-        Integer reservationId=reservationService.reservationConfirmed(reservationDto);
+
+        Integer reservationId=null;
+        if(reservationDto.getDoctorId() != null){
+            reservationId=reservationService.reservationConfirmed(reservationDto);
+        }else{
+            reservationId=reservationService.reservationPending(reservationDto);
+        }
+
         map.put("reservationId",reservationId);
         return map;
     }
@@ -76,8 +83,13 @@ public class ReservationController {
         return map;
     }
 
-//    @GetMapping("/api/reservation/schedule")
-//    public Map<String,Object> reservationSchedule(@RequestParam Integer doctorId){
-//
-//    }
+    @GetMapping("/api/reservation/delete")
+    public Map<String, Object> reservationCancel(@RequestParam("reservationId") Integer reservationId){
+        return Map.of("reservationId",reservationService.reservationCancel(reservationId));
+    }
+
+    @PutMapping("/api/reservation")
+    public Map<String, Object> reservationUpdate(@RequestBody ReservationDto reservationDto){
+        return Map.of("reservationId", reservationService.reservationUpdate(reservationDto));
+    }
 }

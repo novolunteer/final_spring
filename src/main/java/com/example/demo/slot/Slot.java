@@ -1,5 +1,6 @@
 package com.example.demo.slot;
 
+import com.example.demo.department.Department;
 import com.example.demo.staff.Staff;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,11 +15,16 @@ import java.time.LocalDateTime;
 @Builder
 public class Slot {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer slotId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctorId")
     private Staff staff;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departmentId")
+    private Department department;
 
     private LocalDateTime startTime;
     private Integer maxPatient;

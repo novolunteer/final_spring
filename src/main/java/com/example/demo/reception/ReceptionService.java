@@ -5,6 +5,7 @@ import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +70,7 @@ public class ReceptionService {
         return Map.of("receptionId",receptionId);
     }
 
-    public Integer ReceptionConsulting(ReceptionDto receptionDto){
+    public Integer receptionConsulting(ReceptionDto receptionDto){
         Integer receptionId=receptionDto.getReceptionId();
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -79,12 +80,19 @@ public class ReceptionService {
         return reception.getReceptionId();
     }
 
-    public Integer ReceptionCompleted(ReceptionDto receptionDto){
+    public Integer receptionCompleted(ReceptionDto receptionDto){
         Integer receptionId=receptionDto.getReceptionId();
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
         reception.setStatus(ReceptionStatus.COMPLETED);
+
+        return reception.getReceptionId();
+    }
+
+    public Integer receptionCancel(Reservation reservation){
+        Reception reception=receptionRepository.findByReservation(reservation);
+        receptionRepository.delete(reception);
 
         return reception.getReceptionId();
     }

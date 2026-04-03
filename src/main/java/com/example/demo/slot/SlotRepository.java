@@ -1,6 +1,7 @@
 package com.example.demo.slot;
 
 
+import com.example.demo.department.Department;
 import com.example.demo.staff.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,4 +15,6 @@ public interface SlotRepository extends JpaRepository<Slot,Integer> {
     List<Slot> findAllByStartTimeBetweenAndStaff(LocalDateTime start,
                                           LocalDateTime end,
                                           Staff staff);
+
+    List<Slot> findAllByStartTimeBetweenAndDepartment(LocalDateTime startTimeAfter, LocalDateTime startTimeBefore, Department department);
 }

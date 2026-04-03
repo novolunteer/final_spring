@@ -33,4 +33,5 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
             @Param("status") ReceptionStatus status
     );
 
+    Reception findByReservation(Reservation reservation);
 }

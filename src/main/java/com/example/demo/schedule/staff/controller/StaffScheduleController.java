@@ -1,5 +1,7 @@
 package com.example.demo.schedule.staff.controller;
 
+import com.example.demo.schedule.staff.dto.BulkRegisterResultDto;
+import com.example.demo.schedule.staff.dto.BulkStaffScheduleDto;
 import com.example.demo.schedule.staff.dto.StaffScheduleDto;
 import com.example.demo.schedule.staff.service.StaffScheduleService;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +54,12 @@ public class StaffScheduleController {
     public ResponseEntity<?> bulkConfirm(@RequestBody List<Integer> scheduleIds){
         staffScheduleService.bulkConfirm(scheduleIds);
         return ResponseEntity.ok().build();
+    }
+
+    //다른직원 같은 스케줄 일괄등록
+    @PostMapping("/bulk_register")
+    public ResponseEntity<BulkRegisterResultDto> bulkRegister(@RequestBody  BulkStaffScheduleDto dto){
+        BulkRegisterResultDto result= staffScheduleService.bulkRegister(dto);
+        return ResponseEntity.ok(result);
     }
 }

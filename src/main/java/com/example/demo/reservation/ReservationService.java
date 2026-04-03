@@ -18,6 +18,8 @@ import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -128,52 +130,58 @@ public class ReservationService {
         return reservationDto.getReservationId();
     }
 
-    public List<ReservationResponse> reservationList(){
-        return reservationRepository.findByStatus(ReservationStatus.RECEIVED)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+    public Page<ReservationResponse> reservationList(String name,
+                                                     Pageable pageable){
+        return reservationRepository.findByStatusAndPatient_NameContaining(ReservationStatus.RECEIVED, name, pageable)
+                .map(ReservationResponse::new);
     }
 
-    public List<ReservationResponse> reservationList(Integer departmentId){
+    public Page<ReservationResponse> reservationList(Integer departmentId,
+                                                     String name,
+                                                     Pageable pageable){
         Department department=departmentRepository.findByDepartmentId(departmentId);
 
-        return reservationRepository.findByStatusAndDepartment(ReservationStatus.RECEIVED,department)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+        return reservationRepository.findByStatusAndDepartmentAndPatient_NameContaining(ReservationStatus.RECEIVED,
+                                                                                        department,
+                                                                                        name,
+                                                                                        pageable)
+                .map(ReservationResponse::new);
     }
 
-    public List<ReservationResponse> reservationPendingList(){
-        return reservationRepository.findByStatus(ReservationStatus.PENDING)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+    public Page<ReservationResponse> reservationPendingList(String name,
+                                                            Pageable pageable){
+        return reservationRepository.findByStatusAndPatient_NameContaining(ReservationStatus.PENDING, name, pageable)
+                .map(ReservationResponse::new);
     }
 
-    public List<ReservationResponse> reservationPendingList(Integer departmentId){
+    public Page<ReservationResponse> reservationPendingList(Integer departmentId,
+                                                            String name,
+                                                            Pageable pageable){
         Department department=departmentRepository.findByDepartmentId(departmentId);
 
-        return reservationRepository.findByStatusAndDepartment(ReservationStatus.PENDING,department)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+        return reservationRepository.findByStatusAndDepartmentAndPatient_NameContaining(ReservationStatus.PENDING,
+                                                                                        department,
+                                                                                        name,
+                                                                                        pageable)
+                .map(ReservationResponse::new);
     }
 
-    public List<ReservationResponse> reservationconfirmedList(){
-        return reservationRepository.findByStatus(ReservationStatus.CONFIRMED)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+    public Page<ReservationResponse> reservationConfirmedList(String name,
+                                                              Pageable pageable){
+        return reservationRepository.findByStatusAndPatient_NameContaining(ReservationStatus.CONFIRMED, name, pageable)
+                .map(ReservationResponse::new);
     }
 
-    public List<ReservationResponse> reservationconfirmedList(Integer departmentId){
+    public Page<ReservationResponse> reservationConfirmedList(Integer departmentId,
+                                                              String name,
+                                                              Pageable pageable){
         Department department=departmentRepository.findByDepartmentId(departmentId);
 
-        return reservationRepository.findByStatusAndDepartment(ReservationStatus.CONFIRMED,department)
-                .stream()
-                .map(ReservationResponse::new)
-                .toList();
+        return reservationRepository.findByStatusAndDepartmentAndPatient_NameContaining(ReservationStatus.CONFIRMED,
+                                                                                        department,
+                                                                                        name,
+                                                                                        pageable)
+                .map(ReservationResponse::new);
     }
 
     public Integer reservationCancel(Integer reservationId){

@@ -1,7 +1,10 @@
 package com.example.demo.reception;
 
+import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.reservation.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,8 +19,8 @@ public class ReceptionController {
     private final ReceptionService receptionService;
 
     @GetMapping("/api/administration")
-    public Map<String,Object> receptionList(){
-        return receptionService.receptionList();
+    public Page<ReceptionResponse> receptionList(Pageable pageable){
+        return receptionService.receptionList("", pageable);
     }
 
     @GetMapping("/api/administration/recieved")
@@ -25,8 +28,14 @@ public class ReceptionController {
         return receptionService.ReceptionReceived(receptionId);
     }
 
-    @GetMapping("/api/medicalrecord")
-    public Map<String,Object> receptionPendingList(){
-        return receptionService.receptionPendingList();
+    @GetMapping("/api/reception")
+    public Page<ReceptionResponse> receptionStatusList(@RequestParam(required = false) String status,
+                                                  @RequestParam(required = false) String name,
+                                                  Pageable pageable){
+        if (status == null || status.isEmpty()) {
+            return receptionService.receptionList(name, pageable);
+        }else{
+            return receptionService.receptionStatusList(ReceptionStatus.valueOf(status), name, pageable);
+        }
     }
 }

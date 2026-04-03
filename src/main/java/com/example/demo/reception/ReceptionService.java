@@ -5,8 +5,11 @@ import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationRepository;
+import com.example.demo.reservation.ReservationStatus;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,35 +37,35 @@ public class ReceptionService {
         return reception.getReceptionId();
     }
 
-    public Map<String,Object> receptionList(){
+    public Page<ReceptionResponse> receptionList(String name,
+                                             Pageable pageable){
         LocalDate today = LocalDate.now();
 
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
-        List<ReceptionResponse> list=receptionRepository.findTodayReception(start, end)
-                .stream()
-                .map(ReceptionResponse::new)
-                .toList();
-
-        return Map.of("content",list);
+        return receptionRepository.findTodayReception(start, end, name, pageable)
+                .map(ReceptionResponse::new);
     }
 
-    public Map<String,Object> receptionPendingList(){
+    public Page<ReceptionResponse> receptionStatusList(ReceptionStatus status,
+                                                  String name,
+                                                  Pageable pageable){
         LocalDate today = LocalDate.now();
 
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
-        List<ReceptionResponse> list=receptionRepository.findTodayPendingReception(start, end, ReceptionStatus.RECEIVED)
-                .stream()
-                .map(ReceptionResponse::new)
-                .toList();
-        return Map.of("content",list);
+        return receptionRepository.findTodayReception(start, end, status, name, pageable)
+                .map(ReceptionResponse::new);
     }
 
     public Map<String,Object> ReceptionReceived(Integer receptionId){
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
+        Reservation reservation=reservationRepository.findById(reception.getReservation().getReservationId())
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        reservation.setStatus(ReservationStatus.COMPLETED);
         reception.setStatus(ReceptionStatus.RECEIVED);
 
         receptionRepository.save(reception);

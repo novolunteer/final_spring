@@ -4,6 +4,8 @@ import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,46 +43,39 @@ public class ReservationController {
     }
 
     @GetMapping("/api/reservation")
-    public Map<String,Object> reservationList(@RequestParam(required = false) Integer department){
-        Map<String,Object> map=new HashMap<>();
-        List<ReservationResponse> reservation;
-
+    public Page<ReservationResponse> reservationList(@RequestParam(required = false) Integer department,
+                                               @RequestParam(required = false) String name,
+                                               Pageable pageable){
         if(department==null){
-            reservation = reservationService.reservationList();
+            return reservationService.reservationList(name,pageable);
         }else{
-            reservation = reservationService.reservationList(department);
+            return reservationService.reservationList(department,name,pageable);
         }
-        map.put("content",reservation);
-
-        return map;
     }
 
     @GetMapping("/api/reservation/pending")
-    public Map<String,Object> reservationPendingList(@RequestParam(required = false) Integer department){
-        Map<String,Object> map=new HashMap<>();
-        List<ReservationResponse> reservation;
-
+    public Page<ReservationResponse> reservationPendingList(@RequestParam(required = false) Integer department,
+                                                     @RequestParam(required = false) String name,
+                                                     Pageable pageable){
         if(department==null) {
-            reservation=reservationService.reservationPendingList();
+            return reservationService.reservationPendingList(name,pageable);
         }else{
-            reservation=reservationService.reservationPendingList(department);
+            return reservationService.reservationPendingList(department,name,pageable);
         }
-        map.put("content",reservation);
-        return map;
     }
 
     @GetMapping("/api/reservation/confirmed")
-    public Map<String,Object> reservationConfirmedList(@RequestParam(required = false) Integer department){
+    public Page<ReservationResponse> reservationConfirmedList(@RequestParam(required = false) Integer department,
+                                                       @RequestParam(required = false) String name,
+                                                       Pageable pageable){
         Map<String,Object> map=new HashMap<>();
         List<ReservationResponse> reservation;
 
         if(department==null) {
-            reservation = reservationService.reservationconfirmedList();
+            return reservationService.reservationConfirmedList(name,pageable);
         }else{
-            reservation = reservationService.reservationconfirmedList(department);
+            return reservationService.reservationConfirmedList(department,name,pageable);
         }
-        map.put("content",reservation);
-        return map;
     }
 
     @GetMapping("/api/reservation/delete")

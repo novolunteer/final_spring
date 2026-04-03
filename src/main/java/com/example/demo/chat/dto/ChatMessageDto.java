@@ -22,16 +22,13 @@ public class ChatMessageDto {
     private LocalDateTime createdAt;
     private Long unreadCount;
     private boolean mine;
-    private List<ChatAttachmentDto> attachments;
     private List<Integer> participantIds;
     private boolean deleted;
     private LocalDateTime deletedAt;
     private boolean edited;
     private LocalDateTime editedAt;
-    private Integer parentMessageId;
-    private String parentMessageContent;
-    private String parentMessageUserName;
-    private boolean parentMessageIsDeleted;
+    private ParentMessageDto parentMessage;
     private boolean lastMessage;
+    private List<ChatAttachmentDto> attachments;
 }
 

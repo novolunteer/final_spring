@@ -37,7 +37,7 @@ public class ChatMessageController {
         }
 
         try{
-            ChatMessageDto message=messageService.sendUserMessage(dto, userId);
+            ChatMessageDto message=messageService.sendChatMessage(dto, userId);
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {
             e.printStackTrace();

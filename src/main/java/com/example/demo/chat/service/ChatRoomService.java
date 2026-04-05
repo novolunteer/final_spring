@@ -6,6 +6,7 @@ import com.example.demo.chat.dto.*;
 import com.example.demo.chat.entity.ChatMessage;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
+import com.example.demo.chat.repository.ChatAttachmentRepository;
 import com.example.demo.chat.repository.ChatMessageRepository;
 import com.example.demo.chat.repository.ChatRoomParticipantRepository;
 import com.example.demo.chat.repository.ChatRoomRepository;
@@ -35,6 +36,7 @@ public class ChatRoomService {
     private final StaffRepository staffRepository;
     private final UserRoleRepository userRoleRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatAttachmentRepository attachmentRepository;
 
     public List<Integer> inviteStaff(Integer roomId, Integer inviter, List<Integer> staffIds){
         if (staffIds == null || staffIds.isEmpty()) {
@@ -440,9 +442,19 @@ public class ChatRoomService {
         List<Integer> messageIds=chatRooms.stream().map(m -> m.getLastMessageId())
                 .filter(id -> id != null).toList();
         List<ChatMessage> messages=messageRepository.findByMessageIdIn(messageIds);
-        Map<Integer, String> lastMessages=messages.stream().collect(Collectors.toMap(
+        Map<Integer, ChatMessage> lastMessagesMap=messages.stream().collect(Collectors.toMap(
            m -> m.getMessageId(),
-           m -> m.isDeleted() ? "삭제된 메시지입니다.":m.getContent()
+           m -> m
+        ));
+
+        Map<Integer, Object> lastMessageIsDeleted=messages.stream().collect(Collectors.toMap(
+                m -> m.getMessageId(),
+                m -> m.isDeleted()
+        ));
+
+        Map<Integer, Object> lastMessageHasAttachment=messages.stream().collect(Collectors.toMap(
+                m -> m.getMessageId(),
+                m -> attachmentRepository.existsByMessage(m)
         ));
 
         List<ChatRoomDto> rooms=chatRooms.stream().map(c -> {
@@ -460,14 +472,18 @@ public class ChatRoomService {
                 );
             }
 
+            ChatMessage lastMessage=lastMessagesMap.get(c.getLastMessageId());
+
             return ChatRoomDto.builder()
                     .roomId(c.getRoomId())
                     .roomType(c.getRoomType().name())
                     .roomName(c.getRoomName())
                     .createdBy(c.getUser().getUserId())
                     .lastMessageId(c.getLastMessageId())
-                    .lastMessageText(lastMessages.getOrDefault(c.getLastMessageId(), null))
+                    .lastMessageText(lastMessage != null ? lastMessage.getContent():null)
                     .lastMessageAt(c.getLastMessageAt())
+                    .lastMessageIsDeleted((boolean)lastMessageIsDeleted.getOrDefault(c.getLastMessageId(), false))
+                    .lastMessageHasAttachment((boolean)lastMessageHasAttachment.getOrDefault(c.getLastMessageId(), false))
                     .customRoomName(customRoomNames.getOrDefault(c.getRoomId(), null))
                     .participantCount(counts.getOrDefault(c.getRoomId(), 0L))
                     .unreadCount(unreadCount).build();

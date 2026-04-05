@@ -20,6 +20,8 @@ public class ChatRoomDto {
     private Integer lastMessageId;
     private String lastMessageText;
     private LocalDateTime lastMessageAt;
+    private boolean lastMessageIsDeleted;
+    private boolean lastMessageHasAttachment;
     private Long participantCount;
     private String customRoomName;
     private Integer unreadCount;

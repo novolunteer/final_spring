@@ -5,10 +5,7 @@ import com.example.demo.reservation.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -25,7 +22,18 @@ public class ReceptionController {
 
     @GetMapping("/api/administration/recieved")
     public Map<String,Object> receptionConfirmed(@RequestParam Integer receptionId){
-        return receptionService.ReceptionReceived(receptionId);
+        return receptionService.receptionReceived(receptionId);
+    }
+
+    @PatchMapping("/api/reception/status")
+    public Integer receptionStatus(@RequestParam Integer receptionId,
+                                   @RequestParam ReceptionStatus status){
+        if(status.equals(ReceptionStatus.CONSULTING)){
+            return receptionService.receptionConsulting(receptionId);
+        }else{
+            return receptionService.receptionCompleted(receptionId);
+        }
+
     }
 
     @GetMapping("/api/reception")

@@ -12,4 +12,5 @@ public class DepartmentDto {
     private String departmentName;
     private String location;
     private String status;
+    private String departmentCategory;
 }

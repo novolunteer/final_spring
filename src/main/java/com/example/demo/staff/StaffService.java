@@ -76,7 +76,7 @@ public class StaffService {
                 .userId(staff.getUser() != null? staff.getUser().getUserId() : null)
                 .email(staff.getUser() !=null? staff.getUser().getEmail():null)
                 .departmentId(staff.getDepartment() !=null? staff.getDepartment().getDepartmentId():null)
-                .departmentname(staff.getDepartment() !=null? staff.getDepartment().getDepartmentName() : null)
+                .departmentName(staff.getDepartment() !=null? staff.getDepartment().getDepartmentName() : null)
                 .managerId(staff.getManager() != null? staff.getManager().getStaffId() : null)
                 .managerName(staff.getManager() != null? staff.getManager().getName(): null)
                 .build();

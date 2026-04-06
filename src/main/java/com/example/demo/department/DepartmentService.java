@@ -26,6 +26,7 @@ public class DepartmentService {
     private Department dtoToEntity(DepartmentDto dto){
         return Department.builder()
                 .departmentName(dto.getDepartmentName())
+                .departmentCategory(dto.getDepartmentCategory())
                 .location(dto.getLocation())
                 .status(dto.getStatus())
                 .build();
@@ -43,6 +44,7 @@ public class DepartmentService {
         return DepartmentDto.builder()
                 .departmentId(entity.getDepartmentId())
                 .departmentName(entity.getDepartmentName())
+                .departmentCategory(entity.getDepartmentCategory())
                 .location(entity.getLocation())
                 .status(entity.getStatus())
                 .build();
@@ -70,6 +72,7 @@ public class DepartmentService {
             throw new IllegalStateException("이미 존재하는 부서입니다");
         }
         department.setDepartmentName(dto.getDepartmentName());
+        department.setDepartmentCategory(dto.getDepartmentCategory());
         department.setLocation(dto.getLocation());
         department.setStatus(dto.getStatus());
 

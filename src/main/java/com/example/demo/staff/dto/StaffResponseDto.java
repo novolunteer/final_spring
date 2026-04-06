@@ -19,7 +19,7 @@ public class StaffResponseDto {
     private String email;
 
     private Integer departmentId;
-    private  String departmentname;
+    private  String departmentName;
 
     private Integer managerId;
     private String managerName;

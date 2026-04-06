@@ -20,6 +20,7 @@ public interface ChatRoomParticipantRepository extends JpaRepository<ChatRoomPar
     Integer countByRoom(ChatRoom room);
     void deleteByRoom(ChatRoom room);
     boolean existsByRoomAndUser_UserId(ChatRoom room, Integer userId);
+    Optional<ChatRoomParticipant> findByRoomAndUser(ChatRoom room, User user);
 
     @Query("""
         select count(p)

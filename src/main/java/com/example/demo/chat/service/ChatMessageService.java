@@ -250,8 +250,14 @@ public class ChatMessageService {
         Pageable pageable= PageRequest.of(0, size);
         Slice<ChatMessage> slice;
 
-        ChatRoomParticipant participant=participantRepository.findByRoom_RoomIdAndUser_UserId(roomId, userId)
-                .orElseThrow(()->new RuntimeException("현재 참여 중인 채팅방이 아닙니다."));
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+
+        ChatRoom room=roomRepository.findByRoomId(roomId)
+                .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
+
+        ChatRoomParticipant participant=participantRepository.findByRoomAndUser(room, user)
+                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다."));
 
         LocalDateTime joinedAt=participant.getJoinedAt();
 

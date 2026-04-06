@@ -1,6 +1,7 @@
 package com.example.demo.staff;
 
 import com.example.demo.department.Department;
+import com.example.demo.user.User;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +28,5 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
 
     List<Staff> findAllByDepartment(Department Department);
 
+    Staff findByUser(User user);
 }

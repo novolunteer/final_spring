@@ -209,12 +209,23 @@ public class ReservationService {
         Department department=departmentRepository.findByDepartmentId(reservationDto.getDepartmentId());
 
         Slot slot=reservation.getSlot();
-        slot.setStartTime(reservationDto.getReservationDate());
-        slot.setStaff(staff);
-        slot.setDepartment(department);
+        slot.setCurrentPatient(slot.getCurrentPatient()-1);
+
+        Slot slot1=slotRepository.findByStartTime(reservationDto.getReservationDate())
+                .orElseGet(() -> {
+                    Slot newSlot=Slot.builder()
+                            .currentPatient(0)
+                            .maxPatient(3)
+                            .startTime(reservationDto.getReservationDate())
+                            .department(department)
+                            .staff(staff)
+                            .build();
+                    slotRepository.save(newSlot);
+                    return newSlot;
+                });
 
         reservation.setStaff(staff);
-        reservation.setSlot(slot);
+        reservation.setSlot(slot1);
         reservation.setDepartment(department);
 
         return reservation.getReservationId();

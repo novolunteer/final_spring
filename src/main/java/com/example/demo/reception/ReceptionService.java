@@ -58,7 +58,7 @@ public class ReceptionService {
                 .map(ReceptionResponse::new);
     }
 
-    public Map<String,Object> ReceptionReceived(Integer receptionId){
+    public Map<String,Object> receptionReceived(Integer receptionId){
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
@@ -68,13 +68,18 @@ public class ReceptionService {
         reservation.setStatus(ReservationStatus.COMPLETED);
         reception.setStatus(ReceptionStatus.RECEIVED);
 
+        LocalDateTime now=LocalDateTime.now();
+        if(reservation.getSlot().getStartTime().isAfter(now)) {
+            now = reservation.getSlot().getStartTime();
+        }
+
+        reception.setReceptionTime(now);
         receptionRepository.save(reception);
 
         return Map.of("receptionId",receptionId);
     }
 
-    public Integer receptionConsulting(ReceptionDto receptionDto){
-        Integer receptionId=receptionDto.getReceptionId();
+    public Integer receptionConsulting(Integer receptionId){
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
@@ -83,8 +88,7 @@ public class ReceptionService {
         return reception.getReceptionId();
     }
 
-    public Integer receptionCompleted(ReceptionDto receptionDto){
-        Integer receptionId=receptionDto.getReceptionId();
+    public Integer receptionCompleted(Integer receptionId){
         Reception reception=receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 

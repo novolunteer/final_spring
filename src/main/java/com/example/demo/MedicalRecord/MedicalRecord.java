@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 @Builder
 public class MedicalRecord {
     @Id
-    private Integer medicalRecordId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer recordId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patientId")
@@ -25,9 +26,15 @@ public class MedicalRecord {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctorId")
     private Staff staff;
+
     private String symptom;
     private String diseaseCode;
-    private String diagnosis;
+
+    @Enumerated(EnumType.STRING)
+    private MedicalRecordStatus medicalRecordStatus;
+    private String title;
+    private String content;
+
     private Boolean isSensitive;
 
     @CreationTimestamp

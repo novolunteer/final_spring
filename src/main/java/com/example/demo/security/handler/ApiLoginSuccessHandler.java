@@ -30,7 +30,7 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
         Map<String,Object> claims=details.getClaims();
 
         String accessToken=jwtUtil.generateToken(claims,5);
-        String refreshToken= jwtUtil.generateToken(claims,60*2);//2시간
+        String refreshToken= jwtUtil.generateToken(claims,60*2);
         claims.put("accessToken",accessToken);
         claims.put("refreshToken",refreshToken);
 

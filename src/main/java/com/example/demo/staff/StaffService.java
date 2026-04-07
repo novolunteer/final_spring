@@ -50,7 +50,10 @@ public class StaffService {
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
+                .isActive(dto.getIsActive() !=null ? dto.getIsActive() : "Y")
                 .build();
+
+
         Staff savedStaff = staffRepository.save(staff);
 
         return savedStaff.getStaffId();
@@ -73,6 +76,7 @@ public class StaffService {
                 .position(staff.getPosition())
                 .phone(staff.getPhone())
                 .address(staff.getAddress())
+                .isActive(staff.getIsActive())
                 .userId(staff.getUser() != null? staff.getUser().getUserId() : null)
                 .email(staff.getUser() !=null? staff.getUser().getEmail():null)
                 .departmentId(staff.getDepartment() !=null? staff.getDepartment().getDepartmentId():null)
@@ -124,12 +128,14 @@ public class StaffService {
         staff.setName(dto.getName());
         staff.setPhone(dto.getPhone());
         staff.setAddress(dto.getAddress());
+        staff.setIsActive(dto.getIsActive());
     }
 
-    //삭제
-    public void deleteStaff(Integer staffId){
-        Staff staff=staffRepository.findById(staffId)
-                .orElseThrow(()->new RuntimeException("해당 직원이 없습니다"));
-        staffRepository.delete(staff);
+    //soft delete
+    public void updateIsActive(Integer staffId, String isActive){
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new RuntimeException("해당 직원이 없습니다"));
+
+        staff.setIsActive(isActive);
     }
 }

@@ -84,6 +84,11 @@ public class StaffScheduleService {
 
         StaffScheduleType staffScheduleType=staffScheduleTypeRepository.findById(dto.getScheduleTypeId())
                 .orElseThrow(()->new EntityNotFoundException("해당 근무유형이 존재하지 않습니다"));
+
+        if(staffSchedule.getStatus().equals("CONFIRMED")){
+            throw new RuntimeException("확정된 스케줄은 수정할 수 없습니다");
+        }
+
         staffSchedule.setStaff(staff);
         staffSchedule.setWorkDate(dto.getWorkDate());
         staffSchedule.setStaffScheduleType(staffScheduleType);
@@ -95,6 +100,10 @@ public class StaffScheduleService {
     public void delete(Integer scheduleId){
         StaffSchedule staffSchedule=staffScheduleRepository.findById(scheduleId)
                 .orElseThrow(()-> new EntityNotFoundException("해당 스케줄이 존재하지 않습니다"));
+
+        if(staffSchedule.getStatus().equals("CONFIRMED")){
+            throw new RuntimeException("확정된 스케줄은 삭제할 수 없습니다");
+        }
 
         staffScheduleRepository.delete(staffSchedule);
     }

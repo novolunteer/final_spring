@@ -1,21 +1,35 @@
 package com.example.demo.staff;
 
+import com.example.demo.department.Department;
 import com.example.demo.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface StaffRepository extends JpaRepository<Staff,Integer> {
+    @Query("""
+        SELECT s FROM UserRole ur
+        JOIN ur.role r
+        JOIN ur.user u
+        JOIN Staff s ON s.user = u
+        WHERE s.department = :dept
+        AND r.roleName = 'DOCTOR'
+        AND u.status = 'Y'
+       ORDER BY r.roleName
+    """)
+    Optional<List<Staff>> findDoctorsByDepartment(Department dept);
+
+    List<Staff> findAllByDepartment(Department Department);
+
     Staff findByStaffId(Integer staffId);
     List<Staff> findByUserIn(List<User> users);
     Optional<Staff> findByUser(User user);
     Optional<Staff> findByUser_UserId(Integer userId);
 
-    List<Staff> findByUserNotIn(Collection<User> users);
+    List<Staff> findByUserNotIn(List<User> users);
 
     @Query("""
         select distinct s

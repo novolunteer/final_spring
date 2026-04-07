@@ -1,5 +1,6 @@
 package com.example.demo.billing;
 
+import com.example.demo.MedicalRecord.MedicalRecord;
 import com.example.demo.patient.Patient;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,12 @@ public class Billing {
     private Integer billingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    private Patient patient;
+    @JoinColumn(name = "record_id")
+    private MedicalRecord record;
 
+    private Integer totalAmount;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BillingStatus status;
 }

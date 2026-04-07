@@ -31,4 +31,5 @@ public class Staff {
     private String name;
     private String phone;
     private String address;
+    private String isActive;
 }

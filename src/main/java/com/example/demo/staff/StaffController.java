@@ -43,12 +43,10 @@ public class StaffController {
                 )
         );
     }
-
-    @DeleteMapping("/{staffId}")
-    public ResponseEntity<?> deleteStaff(@PathVariable Integer staffId){
-        staffService.deleteStaff(staffId);
-        return ResponseEntity.ok(
-                Map.of("result", "seccess")
-        );
+    @PutMapping("/active/{staffId}")
+    public ResponseEntity<?> updateActive(@PathVariable Integer staffId,
+                                          @RequestBody Map<String, String> body){
+        staffService.updateIsActive(staffId, body.get("isActive"));
+        return ResponseEntity.ok(Map.of("result", "success"));
     }
 }

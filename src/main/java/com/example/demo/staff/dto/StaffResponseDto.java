@@ -23,4 +23,5 @@ public class StaffResponseDto {
 
     private Integer managerId;
     private String managerName;
+    private String isActive;
 }

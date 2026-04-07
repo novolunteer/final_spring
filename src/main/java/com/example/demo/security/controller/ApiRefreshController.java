@@ -18,7 +18,7 @@ public class ApiRefreshController {
     private final JWTUtil jwtUtil;
 
     //토큰 유효기간 검사/재발급
-    @RequestMapping("/user/refresh")
+    @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<Map<String,Object>> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              @RequestParam("refreshToken") String refreshToken){
         if (refreshToken == null){

@@ -2,6 +2,7 @@ package com.example.demo.billing;
 
 import com.example.demo.MedicalRecord.MedicalRecord;
 import com.example.demo.patient.Patient;
+import com.example.demo.reception.Reception;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,8 +18,8 @@ public class Billing {
     private Integer billingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "record_id")
-    private MedicalRecord record;
+    @JoinColumn(name = "reception_id")
+    private Reception reception;
 
     private Integer totalAmount;
 

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,7 +24,7 @@ public class MedicalRecordController {
     public Page<ReceptionResponse> waitingList(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                                ReceptionStatus status,
                                                Pageable pageable){
-        Integer userId=7;
+        Integer userId=4;
         return medicalRecordService.waitingList(userId,status,pageable);
     }
 
@@ -46,5 +47,10 @@ public class MedicalRecordController {
                                        @AuthenticationPrincipal CustomUserDetails customUserDetails){
         Integer doctorId=3;
         return medicalRecordService.MedicalRecordInsert(request, doctorId);
+    }
+
+    @GetMapping("/api/llm/record/{patientId}")
+    public List<Map<String, Object>> getPatientRecords(@PathVariable Integer patientId) {
+        return medicalRecordService.getDiagnosisSets(patientId);
     }
 }

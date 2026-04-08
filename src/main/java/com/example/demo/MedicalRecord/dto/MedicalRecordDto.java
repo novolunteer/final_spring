@@ -42,6 +42,7 @@ public class MedicalRecordDto {
                                 .build()
                 )
                 .medicalRecordStatus(medicalRecordStatus)
+                .symptom(symptom)
                 .title(title)
                 .content(content)
                 .isSensitive(isSensitive)

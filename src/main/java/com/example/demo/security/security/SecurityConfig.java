@@ -67,7 +67,7 @@ public class SecurityConfig {
                 ex.accessDeniedHandler(customAccessDeniedHandler));
 
         httpSecurity.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/login","/join", "/jwt/token/refresh").permitAll()
+                auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh").permitAll()
                         .anyRequest().authenticated()
         );
 
@@ -79,7 +79,7 @@ public class SecurityConfig {
         CorsConfiguration configuration=new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization","Cache-Control","Content-Type"));
-        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD", "PATCH"));
+        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

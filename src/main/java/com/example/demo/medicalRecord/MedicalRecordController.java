@@ -1,9 +1,8 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
-import com.example.demo.MedicalRecord.dto.MedicalRecordRequest;
-import com.example.demo.MedicalRecord.dto.MedicalRecordResponse;
+import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
+import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
 import com.example.demo.reception.ReceptionStatus;
-import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -24,7 +22,7 @@ public class MedicalRecordController {
     public Page<ReceptionResponse> waitingList(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                                ReceptionStatus status,
                                                Pageable pageable){
-        Integer userId=4;
+        Integer userId=customUserDetails.getUserId();
         return medicalRecordService.waitingList(userId,status,pageable);
     }
 
@@ -47,10 +45,5 @@ public class MedicalRecordController {
                                        @AuthenticationPrincipal CustomUserDetails customUserDetails){
         Integer doctorId=3;
         return medicalRecordService.MedicalRecordInsert(request, doctorId);
-    }
-
-    @GetMapping("/api/llm/record/{patientId}")
-    public List<Map<String, Object>> getPatientRecords(@PathVariable Integer patientId) {
-        return medicalRecordService.getDiagnosisSets(patientId);
     }
 }

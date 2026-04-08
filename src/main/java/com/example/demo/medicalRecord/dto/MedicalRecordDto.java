@@ -1,18 +1,13 @@
-package com.example.demo.MedicalRecord.dto;
+package com.example.demo.medicalRecord.dto;
 
-import com.example.demo.MedicalRecord.MedicalRecord;
-import com.example.demo.MedicalRecord.MedicalRecordStatus;
+import com.example.demo.medicalRecord.MedicalRecord;
+import com.example.demo.medicalRecord.MedicalRecordStatus;
 import com.example.demo.patient.Patient;
 import com.example.demo.staff.Staff;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 

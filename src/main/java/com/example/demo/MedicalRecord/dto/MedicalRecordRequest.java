@@ -16,6 +16,7 @@ public class MedicalRecordRequest {
     private Integer patientId;
     private MedicalRecordStatus medicalRecordStatus;
     private String title;
+    private String symptom;
     private String content;
     private Boolean isSensitive;
 

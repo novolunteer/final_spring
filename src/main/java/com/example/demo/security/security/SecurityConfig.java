@@ -67,7 +67,7 @@ public class SecurityConfig {
                 ex.accessDeniedHandler(customAccessDeniedHandler));
 
         httpSecurity.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/login","/join", "/api/**").permitAll()
+                auth.requestMatchers("/login","/join", "/jwt/token/refresh").permitAll()
                         .anyRequest().authenticated()
         );
 

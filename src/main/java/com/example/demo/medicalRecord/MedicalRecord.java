@@ -1,4 +1,4 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.staff.Staff;

@@ -1,7 +1,6 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
 public enum MedicalRecordStatus {
-    SYMPTOM,
     DIAGNOSIS,
     TEST,
     SURGERY,

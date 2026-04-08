@@ -1,7 +1,7 @@
-package com.example.demo.MedicalRecord.dto;
+package com.example.demo.medicalRecord.dto;
 
-import com.example.demo.MedicalRecord.MedicalRecord;
-import com.example.demo.MedicalRecord.MedicalRecordStatus;
+import com.example.demo.medicalRecord.MedicalRecord;
+import com.example.demo.medicalRecord.MedicalRecordStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +18,7 @@ public class MedicalRecordResponse {
     private Integer patientId;
     private Integer doctorId;
     private String doctorName;
+    private Integer departmentId;
     private String departmentName;
     private String symptom;
     private String diseaseCode;
@@ -36,6 +37,7 @@ public class MedicalRecordResponse {
         this.patientId = medicalRecord.getPatient().getPatientId();
         this.doctorId = medicalRecord.getStaff().getStaffId();
         this.doctorName = medicalRecord.getStaff().getName();
+        this.departmentId = medicalRecord.getStaff().getDepartment().getDepartmentId();
         this.departmentName = medicalRecord.getStaff().getDepartment().getDepartmentName();
         this.symptom = medicalRecord.getSymptom();
         this.diseaseCode = medicalRecord.getDiseaseCode();

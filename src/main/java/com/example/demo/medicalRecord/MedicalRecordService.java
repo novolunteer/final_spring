@@ -1,8 +1,8 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
-import com.example.demo.MedicalRecord.dto.MedicalRecordDto;
-import com.example.demo.MedicalRecord.dto.MedicalRecordRequest;
-import com.example.demo.MedicalRecord.dto.MedicalRecordResponse;
+import com.example.demo.medicalRecord.dto.MedicalRecordDto;
+import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
+import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientDto;
 import com.example.demo.patient.PatientRepository;
@@ -21,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -43,8 +40,10 @@ public class MedicalRecordService {
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
 
-        User user=userRepository.findByUserId(userId);
-        Staff doctor=staffRepository.findByUser(user);
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+        Staff doctor=staffRepository.findByUser(user)
+                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
 
         return receptionRepository.findTodayReceptionWaiting(start,end,status,doctor.getStaffId(),pageable)
                 .map(ReceptionResponse::new);
@@ -78,60 +77,12 @@ public class MedicalRecordService {
                 .isSensitive(medicalRecordRequest.getIsSensitive())
                 .build();
         if(medicalRecordRequest.getSymptom() != null){
-            medicalRecordDto.setSymptom(medicalRecordDto.getSymptom());
+            medicalRecordDto.setSymptom(medicalRecordRequest.getSymptom());
         }
 
         MedicalRecord medicalRecord=medicalRecordDto.toEntity();
         medicalRecordRepository.save(medicalRecord);
 
         return medicalRecord.getRecordId();
-    }
-
-    public List<Map<String, Object>> getDiagnosisSets(Integer patientId) {
-        List<MedicalRecord> diagnosisList =
-                medicalRecordRepository.findTop4ByPatient_PatientIdAndMedicalRecordStatusOrderByCreateAtDesc(
-                        patientId, MedicalRecordStatus.DIAGNOSIS
-                );
-
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        for (int i = 0; i < diagnosisList.size(); i++) {
-
-            MedicalRecord diag = diagnosisList.get(i);
-
-            LocalDateTime start = diag.getCreateAt();
-            LocalDateTime end = (i == 0)
-                    ? LocalDateTime.now()
-                    : diagnosisList.get(i - 1).getCreateAt();
-
-            List<MedicalRecord> related =
-                    medicalRecordRepository.findByPatient_PatientIdAndCreateAtBetween(
-                            patientId, start, end
-                    );
-
-            List<Map<String, Object>> records = related.stream()
-                    .filter(r -> r.getMedicalRecordStatus() != MedicalRecordStatus.DIAGNOSIS)
-                    .map(r -> {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("type", r.getMedicalRecordStatus().name());
-                        map.put("content", r.getContent());
-                        return map;
-                    })
-                    .toList();
-
-            Map<String, Object> set = new HashMap<>();
-
-            Map<String, Object> diagnosis = new HashMap<>();
-            diagnosis.put("date", diag.getCreateAt());
-            diagnosis.put("symptom", diag.getSymptom());
-            diagnosis.put("content", diag.getContent());
-
-            set.put("diagnosis", diagnosis);
-            set.put("records", records);
-
-            result.add(set);
-        }
-
-        return result;
     }
 }

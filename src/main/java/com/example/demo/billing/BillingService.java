@@ -3,13 +3,18 @@ package com.example.demo.billing;
 import com.example.demo.billing.dto.BillingDto;
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
+import com.example.demo.payment.dto.PaymentPrepareDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BillingService {
     private final BillingRepository billingRepository;
     private final DepartmentRepository departmentRepository;
@@ -30,16 +35,16 @@ public class BillingService {
             String trimmedKeyword=keyword.trim();
 
             if (trimmedKeyword.matches("\\d+")){
-                billings=billingRepository.findByRecord_RecordId(Integer.valueOf(trimmedKeyword), pageable);
+                billings=billingRepository.findByReception_ReceptionId(Integer.valueOf(trimmedKeyword), pageable);
             } else {
-                billings=billingRepository.findByRecord_Patient_NameContaining(trimmedKeyword, pageable);
+                billings=billingRepository.findByReception_Reservation_Patient_NameContaining(trimmedKeyword, pageable);
             }
         }
 
         return billings.map(b -> BillingDto.builder()
                 .billingId(b.getBillingId())
-                .recordId(b.getRecord().getRecordId())
-                .patientName(b.getRecord().getPatient().getName())
+                .receptionId(b.getReception().getReceptionId())
+                .patientName(b.getReception().getReservation().getPatient().getName())
                 .totalAmount(b.getTotalAmount())
                 .status(b.getStatus().name()).build());
     }

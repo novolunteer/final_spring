@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class BillingDto {
     private Integer billingId;
-    private Integer recordId;
+    private Integer receptionId;
     private String patientName;
     private Integer totalAmount;
     private String status;

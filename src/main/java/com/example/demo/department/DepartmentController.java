@@ -36,7 +36,7 @@ public class DepartmentController {
         return "삭제완료";
     }
 
-    @GetMapping("/content")
+    @GetMapping("")
     public Map<String,Object> getDepartment(){
         return departmentService.getDepartment();
     }

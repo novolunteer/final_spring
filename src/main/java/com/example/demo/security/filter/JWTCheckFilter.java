@@ -71,17 +71,25 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                             details.getAuthorities()
                     );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
+        } catch (CustomJWTException e) {
+            sendTokenError(response);
+            return;
+        } catch (Exception e){
             e.printStackTrace();
-            Gson gson=new Gson();
-            String jsonStr=gson.toJson(Map.of("error","ERROR_ACCESS_TOKEN"));
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=utf-8");
-            PrintWriter printWriter=response.getWriter();
-            printWriter.println(jsonStr);
-            printWriter.close();
+            sendTokenError(response);
+            return;
         }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private void sendTokenError(HttpServletResponse response) throws IOException{
+        Gson gson=new Gson();
+        String jsonStr=gson.toJson(Map.of("error","ERROR_ACCESS_TOKEN"));
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=utf-8");
+        PrintWriter printWriter=response.getWriter();
+        printWriter.println(jsonStr);
+        printWriter.close();
     }
 }

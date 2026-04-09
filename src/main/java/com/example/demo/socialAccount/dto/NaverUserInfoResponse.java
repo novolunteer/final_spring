@@ -13,6 +13,7 @@ public class NaverUserInfoResponse {
     @Getter
     @Setter
     public static class NaverUserResponse{
+        private String id;
         private String name;
         private String gender;
         private String mobile;

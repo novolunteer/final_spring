@@ -35,16 +35,4 @@ public class User {
     @Builder.Default
     private List<UserRole> userRoles=new ArrayList<>();
 
-    public void addRole(UserRole role){
-        userRoles.add(role);
-        role.setUser(this);
-    }
-
-    public void clearRole(){
-        for (UserRole role : userRoles){
-            role.setUser(null);
-        }
-        userRoles.clear();
-    }
-
 }

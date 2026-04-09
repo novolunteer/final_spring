@@ -2,6 +2,7 @@ package com.example.demo.user;
 
 import com.example.demo.userRole.UserRole;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

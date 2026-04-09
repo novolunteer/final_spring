@@ -1,6 +1,7 @@
 package com.example.demo.chat.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
+@Builder
 public class ChatAttachmentDto {
     private Integer attachmentId;
     private Integer messageId;
@@ -17,7 +19,7 @@ public class ChatAttachmentDto {
     private String fileUrl;
     private String contentType;
     private String fileExtension;
-    private Integer fileSize;
+    private Long fileSize;
     private String thumbnailUrl;
     private boolean image;
     private boolean download;

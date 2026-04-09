@@ -1,6 +1,6 @@
 package com.example.demo.billing;
 
-import com.example.demo.MedicalRecord.MedicalRecord;
+import com.example.demo.medicalRecord.MedicalRecord;
 import com.example.demo.patient.Patient;
 import com.example.demo.reception.Reception;
 import com.example.demo.medicalRecord.MedicalRecord;

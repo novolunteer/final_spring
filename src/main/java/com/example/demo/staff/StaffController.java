@@ -54,7 +54,7 @@ public class StaffController {
         return ResponseEntity.ok(Map.of("result", "success"));
 
     }
-    @GetMapping("/api/doctor")
+    @GetMapping("/doctor")
     public Map<String,Object> getDepartment(@RequestParam Integer departmentId){
         DepartmentDto departmentDto = new DepartmentDto();
         departmentDto.setDepartmentId(departmentId);

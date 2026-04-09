@@ -10,4 +10,16 @@ public interface StaffScheduleRepository extends JpaRepository<StaffSchedule, In
     Optional<StaffSchedule> findByStaff_StaffIdAndWorkDate(Integer staffId, LocalDate workDate);
 
     boolean existsByStaff_StaffIdAndWorkDate(Integer staffId, LocalDate workDate);
+
+    Optional<StaffSchedule> findByStaff_StaffIdAndWorkDateAndScheduleIdNot(
+            Integer staffId,
+            LocalDate workDate,
+            Integer scheduleId
+    );
+
+    boolean existsByStaff_StaffIdAndWorkDateAndScheduleIdNot(
+            Integer staffId,
+            LocalDate workDate,
+            Integer scheduleId
+    );
 }

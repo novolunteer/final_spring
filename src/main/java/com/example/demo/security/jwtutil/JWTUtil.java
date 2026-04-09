@@ -55,4 +55,17 @@ public class JWTUtil {
 
         return claim;
     }
+
+    public Claims getClaimsIgnoreExpiration(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
+    }
 }

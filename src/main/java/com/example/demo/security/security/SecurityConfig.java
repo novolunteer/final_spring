@@ -68,6 +68,7 @@ public class SecurityConfig {
 
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh").permitAll()
+                        .requestMatchers("/api/sse/**").permitAll()
                         .anyRequest().authenticated()
         );
 
@@ -83,6 +84,15 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
+        // 2️⃣ SSE 전용 (/api/sse/**) → 특정 origin만 허용, 쿠키 사용
+        CorsConfiguration sseConfig = new CorsConfiguration();
+        sseConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173"));
+        sseConfig.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        sseConfig.setAllowedMethods(Arrays.asList("GET"));
+        sseConfig.setAllowCredentials(true); // 쿠키 전송 허용
+        source.registerCorsConfiguration("/api/sse/**", sseConfig);
+
         return source;
     }
 }

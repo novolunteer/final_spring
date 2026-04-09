@@ -12,9 +12,11 @@ import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +32,30 @@ public class StaffScheduleService {
     //스케줄 등록
     public Integer register(StaffScheduleDto dto){
         Staff staff=staffRepository.findById(dto.getStaffId())
-                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 직원입니다"));
+                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 직원입니다."));
+
+        if (Boolean.FALSE.equals(staff.getIsActive())){
+            throw new IllegalStateException("비활성 직원은 스케줄을 배정할 수 없습니다");
+        }
+
         StaffScheduleType staffScheduleType=staffScheduleTypeRepository.findById(dto.getScheduleTypeId())
-                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 근무유형입니다"));
+                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 근무유형입니다."));
+
+        StaffScheduleType type = staffScheduleTypeRepository
+                .findById(dto.getScheduleTypeId())
+                .orElseThrow(()->new RuntimeException("근무유형 없음"));
+        if (Boolean.FALSE.equals(staffScheduleType.getIsActive())){
+            throw new RuntimeException("비활성 근무유형은 선택할 수 없습니다.");
+        }
+
+        boolean exists = staffScheduleRepository
+                .existsByStaff_StaffIdAndWorkDate(dto.getStaffId(), dto.getWorkDate());
+
+        if(exists) {
+            throw new IllegalStateException("같은 직원의 같은 날짜 스케줄은 이미 존재합니다");
+        }
+        validateNightPattern(dto.getStaffId(), dto.getWorkDate(), null, staffScheduleType);
+
         StaffSchedule staffSchedule=dtoToEntity(dto, staff,staffScheduleType);
 
         return staffScheduleRepository.save(staffSchedule).getScheduleId();
@@ -82,13 +105,30 @@ public class StaffScheduleService {
         Staff staff= staffRepository.findById(dto.getStaffId())
                 .orElseThrow(()->new EntityNotFoundException("해당 직원이 존재하지 않습니다"));
 
+        if (Boolean.FALSE.equals(staff.getIsActive())){
+            throw new IllegalStateException("비활성 직원은 스케줄을 배정할 수 없습니다");
+        }
+
         StaffScheduleType staffScheduleType=staffScheduleTypeRepository.findById(dto.getScheduleTypeId())
                 .orElseThrow(()->new EntityNotFoundException("해당 근무유형이 존재하지 않습니다"));
 
         if(staffSchedule.getStatus().equals("CONFIRMED")){
             throw new RuntimeException("확정된 스케줄은 수정할 수 없습니다");
         }
+        boolean exists = staffScheduleRepository.existsByStaff_StaffIdAndWorkDate(
+                dto.getStaffId(), dto.getWorkDate()
+        );
 
+        if (Boolean.FALSE.equals(staffScheduleType.getIsActive())){
+            throw new RuntimeException("비활성 근무유형은 선택할 수 없습니다.");
+        }
+
+        if(exists && !staffSchedule.getStaff().getStaffId().equals(dto.getStaffId())
+        || exists && !staffSchedule.getWorkDate().equals(dto.getWorkDate())){
+            throw new IllegalStateException("같은 직원의 같은 날짜 스케줄은 이미 존재합니다");
+        }
+
+        validateNightPattern(dto.getStaffId(), dto.getWorkDate(), null, staffScheduleType);
         staffSchedule.setStaff(staff);
         staffSchedule.setWorkDate(dto.getWorkDate());
         staffSchedule.setStaffScheduleType(staffScheduleType);
@@ -147,6 +187,20 @@ public class StaffScheduleService {
         while(!currentDate.isAfter(dto.getEndDate())){
 
             for(Staff staff : staffList) {
+                //비활성 직원 체크
+                if(Boolean.FALSE.equals(staff.getIsActive())){
+                    skippedCount ++;
+                    skippedList.add(
+                            SkippedScheduleDto.builder()
+                                    .staffId(staff.getStaffId())
+                                    .staffName(staff.getName())
+                                    .workDate(currentDate)
+                                    .reason("비활성 직원")
+                                    .build()
+                    );
+                    continue;
+                }
+                //같은 직원 + 같은 날짜 중복체크
                 boolean exist = staffScheduleRepository.existsByStaff_StaffIdAndWorkDate(staff.getStaffId(), currentDate);
                 if (exist) {
                     skippedCount ++;
@@ -160,6 +214,23 @@ public class StaffScheduleService {
                     );
                     continue;
                 }
+
+                //야간근무 패턴 체크
+                try {
+                    validateNightPattern(staff.getStaffId(), currentDate, null, staffScheduleType);
+                } catch (IllegalStateException e) {
+                    skippedCount++;
+                    skippedList.add(
+                            SkippedScheduleDto.builder()
+                                    .staffId(staff.getStaffId())
+                                    .staffName(staff.getName())
+                                    .workDate(currentDate)
+                                    .reason(e.getMessage())
+                                    .build()
+                    );
+                    continue;
+                }
+                //저장
                 StaffSchedule staffSchedule = StaffSchedule.builder()
                         .staff(staff)
                         .workDate(currentDate)
@@ -178,5 +249,39 @@ public class StaffScheduleService {
                 .skippedList(skippedList)
                 .message(savedCount + "건 등록," + skippedCount + "건 스케줄 중복으로 제외")
                 .build();
+    }
+
+    private void validateNightPattern(Integer staffId, LocalDate workDate, Integer scheduleId,
+                                       StaffScheduleType newType){
+        LocalDate prevDate = workDate.minusDays(1);
+
+        StaffSchedule prevSchedule;
+
+        if(scheduleId==null){
+            prevSchedule = staffScheduleRepository
+                    .findByStaff_StaffIdAndWorkDate(staffId, prevDate)
+                    .orElse(null);
+        }else {
+            prevSchedule = staffScheduleRepository
+                    .findByStaff_StaffIdAndWorkDateAndScheduleIdNot(staffId, prevDate, scheduleId)
+                    .orElse(null);
+        }
+        if(prevSchedule==null){
+            return;
+        }
+        String prevTypeCode = prevSchedule.getStaffScheduleType().getTypeCode();
+        String newTypeCode = newType.getTypeCode();
+
+        if(prevTypeCode == null || newTypeCode == null){
+            return;
+        }
+        //전날 나이트근무이면 다음날 데이,이브닝,나이트 금지
+        if("NIGHT".equalsIgnoreCase(prevTypeCode)){
+            if ("DAY".equalsIgnoreCase(newTypeCode)
+            || "EVENING".equalsIgnoreCase(newTypeCode)
+            || "NIGHT".equalsIgnoreCase(newTypeCode)){
+                throw new IllegalStateException("야간근무 다음날에는 데이/이브닝/야간근무를 배정할 수 없습니다");
+            }
+        }
     }
 }

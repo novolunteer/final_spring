@@ -94,6 +94,7 @@ public class ReceptionService {
 
         reception.setStatus(ReceptionStatus.COMPLETED);
 
+
         return reception.getReceptionId();
     }
 

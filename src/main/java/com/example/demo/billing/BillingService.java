@@ -19,6 +19,24 @@ public class BillingService {
     private final BillingRepository billingRepository;
     private final DepartmentRepository departmentRepository;
 
+    public void insertTotalAmount(BillingDto dto, Integer departmentId){
+        Department billingDept=departmentRepository.findByDepartmentName("원무과")
+                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
+
+        if (!billingDept.getDepartmentId().equals(departmentId)){
+            throw new RuntimeException("접근 권한이 없습니다.");
+        }
+
+        Billing billing=billingRepository.findByBillingId(dto.getBillingId())
+                .orElseThrow(()->new RuntimeException("청구서가 존재하지 않습니다."));
+
+        if (billing.getStatus() == BillingStatus.PAID || billing.getStatus() == BillingStatus.PARTIAL){
+            throw new RuntimeException("결제 이력이 있어 총 금액을 수정할 수 없습니다.");
+        }
+
+        billing.setTotalAmount(dto.getTotalAmount());
+    }
+
     public Page<BillingDto> getBillingList(String keyword, Pageable pageable, Integer departmentId){
         Department billingDept=departmentRepository.findByDepartmentName("원무과")
                 .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));

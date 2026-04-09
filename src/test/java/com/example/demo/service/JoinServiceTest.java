@@ -26,18 +26,17 @@ public class JoinServiceTest {
     @Test
     public void join(){
         List<Integer> roles=new ArrayList<>();
-        roles.add(2);
-        roles.add(7);
+        roles.add(1);
 
         StaffUserResponse response=StaffUserResponse.builder()
-                .email("test4@test.com")
+                .email("jiwon@gmail.com")
                 .password(passwordEncoder.encode("1234"))
                 .status("Y")
                 .roles(roles)
-                .departmentId(2)
-                .name("test")
-                .phone("010-1334-5678")
-                .address("서울특별시 강남구")
+                .departmentId(12)
+                .name("Jiwon")
+                .phone("010-1999-0920")
+                .address("충청남도 천안시 동남구")
                 .build();
 
         UserDto user=joinService.joinTest(response);

@@ -1,8 +1,11 @@
 package com.example.demo.department;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -28,9 +31,14 @@ public class DepartmentController {
     }
     //삭제
     @DeleteMapping("/{departmentId}")
-    public String delete(@PathVariable Integer departmentId){
+    public String delete(@PathVariable Integer departmentId) {
         departmentService.delete(departmentId);
         return "삭제완료";
+    }
+
+    @GetMapping("/content")
+    public Map<String,Object> getDepartment(){
+        return departmentService.getDepartment();
     }
     //수정
     @PutMapping("/{departmentId}")

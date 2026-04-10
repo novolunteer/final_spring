@@ -128,17 +128,16 @@ public class SocialAccountController {
                                                           HttpSession session){
         try{
             User user=socialAccountService.registerNaverAccount(request);
+            List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
             Map<String, Object> claims=new HashMap<>();
             claims.put("email", user.getEmail());
             claims.put("userId", user.getUserId());
-            claims.put("roles", user.getUserRoles());
-            claims.put("status", user.getStatus());
+            claims.put("roles", roles);
+            claims.put("status", user.getStatus().toString());
 
             String accessToken=jwtUtil.generateToken(claims, 5);
             String refreshToken=jwtUtil.generateToken(claims, 60*2);
-
-            List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
             SocialLoginResponse response=SocialLoginResponse.builder()
                     .userId(user.getUserId())

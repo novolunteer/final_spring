@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Builder
-public class NaverJoinResponse {
+public class NaverLoginRequest {
     private String provider;
     private String providerId;
+    private String rrn;
     private String name;
     private String gender;
     private String mobile;

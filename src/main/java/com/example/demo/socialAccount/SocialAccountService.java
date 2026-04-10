@@ -2,11 +2,16 @@ package com.example.demo.socialAccount;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
+import com.example.demo.role.Role;
+import com.example.demo.role.RoleRepository;
+import com.example.demo.socialAccount.dto.NaverLoginRequest;
 import com.example.demo.socialAccount.dto.NaverTokenResponse;
 import com.example.demo.socialAccount.dto.NaverUserInfoResponse;
 import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
 import com.example.demo.user.UserRepository;
+import com.example.demo.userRole.UserRole;
+import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -14,20 +19,110 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class SocialAccountService {
     @Value("${naver.client-id}")
     private String naverClientId;
     @Value("${naver.client-secret}")
     private String naverClientSecret;
-    @Value("${naver.redirect-uri}")
-    private String naverRedirectUri;
 
     private final RestTemplate restTemplate=new RestTemplate();
     private final SocialAccountRepository socialAccountRepository;
+    private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+
+    public User registerNaverAccount(NaverLoginRequest request){
+        String provider=request.getProvider();
+        if (provider == null || provider.trim().isEmpty() || !"NAVER".equals(provider)){
+            throw new RuntimeException("PROVIDER_IS_INCORRECT");
+        }
+
+        String providerId=request.getProviderId();
+        if(providerId == null || providerId.trim().isEmpty()){
+            throw new RuntimeException("PROVIDER_ID_IS_NULL");
+        }
+
+        String name=request.getName();
+        if (name == null || name.trim().isEmpty()){
+            throw new RuntimeException("NAME_IS_NULL");
+        }
+
+        String rrn=request.getRrn();
+        if (rrn == null || rrn.trim().isEmpty()){
+            throw new RuntimeException("RRN_IS_NULL");
+        }
+
+        Patient patient=patientRepository.findByRrn(rrn);
+        if (patient == null){
+            //신규 회원가입
+            String makeEmail="SOCIAL_NAVER_" + UUID.randomUUID();
+            String email=makeEmail.substring(0, 49);
+            String password="SOCIAL";
+
+            User user=userRepository.save(User.builder()
+                    .email(email)
+                    .password(password)
+                    .status("Y").build());
+
+            Role role=roleRepository.findByRoleName("PATIENT");
+            userRoleRepository.save(UserRole.builder()
+                    .user(user)
+                    .role(role).build());
+
+            Patient savedPatient=patientRepository.save(Patient.builder()
+                    .user(user)
+                    .rrn(rrn)
+                    .name(name)
+                    .phone(request.getMobile() != null ? request.getMobile() : null)
+                    .gender(request.getGender() != null ? request.getGender() : null).build());
+
+            SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                    .user(savedPatient.getUser())
+                    .provider(SocialAccountProvider.NAVER)
+                    .providerId(providerId).build());
+            return account.getUser();
+        } else {
+            if (patient.getUser() == null){
+                //유저 계정 생성 후 소셜 로그인
+                String makeEmail="SOCIAL_NAVER_" + UUID.randomUUID();
+                String email=makeEmail.substring(0, 49);
+                String password="SOCIAL";
+
+                User user=userRepository.save(User.builder()
+                        .email(email)
+                        .password(password)
+                        .status("Y").build());
+
+                Role role=roleRepository.findByRoleName("PATIENT");
+                userRoleRepository.save(UserRole.builder()
+                        .user(user)
+                        .role(role).build());
+                patient.setUser(user);
+
+                SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                        .user(user)
+                        .provider(SocialAccountProvider.NAVER)
+                        .providerId(providerId).build());
+                return account.getUser();
+            } else {
+                //소셜 로그인 등록
+                SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                        .user(patient.getUser())
+                        .provider(SocialAccountProvider.NAVER)
+                        .providerId(providerId).build());
+                return account.getUser();
+            }
+        }
+    }
 
     public UserDto verifyUser(SocialAccountProvider provider, String providerId){
         SocialAccount account=socialAccountRepository.findByProviderAndProviderId(provider, providerId);
@@ -38,7 +133,7 @@ public class SocialAccountService {
         }
     }
 
-    public NaverUserInfoResponse getUserInfo(String accessToken){
+    public NaverUserInfoResponse getNaverUserInfo(String accessToken){
         String url = "https://openapi.naver.com/v1/nid/me";
 
         HttpHeaders headers=new HttpHeaders();
@@ -55,7 +150,7 @@ public class SocialAccountService {
         return response.getBody();
     }
 
-    public NaverTokenResponse getAccessToken(String code, String state){
+    public NaverTokenResponse getNaverAccessToken(String code, String state){
         String url = "https://nid.naver.com/oauth2.0/token" +
                 "?grant_type=authorization_code" +
                 "&client_id=" + naverClientId +

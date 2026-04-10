@@ -1,5 +1,6 @@
 package com.example.demo.security.security;
 
+import com.example.demo.staff.Staff;
 import com.example.demo.user.User;
 import com.example.demo.userRole.UserRole;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,8 +14,14 @@ import java.util.Map;
 
 public class CustomUserDetails implements UserDetails {
     private final User user;
-    public CustomUserDetails(User user){
+    private final Integer departmentId;
+    public CustomUserDetails(User user, Integer departmentId){
         this.user=user;
+        this.departmentId=departmentId;
+    }
+
+    public Integer getDepartmentId(){
+        return departmentId;
     }
 
     public Integer getUserId(){
@@ -51,6 +58,9 @@ public class CustomUserDetails implements UserDetails {
         dataMap.put("email", user.getEmail());
         dataMap.put("status", user.getStatus());
         dataMap.put("roles",user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList());
+        if (departmentId != null){
+            dataMap.put("departmentId", departmentId);
+        }
         return dataMap;
     }
 }

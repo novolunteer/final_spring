@@ -82,7 +82,7 @@ public class ReservationService {
 
         Department department=departmentRepository.findByDepartmentId(staff.getDepartment().getDepartmentId());
 
-        Slot slot=slotRepository.findByStartTime(reservationDto.getReservationDate())
+        Slot slot=slotRepository.findByStartTimeAndStaff(reservationDto.getReservationDate(),staff)
                 .orElseGet(() -> {
                     Slot newSlot=Slot.builder()
                             .currentPatient(0)
@@ -221,7 +221,7 @@ public class ReservationService {
             receptionService.receptionCancel(reservation);
         }
 
-        reservationRepository.delete(reservation);
+        reservation.setStatus(ReservationStatus.CANCELED);
 
         return reservationId;
     }

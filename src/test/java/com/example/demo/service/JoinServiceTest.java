@@ -29,14 +29,14 @@ public class JoinServiceTest {
         roles.add(1);
 
         StaffUserResponse response=StaffUserResponse.builder()
-                .email("jiwon@gmail.com")
+                .email("anna@gmail.com")
                 .password(passwordEncoder.encode("1234"))
                 .status("Y")
                 .roles(roles)
-                .departmentId(12)
-                .name("Jiwon")
-                .phone("010-1999-0920")
-                .address("충청남도 천안시 동남구")
+                .departmentId(16)
+                .name("Anna")
+                .phone("010-8546-1234")
+                .address("서울특별시 서초구 서초동")
                 .build();
 
         UserDto user=joinService.joinTest(response);

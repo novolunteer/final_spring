@@ -9,6 +9,7 @@ import com.example.demo.patient.PatientRepository;
 import com.example.demo.reception.ReceptionRepository;
 import com.example.demo.reception.ReceptionStatus;
 import com.example.demo.reception.dto.ReceptionResponse;
+import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
@@ -41,9 +42,9 @@ public class MedicalRecordService {
         LocalDateTime end = today.plusDays(1).atStartOfDay();
 
         User user=userRepository.findByUserId(userId)
-                .orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
+                .orElseThrow(()->new RuntimeException("Not exist"));
         Staff doctor=staffRepository.findByUser(user)
-                .orElseThrow(()->new RuntimeException("존재하지 않는 직원입니다."));
+                .orElseThrow(()->new RuntimeException("Not exist"));
 
         return receptionRepository.findTodayReceptionWaiting(start,end,status,doctor.getStaffId(),pageable)
                 .map(ReceptionResponse::new);
@@ -64,6 +65,15 @@ public class MedicalRecordService {
 
         return medicalRecordRepository.findAllByPatientAndMedicalRecordStatus(patient, status, pageable)
                 .map(MedicalRecordResponse::new);
+    }
+
+    public MedicalRecordResponse medicalRecordDetail(Integer recordId,
+                                                     String reason,
+                                                     CustomUserDetails customUserDetails){
+        MedicalRecord medicalRecord=medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+
+        return new MedicalRecordResponse(medicalRecord);
     }
 
     public Integer MedicalRecordInsert(MedicalRecordRequest medicalRecordRequest,

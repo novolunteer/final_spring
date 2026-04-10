@@ -1,9 +1,6 @@
 package com.example.demo.department;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -20,4 +17,6 @@ public class Department {
     private String departmentName;
     private String location;
     private String status;
+    @Column(name = "department_category")
+    private String departmentCategory;
 }

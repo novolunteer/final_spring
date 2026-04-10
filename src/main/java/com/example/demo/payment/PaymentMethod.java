@@ -1,5 +1,5 @@
 package com.example.demo.payment;
 
 public enum PaymentMethod {
-    CASH,CARD,BANK_TRANSFER,KAKAO_PAY
+    CARD, TRANSFER, VIRTUAL_ACCOUNT, MOBILE_PHONE, EASY_PAY, CASH
 }

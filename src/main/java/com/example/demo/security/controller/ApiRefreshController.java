@@ -21,9 +21,13 @@ public class ApiRefreshController {
     @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              @RequestParam("refreshToken") String refreshToken){
+
+        System.out.println("================>point3"+refreshToken);
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");
         }
+
+        System.out.println("================>point3"+refreshToken);
 
         if (authorization == null || authorization.length() < 7){
             throw new CustomJWTException("INVALID_REFRESH");

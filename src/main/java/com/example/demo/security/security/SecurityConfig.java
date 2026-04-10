@@ -41,7 +41,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
         httpSecurity.sessionManagement(sessionConfig -> {
-            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS); //세션 생성하지 않기
+            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
         });
 
         //csrf 토큰 사용하지 않기
@@ -68,7 +68,7 @@ public class SecurityConfig {
 
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh",
-                                "/join/**").permitAll()
+                                "/join/**", "/social/**").permitAll()
                         .anyRequest().authenticated()
         );
 

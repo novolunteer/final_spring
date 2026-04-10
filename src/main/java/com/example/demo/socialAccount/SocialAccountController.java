@@ -1,9 +1,8 @@
 package com.example.demo.socialAccount;
 
 import com.example.demo.security.jwtutil.JWTUtil;
-import com.example.demo.socialAccount.dto.NaverJoinResponse;
-import com.example.demo.socialAccount.dto.NaverTokenResponse;
-import com.example.demo.socialAccount.dto.NaverUserInfoResponse;
+import com.example.demo.socialAccount.dto.*;
+import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -11,14 +10,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +60,8 @@ public class SocialAccountController {
             return;
         }
 
-        NaverTokenResponse tokenResponse=socialAccountService.getAccessToken(code, state);
-        NaverUserInfoResponse userInfoResponse=socialAccountService.getUserInfo(tokenResponse.getAccessToken());
+        NaverTokenResponse tokenResponse=socialAccountService.getNaverAccessToken(code, state);
+        NaverUserInfoResponse userInfoResponse=socialAccountService.getNaverUserInfo(tokenResponse.getAccess_token());
 
         String providerId=userInfoResponse.getResponse().getId();
 
@@ -92,33 +88,63 @@ public class SocialAccountController {
         claims.put("roles", user.getRoles());
         claims.put("status", user.getStatus());
 
-        String accessToken= jwtUtil.generateToken(claims, 5);
+        String accessToken=jwtUtil.generateToken(claims, 5);
         String refreshToken=jwtUtil.generateToken(claims, 60*2);
 
-        String redirectUrl=reactUri + "/login?accessToken="
-                + URLEncoder.encode(accessToken, StandardCharsets.UTF_8)
-                + "&refreshToken=" + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
-
-        response.sendRedirect(redirectUrl);
+        //여기서 로그인 어떻게 처리할지 고민해야 함
+        response.sendRedirect(reactUri);
     }
 
     @GetMapping("/social/login/naver/info")
-    public ResponseEntity<NaverJoinResponse> getNaverUserInfo(HttpSession session){
+    public ResponseEntity<NaverLoginResponse> getNaverUserInfo(HttpSession session){
         try{
             String phone=null;
             if (session.getAttribute("mobile") != null){
-                List<String> mobile=List.of(session.getAttribute("mobile").toString().split("-"));
-                for (String s:mobile){
-                    phone += s;
-                }
+                String mobile=(String) session.getAttribute("mobile");
+                phone=mobile.replace("-","");
             }
 
-            return ResponseEntity.ok(NaverJoinResponse.builder()
-                    .provider(session.getAttribute("socialProvider").toString())
-                    .providerId(session.getAttribute("socialProviderId").toString())
-                    .name(session.getAttribute("socialName").toString())
-                    .gender(session.getAttribute("socialGender").toString())
+            return ResponseEntity.ok(NaverLoginResponse.builder()
+                    .provider((String) session.getAttribute("socialProvider"))
+                    .providerId((String) session.getAttribute("socialProviderId"))
+                    .name((String) session.getAttribute("socialName"))
+                    .gender(session.getAttribute("socialGender") == null ? null : (String) session.getAttribute("socialGender"))
                     .mobile(phone).build());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/social/login/naver/complete")
+    public ResponseEntity<SocialLoginResponse> naverLogin(@RequestBody NaverLoginRequest request,
+                                                          HttpSession session){
+        try{
+            User user=socialAccountService.registerNaverAccount(request);
+
+            Map<String, Object> claims=new HashMap<>();
+            claims.put("email", user.getEmail());
+            claims.put("userId", user.getUserId());
+            claims.put("roles", user.getUserRoles());
+            claims.put("status", user.getStatus());
+
+            String accessToken=jwtUtil.generateToken(claims, 5);
+            String refreshToken=jwtUtil.generateToken(claims, 60*2);
+
+            List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
+
+            SocialLoginResponse response=SocialLoginResponse.builder()
+                    .userId(user.getUserId())
+                    .email(user.getEmail())
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .roles(roles)
+                    .status(user.getStatus())
+                    .departmentId(null).build();
+
+            session.invalidate();
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

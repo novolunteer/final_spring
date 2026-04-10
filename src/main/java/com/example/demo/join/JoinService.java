@@ -5,6 +5,8 @@ import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
+import com.example.demo.socialAccount.SocialAccount;
+import com.example.demo.socialAccount.SocialAccountRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import com.example.demo.userRole.UserRole;
@@ -12,6 +14,8 @@ import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class JoinService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SocialAccountRepository socialAccountRepository;
 
     public String join(PatientUserRequest request){
         String rrn= request.getRrn();
@@ -119,7 +124,12 @@ public class JoinService {
             if (patient.getUser() == null){
                 return "UNREGISTERED_USER";
             } else {
-                return "REGISTERED_USER";
+                List<SocialAccount> accounts=socialAccountRepository.findByUser(patient.getUser());
+                if(accounts != null && !accounts.isEmpty() && accounts.size() > 0){
+                    return "SOCIAL_USER";
+                } else {
+                    return "REGISTERED_USER";
+                }
             }
         }
 

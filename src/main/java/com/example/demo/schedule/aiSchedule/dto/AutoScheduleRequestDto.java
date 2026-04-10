@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -14,13 +15,6 @@ public class AutoScheduleRequestDto {
     private Integer departmentId;
     private LocalDate startDate;
     private LocalDate endDate;
-
-    private Integer dayMinStaff;
-    private Integer eveningMinStaff;
-    private Integer nightMinStaff;
-
-    private Integer maxConsecutiveNight;
-    private Boolean blockNightToday;
-
-    private List<Integer> excludedStarrIds;
+    //추가 조건
+    private String extraCondition;
 }

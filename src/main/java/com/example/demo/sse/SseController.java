@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
@@ -28,12 +30,16 @@ public class SseController {
 
     @GetMapping(value = "/api/sse/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Integer userId,
-                                @RequestParam(value = "token", required = false) String token) {
+                                @CookieValue(value = "accessToken", required = false) String accessToken,
+                                @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
         SseEmitter emitter = new SseEmitter(60 * 1000L);
 
+        System.out.println("accessToken=====>"+accessToken);
+        System.out.println("refreshToken======>"+refreshToken);
+
         try {
-            if (token == null || token.isBlank()) {
+            if (accessToken == null || accessToken.isBlank()) {
                 emitter.send(SseEmitter.event().name("error").data("NO_TOKEN"));
                 emitter.complete();
                 return emitter;
@@ -41,11 +47,16 @@ public class SseController {
 
             Claims claims=null;
             try {
-                claims = jWTUtil.validateToken(token);
+                claims = jWTUtil.validateToken(accessToken);
+                System.out.println("==========>"+claims);
             } catch (CustomJWTException e) {
                 if ("Expired".equals(e.getMessage())) {
-                    System.out.println("토큰 만료지만 진행");
-                    claims = jWTUtil.getClaimsIgnoreExpiration(token);
+
+                    Map<String, Object> response = sseService.getToken(accessToken, refreshToken);
+
+                    emitter.send(SseEmitter.event()
+                            .name("TOKEN_REFRESH")
+                            .data(response));
                 } else {
                     throw e;
                 }

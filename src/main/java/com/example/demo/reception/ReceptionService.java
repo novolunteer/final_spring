@@ -1,5 +1,8 @@
 package com.example.demo.reception;
 
+import com.example.demo.billing.Billing;
+import com.example.demo.billing.BillingRepository;
+import com.example.demo.billing.BillingStatus;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
@@ -25,6 +28,7 @@ public class ReceptionService {
     private final ReceptionRepository receptionRepository;
     private final ReservationRepository reservationRepository;
     private final PatientRepository patientRepository;
+    private final BillingRepository billingRepository;
 
     public Integer receptionInsert(Reservation reservation){
         ReceptionDto receptionDto=ReceptionDto.builder()
@@ -94,13 +98,24 @@ public class ReceptionService {
 
         reception.setStatus(ReceptionStatus.COMPLETED);
 
+        billingRepository.save(Billing.builder()
+                .reception(reception)
+                .status(BillingStatus.PENDING).build());
 
         return reception.getReceptionId();
     }
 
+    public Integer receptionCancel(Integer reservationId){
+        Reservation reservation=reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+        Reception reception=receptionRepository.findByReservation(reservation);
+        reception.setStatus(ReceptionStatus.CANCELED);
+
+        return reception.getReceptionId();
+    }
     public Integer receptionCancel(Reservation reservation){
         Reception reception=receptionRepository.findByReservation(reservation);
-        receptionRepository.delete(reception);
+        reception.setStatus(ReceptionStatus.CANCELED);
 
         return reception.getReceptionId();
     }

@@ -35,11 +35,17 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
         claims.put("accessToken",accessToken);
         claims.put("refreshToken",refreshToken);
 
-        Cookie cookie = new Cookie("JWT", accessToken);
+        Cookie cookie = new Cookie("accessToken", accessToken);
         cookie.setHttpOnly(false);
         cookie.setPath("/");
         cookie.setMaxAge(3600); // 1시간
         response.addCookie(cookie);
+
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 24 * 7); // 7일 예시
+        response.addCookie(refreshCookie);
 
         Gson gson=new Gson();
         String jsonStr=gson.toJson(claims);

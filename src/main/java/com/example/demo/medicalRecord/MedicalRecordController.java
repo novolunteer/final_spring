@@ -31,13 +31,21 @@ public class MedicalRecordController {
         return medicalRecordService.patientInfo(patientId);
     }
 
-    @GetMapping("/api/medicalrecord")
+    @GetMapping("/api/medicalrecord/record")
     public Page<MedicalRecordResponse> medicalRecord(@RequestParam Integer patientId,
                                                      @RequestParam MedicalRecordStatus status,
                                                      @AuthenticationPrincipal CustomUserDetails customUserDetails,
                                                      Pageable pageable){
 
         return medicalRecordService.medicalRecord(patientId, status, pageable);
+    }
+
+    @GetMapping("/api/medicalrecord/record/detail")
+    public MedicalRecordResponse medicalRecordDetail(@RequestParam Integer recordId,
+                                                     @RequestParam(value = "reason", required = false) String reason,
+                                                     @AuthenticationPrincipal CustomUserDetails customUserDetails){
+        System.out.println("=================>"+recordId);
+        return medicalRecordService.medicalRecordDetail(recordId, reason, customUserDetails);
     }
 
     @PostMapping("/api/medicalrecord")

@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface StaffRepository extends JpaRepository<Staff,Integer> {
     Staff findByStaffId(Integer staffId);
     List<Staff> findByUserIn(List<User> users);
+    List<Staff> findByDepartmentDepartmentId(Integer departmentId);
 }

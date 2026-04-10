@@ -71,7 +71,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                             details.getAuthorities()
                     );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            System.out.println("===========>doFilterInternal"+claims);
 
         } catch (CustomJWTException e) {
             sendTokenError(response);

@@ -64,6 +64,10 @@ public class ChatMessageService {
                 throw new RuntimeException("같은 채팅방의 메시지가 아닙니다.");
             }
 
+            if (parentMessage.isDeleted()){
+                throw new RuntimeException("삭제된 메시지에는 답장할 수 없습니다.");
+            }
+
             parentMessageDto=toParentMessageDto(parentMessage, false);
         }
 
@@ -145,7 +149,6 @@ public class ChatMessageService {
 
         message.setDeleted(true);
         message.setDeletedAt(LocalDateTime.now());
-        message.setContent(null);
         ChatMessage deleteMessage=messageRepository.save(message);
 
         List<ChatRoomParticipant> participants=participantRepository.findByRoom(deleteMessage.getRoom());

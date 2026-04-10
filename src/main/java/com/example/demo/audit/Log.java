@@ -19,11 +19,11 @@ public class Log {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long logId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recordId")
     private MedicalRecord medicalRecord;
 

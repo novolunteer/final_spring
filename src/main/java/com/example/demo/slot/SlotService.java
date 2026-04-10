@@ -1,6 +1,9 @@
 package com.example.demo.slot;
 
+import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
+import com.example.demo.schedule.staff.entity.StaffSchedule;
+import com.example.demo.schedule.staff.repository.StaffScheduleRepository;
 import com.example.demo.slot.dto.SlotDayResponse;
 import com.example.demo.slot.dto.SlotDto;
 import com.example.demo.slot.dto.SlotResponse;
@@ -26,6 +29,7 @@ public class SlotService {
     private final SlotRepository slotRepository;
     private final DepartmentRepository departmentRepository;
     private final StaffRepository staffRepository;
+    private final StaffScheduleRepository scheduleRepository;
 
     public List<SlotDayResponse> MonthlyList(LocalDateTime monthly, Integer doctorId){
         Staff doctor = staffRepository.findByStaffId(doctorId);
@@ -45,6 +49,15 @@ public class SlotService {
         LocalDate last = monthly.toLocalDate().withDayOfMonth(monthly.toLocalDate().lengthOfMonth());
 
         for (LocalDate d = first; !d.isAfter(last); d = d.plusDays(1)) {
+            StaffSchedule schedule = scheduleRepository.findByStaffAndWorkDate(doctor, d);
+            if (schedule != null && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+                result.add(SlotDayResponse.builder()
+                        .date(d.toString())
+                        .totalCapacity(0)
+                        .available(false)
+                        .build());
+                continue; // 👉 이 날은 끝 (슬롯 계산 안 함)
+            }
 
             List<Slot> daySlots = grouped.getOrDefault(d, new ArrayList<>());
 
@@ -85,42 +98,82 @@ public class SlotService {
     }
 
     public List<SlotDayResponse> MonthlyListByDepartment(LocalDateTime monthly, Integer departmentId) {
-        // 1. 해당 과 의사 리스트
-        List<Staff> doctors = staffRepository.findDoctorsByDepartment( departmentRepository.findByDepartmentId(departmentId) )
+        // 1. 의사 리스트
+        Department department = departmentRepository.findByDepartmentId(departmentId);
+        List<Staff> doctors = staffRepository.findDoctorsByDepartment(department)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
-        // 2. 월 범위
-        LocalDateTime start = monthly.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime end = monthly.withDayOfMonth(monthly.toLocalDate().lengthOfMonth()) .withHour(23).withMinute(59).withSecond(59);
 
-        // 3. 슬롯 한 번에 조회 (🔥 중요)
+        // 2. 날짜 범위 (LocalDate 기준)
+        LocalDate firstDay = monthly.toLocalDate().withDayOfMonth(1);
+        LocalDate lastDay = monthly.toLocalDate().withDayOfMonth(monthly.toLocalDate().lengthOfMonth());
 
-        List<Slot> allSlots = slotRepository.findAllByStartTimeBetweenAndDepartment(start, end, departmentRepository.findByDepartmentId(departmentId));
+        LocalDateTime start = firstDay.atStartOfDay();
+        LocalDateTime end = lastDay.atTime(23, 59, 59);
 
-        // 4. (날짜 + 의사 + 시간) 기준으로 미리 Map 만들어두기
-        Map<String, Integer> slotMap = new HashMap<>(); for (Slot s : allSlots) {
-            String key = s.getStartTime().toLocalDate() + "_" + s.getStaff().getStaffId() + "_" + s.getStartTime().getHour();
-            int remain = s.getMaxPatient() - s.getCurrentPatient(); slotMap.merge(key, remain, Integer::sum); }
+        // 3. 슬롯 한 번에 조회
+        List<Slot> allSlots =
+                slotRepository.findAllByStartTimeBetweenAndDepartment(start, end, department);
 
-        // 5. 결과 생성
+        // 4. 슬롯 Map (날짜_의사_시간)
+        Map<String, Integer> slotMap = new HashMap<>();
+        for (Slot s : allSlots) {
+            String key = s.getStartTime().toLocalDate() + "_"
+                    + s.getStaff().getStaffId() + "_"
+                    + s.getStartTime().getHour();
+
+            int remain = s.getMaxPatient() - s.getCurrentPatient();
+            slotMap.merge(key, remain, Integer::sum);
+        }
+
+        // 🔥 5. 스케줄 한 번에 조회 (LocalDate 기반)
+        List<StaffSchedule> schedules =
+                scheduleRepository.findAllByStaffInAndWorkDateBetween(doctors, firstDay, lastDay);
+
+        // 🔥 6. 스케줄 Map (날짜_의사 → typeId)
+        Map<String, Integer> scheduleMap = new HashMap<>();
+        for (StaffSchedule s : schedules) {
+            String key = s.getWorkDate() + "_" + s.getStaff().getStaffId();
+            scheduleMap.put(key, s.getStaffScheduleType().getScheduleTypeId());
+        }
+
+        // 7. 결과 생성
         List<SlotDayResponse> result = new ArrayList<>();
-        LocalDate firstDay = start.toLocalDate(); LocalDate lastDay = end.toLocalDate();
+
         for (LocalDate d = firstDay; !d.isAfter(lastDay); d = d.plusDays(1)) {
+
             int totalCapacity = 0;
 
             for (Staff doc : doctors) {
+
+                String scheduleKey = d + "_" + doc.getStaffId();
+                Integer typeId = scheduleMap.get(scheduleKey);
+
+                if (typeId != null && typeId == 3) {
+                    continue;
+                }
+
+                // 시간별 슬롯 계산
                 for (int hour = 9; hour <= 17; hour++) {
-                    if (hour == 13) continue; String key = d + "_" + doc.getStaffId() + "_" + hour;
+                    if (hour == 13) continue;
+
+                    String key = d + "_" + doc.getStaffId() + "_" + hour;
                     Integer remain = slotMap.get(key);
 
-                    // 슬롯이 없으면 기본 3명
                     if (remain == null) {
-                        totalCapacity += 3;
+                        totalCapacity += 3; // 슬롯 없으면 기본값
                     } else {
                         totalCapacity += remain;
-                    } } }
-            result.add(SlotDayResponse.builder() .date(d.toString()) .totalCapacity(totalCapacity) .available(totalCapacity > 0)
+                    }
+                }
+            }
+
+            result.add(SlotDayResponse.builder()
+                    .date(d.toString())
+                    .totalCapacity(totalCapacity)
+                    .available(totalCapacity > 0)
                     .build());
         }
+
         return result;
     }
 

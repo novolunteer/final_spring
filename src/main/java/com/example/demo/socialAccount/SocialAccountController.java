@@ -35,6 +35,19 @@ public class SocialAccountController {
     private final SocialAccountService socialAccountService;
     private final JWTUtil jwtUtil;
 
+    @GetMapping("/social/login/kakao/callback")
+    public ResponseEntity<KakaoLoginResponse> kakaoCallback(@RequestParam("code") String code){
+        try{
+            Map<String,Object> result=socialAccountService.kakaoLogin(code);
+            KakaoLoginResponse response=KakaoLoginResponse.builder()
+                    .providerId(result.get("providerId").toString()).provider(result.get("provider").toString()).build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/social/login/naver")
     public void redirectToNaver(HttpServletResponse response, HttpSession session) throws IOException {
         String state= UUID.randomUUID().toString();

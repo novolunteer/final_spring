@@ -4,6 +4,7 @@ import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
+import com.example.demo.socialAccount.dto.KakaoTokenResponse;
 import com.example.demo.socialAccount.dto.NaverLoginRequest;
 import com.example.demo.socialAccount.dto.NaverTokenResponse;
 import com.example.demo.socialAccount.dto.NaverUserInfoResponse;
@@ -14,14 +15,15 @@ import com.example.demo.userRole.UserRole;
 import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -32,6 +34,79 @@ public class SocialAccountService {
     private String naverClientId;
     @Value("${naver.client-secret}")
     private String naverClientSecret;
+
+    @Value("${kakao.client-id}")
+    private String kakaoClientId;
+    @Value("${kakao.redirect-uri}")
+    private String kakaoRedirectUri;
+
+    public Map<String, Object> kakaoLogin(String code){
+        String accessToken=getKakaoAccessToken(code);
+
+        Map<String, Object> userInfo=getKakaoUserInfo(accessToken);
+
+        Long kakaoId=((Number) userInfo.get("id")).longValue();
+        String providerId=String.valueOf(kakaoId);
+
+        Map<String, Object> result=new HashMap<>();
+        result.put("provider", SocialAccountProvider.KAKAO.name());
+        result.put("providerId", providerId);
+
+        return result;
+    }
+
+    private String getKakaoAccessToken(String code){
+        RestTemplate restTemplate=new RestTemplate();
+
+        String url = "https://kauth.kakao.com/oauth/token";
+
+        HttpHeaders headers=new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params=new LinkedMultiValueMap<>();
+        params.add("grant_type", "authorization_code");
+        params.add("client_id", kakaoClientId);
+        params.add("redirect_uri", kakaoRedirectUri);
+        params.add("code", code);
+
+        HttpEntity<MultiValueMap<String, String>> request=new HttpEntity<>(params, headers);
+
+        ResponseEntity<KakaoTokenResponse> response=restTemplate.postForEntity(url, request, KakaoTokenResponse.class);
+
+        KakaoTokenResponse body=response.getBody();
+
+        if (body == null || body.getAccess_token() == null) {
+            throw new RuntimeException("카카오 access token을 가져오지 못했습니다.");
+        }
+
+        return body.getAccess_token();
+    }
+
+    private Map<String, Object> getKakaoUserInfo(String accessToken){
+        RestTemplate restTemplate=new RestTemplate();
+
+        String url="https://kapi.kakao.com/v2/user/me";
+
+        HttpHeaders headers=new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        HttpEntity<Void> request=new HttpEntity<>(headers);
+
+        ResponseEntity<Map> response=restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                request,
+                Map.class
+        );
+
+        Map<String, Object> body=response.getBody();
+
+        if (body == null || body.get("id") == null){
+            throw new RuntimeException("카카오 사용자 id를 가져오지 못했습니다.");
+        }
+
+        return body;
+    }
 
     private final RestTemplate restTemplate=new RestTemplate();
     private final SocialAccountRepository socialAccountRepository;

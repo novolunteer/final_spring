@@ -91,8 +91,15 @@ public class SocialAccountController {
         String accessToken=jwtUtil.generateToken(claims, 5);
         String refreshToken=jwtUtil.generateToken(claims, 60*2);
 
+        session.setAttribute("email", user.getEmail());
+        session.setAttribute("userId", user.getUserId());
+        session.setAttribute("roles", user.getRoles());
+        session.setAttribute("status", user.getStatus());
+        session.setAttribute("accessToken", accessToken);
+        session.setAttribute("refreshToken", refreshToken);
+
         //여기서 로그인 어떻게 처리할지 고민해야 함
-        response.sendRedirect(reactUri);
+        response.sendRedirect(reactUri + "/login?mode=naverLogin");
     }
 
     @GetMapping("/social/login/naver/info")
@@ -144,6 +151,25 @@ public class SocialAccountController {
 
             session.invalidate();
 
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/social/login/naver/complete")
+    public ResponseEntity<SocialLoginResponse> naverUserLogin(HttpSession session){
+        try{
+            SocialLoginResponse response=SocialLoginResponse.builder()
+                    .userId((Integer) session.getAttribute("userId"))
+                    .email((String) session.getAttribute("email"))
+                    .status((String) session.getAttribute("status"))
+                    .roles((List<String>) session.getAttribute("roles"))
+                    .accessToken((String) session.getAttribute("accessToken"))
+                    .refreshToken((String) session.getAttribute("refreshToken")).build();
+
+            session.invalidate();
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();

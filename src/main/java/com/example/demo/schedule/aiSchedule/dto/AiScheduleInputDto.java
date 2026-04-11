@@ -23,6 +23,6 @@ public class AiScheduleInputDto {
     private Map<String, Integer> minStaffMap;
 
     private List<Map<String, Object>> staffList;
-    private List<Map<String, Object>> manualConditionList;
+    private List<AiManualConditionDto> manualConditionList;
     private List<String> rules;
 }

@@ -1,6 +1,5 @@
 package com.example.demo.schedule.aiSchedule.service;
 
-import com.example.demo.schedule.aiSchedule.dto.ParsedConditionDto;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import lombok.RequiredArgsConstructor;

@@ -11,6 +11,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+//프론트 -> 백 요청
 public class AutoScheduleRequestDto {
     private Integer departmentId;
     private LocalDate startDate;

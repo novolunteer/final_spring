@@ -36,7 +36,7 @@ public class ChatAttachment {
     private String fileExtension;
 
     @Column(nullable = false)
-    private Integer fileSize;
+    private Long fileSize;
 
     private String thumbnailUrl;
 

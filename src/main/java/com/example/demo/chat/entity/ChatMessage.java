@@ -36,4 +36,20 @@ public class ChatMessage {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
+
+    private LocalDateTime deletedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isEdited = false;
+
+    private LocalDateTime editedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_message_id")
+    private ChatMessage parentMessage;
+
 }

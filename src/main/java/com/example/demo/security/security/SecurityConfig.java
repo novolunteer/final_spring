@@ -1,97 +1,10 @@
-//package com.example.demo.security.security;
-//
-//import com.example.demo.security.filter.JWTCheckFilter;
-//import com.example.demo.security.handler.ApiLoginFailureHandler;
-//import com.example.demo.security.handler.ApiLoginSuccessHandler;
-//import com.example.demo.security.handler.CustomAccessDeniedHandler;
-//import com.example.demo.security.jwtutil.JWTUtil;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.config.http.SessionCreationPolicy;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.security.web.SecurityFilterChain;
-//import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-//import org.springframework.web.cors.CorsConfiguration;
-//import org.springframework.web.cors.CorsConfigurationSource;
-//import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-//
-//import java.util.Arrays;
-//
-//@Configuration
-//@EnableWebSecurity
-//@EnableMethodSecurity
-//@RequiredArgsConstructor
-//public class SecurityConfig {
-//    private final JWTUtil jwtUtil;
-//    private final CustomUserDetailsService customUserDetailsService;
-//    private final ApiLoginSuccessHandler apiLoginSuccessHandler;
-//    private final ApiLoginFailureHandler apiLoginFailureHandler;
-//    private final CustomAccessDeniedHandler customAccessDeniedHandler;
-//
-//    @Bean
-//    public PasswordEncoder passwordEncoder(){
-//        return new BCryptPasswordEncoder();
-//    }
-//
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
-//        httpSecurity.sessionManagement(sessionConfig -> {
-//            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS); //세션 생성하지 않기
-//        });
-//
-//        //csrf 토큰 사용하지 않기
-//        httpSecurity.csrf(csrf -> csrf.disable());
-//
-//        httpSecurity.formLogin(form -> form
-//                .loginProcessingUrl("/login")
-//                .usernameParameter("email")
-//                .passwordParameter("password")
-//                .successHandler(apiLoginSuccessHandler)
-//                .failureHandler(apiLoginFailureHandler)
-//        );
-//
-//        //CrossOrigin 설정
-//        httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-//
-//        httpSecurity.addFilterBefore(
-//                new JWTCheckFilter(jwtUtil,customUserDetailsService),
-//                UsernamePasswordAuthenticationFilter.class
-//        );
-//
-//        httpSecurity.exceptionHandling(ex ->
-//                ex.accessDeniedHandler(customAccessDeniedHandler));
-//
-//        httpSecurity.authorizeHttpRequests(auth ->
-//                auth.requestMatchers("/login","/join","/api/**").permitAll()
-//                        .anyRequest().authenticated()
-//        );
-//
-//        return httpSecurity.build();
-//    }
-//
-//    @Bean //CrossOrigin 설정: 웹브라우저에서(리액트-프론트엔드) 요청이 들어와도 요청 처리가 되도록 허용하기
-//    public CorsConfigurationSource corsConfigurationSource(){
-//        CorsConfiguration configuration=new CorsConfiguration();
-//        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-//        configuration.setAllowedHeaders(Arrays.asList("Authorization","Cache-Control","Content-Type"));
-//        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD","OPTIONS"));
-//        configuration.setAllowCredentials(true);
-//        UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", configuration);
-//        return source;
-//    }
-//}
-
-
-//로그인 없이 테스트하려고 잠시 꺼둔거
 package com.example.demo.security.security;
 
+import com.example.demo.security.filter.JWTCheckFilter;
+import com.example.demo.security.handler.ApiLoginFailureHandler;
+import com.example.demo.security.handler.ApiLoginSuccessHandler;
 import com.example.demo.security.handler.CustomAccessDeniedHandler;
+import com.example.demo.security.jwtutil.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -102,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -113,6 +27,10 @@ import java.util.Arrays;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final JWTUtil jwtUtil;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final ApiLoginSuccessHandler apiLoginSuccessHandler;
+    private final ApiLoginFailureHandler apiLoginFailureHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean
@@ -123,36 +41,47 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
         httpSecurity.sessionManagement(sessionConfig -> {
-            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS); //세션 생성하지 않기
         });
 
+        //csrf 토큰 사용하지 않기
         httpSecurity.csrf(csrf -> csrf.disable());
 
-        // 로그인 잠시 끄기
-        httpSecurity.formLogin(form -> form.disable());
+        httpSecurity.formLogin(form -> form
+                .loginProcessingUrl("/login")
+                .usernameParameter("email")
+                .passwordParameter("password")
+                .successHandler(apiLoginSuccessHandler)
+                .failureHandler(apiLoginFailureHandler)
+        );
 
+        //CrossOrigin 설정
         httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+
+        httpSecurity.addFilterBefore(
+                new JWTCheckFilter(jwtUtil,customUserDetailsService),
+                UsernamePasswordAuthenticationFilter.class
+        );
 
         httpSecurity.exceptionHandling(ex ->
                 ex.accessDeniedHandler(customAccessDeniedHandler));
 
-        // 테스트용: 전부 허용
         httpSecurity.authorizeHttpRequests(auth ->
-                auth.anyRequest().permitAll()
+                auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh").permitAll()
+                        .anyRequest().authenticated()
         );
 
         return httpSecurity.build();
     }
 
-    @Bean
+    @Bean //CrossOrigin 설정: 웹브라우저에서(리액트-프론트엔드) 요청이 들어와도 요청 처리가 되도록 허용하기
     public CorsConfigurationSource corsConfigurationSource(){
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration=new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization","Cache-Control","Content-Type"));
-        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD","OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD"));
         configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }

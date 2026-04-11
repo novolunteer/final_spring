@@ -1,18 +1,17 @@
 package com.example.demo.schedule.aiSchedule.service;
 
+import com.example.demo.schedule.aiSchedule.dto.AiManualConditionDto;
+import com.example.demo.schedule.aiSchedule.dto.ConditionParseResultDto;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,30 +21,33 @@ import java.util.regex.Pattern;
 public class ConditionParseService {
     private final StaffRepository staffRepository;
 
-    public ParsedConditionDto parse(Integer departmentId, String text){
-        List<Map<String, Object>> manualConditionList = new ArrayList<>();
+    public ConditionParseResultDto parse(Integer departmentId, String text) {
+        List<AiManualConditionDto> manualConditionList = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
-        if(text == null || text.isBlank()){
-            return ParsedConditionDto.builder()
+        if (text == null || text.isBlank()) {
+            return ConditionParseResultDto.builder()
                     .manualConditionList(manualConditionList)
                     .warnings(warnings)
                     .build();
         }
+
         List<Staff> departmentStaff = staffRepository.findByDepartmentDepartmentId(departmentId);
         String[] lines = text.split("\\r?\\n");
         Pattern pattern = Pattern.compile(
-//                [이름] + 공백 + [날짜] + 공백 + [근무유형]
+                // [이름] + 공백 + [날짜] + 공백 + [근무유형]
                 "^([가-힣A-Za-z0-9]+)\\s+(\\d{1,2}/\\d{1,2}|\\d{4}-\\d{2}-\\d{2})\\s+([A-Za-z가-힣_]+)$"
         );
-        for(String line : lines){
+
+        for (String line : lines) {
             String trimmed = line.trim();
-            if (trimmed.isBlank()){
+            if (trimmed.isBlank()) {
                 continue;
             }
-            Matcher matcher=pattern.matcher(trimmed);
-            if (!matcher.find()){
-                warnings.add("해석 실패"+ trimmed);
+
+            Matcher matcher = pattern.matcher(trimmed);
+            if (!matcher.find()) {
+                warnings.add("해석 실패: " + trimmed);
                 continue;
             }
 
@@ -58,31 +60,32 @@ public class ConditionParseService {
                     .findFirst()
                     .orElse(null);
 
-            if (matchedStaff == null){
-                warnings.add("직원을 찾을 수 없음:"+ staffName);
+            if (matchedStaff == null) {
+                warnings.add("직원을 찾을 수 없음: " + staffName);
                 continue;
             }
 
             LocalDate workDate;
-            try{
+            try {
                 workDate = parseDate(dateText);
-            }catch (Exception e){
-                warnings.add("날짜해석 실패 :"+ dateText);
+            } catch (Exception e) {
+                warnings.add("날짜 해석 실패: " + dateText);
                 continue;
             }
+
             String normalizedType = normalizeType(typeText);
             String mode = isBlockType(normalizedType) ? "BLOCK" : "FIX";
 
-            Map<String, Object> item = new HashMap<>();
-            item.put("staffId", matchedStaff.getStaffId());
-            item.put("staffName", matchedStaff.getName());
-            item.put("workDate", workDate.toString());
-            item.put("type", normalizedType);
-            item.put("mode", mode);
-
-            manualConditionList.add(item);
+            manualConditionList.add(AiManualConditionDto.builder()
+                    .staffId(matchedStaff.getStaffId())
+                    .staffName(matchedStaff.getName())
+                    .workDate(workDate.toString())
+                    .type(normalizedType)
+                    .mode(mode)
+                    .build());
         }
-        return ParsedConditionDto.builder()
+
+        return ConditionParseResultDto.builder()
                 .manualConditionList(manualConditionList)
                 .warnings(warnings)
                 .build();

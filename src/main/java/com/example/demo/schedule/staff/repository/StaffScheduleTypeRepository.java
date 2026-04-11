@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface StaffScheduleTypeRepository extends JpaRepository<StaffScheduleType, Integer> {
     boolean existsByTypeCode(String typeCode);
-    Optional<StaffScheduleTypeRepository> findByTypeCode(String typeCode);
+    Optional<StaffScheduleType> findByTypeCode(String typeCode);
 
     List<String> findByIsActive(Boolean isActive);
 }

@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class AiManualConditionDto {
     private Integer staffId;
-    private String StaffName;
+    private String staffName;
     private String workDate;
     private String type;
     private String mode;

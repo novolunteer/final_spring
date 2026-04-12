@@ -20,20 +20,20 @@ import java.util.stream.Collectors;
 public class SchedulePolicyService {
     private final DepartmentSchedulePolicyRepository departmentSchedulePolicyRepository;
     private final DepartmentSchedulePolicyShiftRepository departmentSchedulePolicyShiftRepository;
-
+// 부서정책 조회
     public DepartmentSchedulePolicyDto getPolicyByDepartment(Integer departmentId) {
         DepartmentSchedulePolicy policy = departmentSchedulePolicyRepository
                 .findByDepartmentDepartmentId(departmentId)
                 .orElseThrow(() -> new RuntimeException("해당 부서의 스케줄 정책이 없습니다"));
-
+// 근무유형 목록 조회
         List<DepartmentSchedulePolicyShift> shiftList = departmentSchedulePolicyShiftRepository
                 .findByPolicyPolicyId(policy.getPolicyId());
-
+// 활성화돤 것만 필터링
         List<String> shiftTypes = shiftList.stream()
                 .filter(shift -> Boolean.TRUE.equals(shift.getIsEnabled()))
                 .map(shift -> shift.getScheduleType().getTypeCode())
                 .toList();
-
+// 최소인원
         Map<String, Integer> minStaffMap = shiftList.stream()
                 .filter(shift -> Boolean.TRUE.equals(shift.getIsEnabled()))
                 .collect(Collectors.toMap(shift -> shift.getScheduleType().getTypeCode(),

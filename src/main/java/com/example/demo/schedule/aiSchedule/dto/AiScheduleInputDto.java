@@ -1,5 +1,6 @@
 package com.example.demo.schedule.aiSchedule.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -16,7 +17,9 @@ public class AiScheduleInputDto {
     private String departmentName;
     private String jobType;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
     private List<String> shiftTypes;

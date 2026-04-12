@@ -10,6 +10,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+//DB에 저장된 부서별 기본 정책
 public class DepartmentSchedulePolicyDto {
     private Integer departmentId;
     private String departmentName;

@@ -36,37 +36,46 @@ public class AutoScheduleService {
     @Transactional
     public AiScheduleResultDto generateSchedule(AutoScheduleRequestDto request) {
 
-        // 1. 부서 정책 로드 (근무유형, 최소인원, 제한 규칙)
+        // 부서 정책 (근무유형, 최소인원, 제한 규칙)
         DepartmentSchedulePolicyDto policy =
                 schedulePolicyService.getPolicyByDepartment(request.getDepartmentId());
 
-        // 2. 해당 부서 직원 목록 로드
+        // 해당 부서 직원 목록 로드
         List<Staff> staffList =
                 staffRepository.findByDepartmentDepartmentId(request.getDepartmentId());
 
-        // 3. 자연어 추가조건 파싱 (ex: "홍길동 5/5 OFF")
+        // 자연어 추가조건  (ex: "홍길동 5/5 OFF")
         ConditionParseResultDto parsed =
                 conditionParseService.parse(request.getDepartmentId(), request.getExtraCondition());
 
-        // 4. AI에 넘길 입력 DTO 조립
+        // AI에 넘길 입력 DTO
         AiScheduleInputDto input = buildInput(request, policy, staffList, parsed);
 
-        // 5. Python AI 서버 호출
+        // Python AI 서버 호출
         AiScheduleResultDto result = callAiServer(input);
 
-        // 6. 파싱 경고가 있으면 결과 경고에 합치기
+        // 파싱 경고가 있으면 결과 경고에 합치기
         if (parsed.getWarnings() != null) {
             result.getWarnings().addAll(parsed.getWarnings());
         }
 
-        // 7. AI가 생성한 스케줄 DB 저장
-        List<String> validationErrors = saveSchedules(result.getAssignments());
-        result.getValidationErrors().addAll(validationErrors);
-
+        // 저장은 하지 않고 미리보기 결과만 반환
         return result;
     }
 
-    // ── 내부 메서드 ──────────────────────────────────────────────────────────────
+    // 프론트에서 미리보기 확인 후 저장 요청 시 호출
+    @Transactional
+    public AiScheduleResultDto confirmSchedule(ConfirmScheduleRequestDto request) {
+        List<String> validationErrors = saveSchedules(request.getAssignments());
+
+        return AiScheduleResultDto.builder()
+                .assignments(request.getAssignments())
+                .unassigned(new ArrayList<>())
+                .warnings(new ArrayList<>())
+                .validationErrors(validationErrors)
+                .build();
+    }
+
 
     private AiScheduleInputDto buildInput(AutoScheduleRequestDto request,
                                           DepartmentSchedulePolicyDto policy,
@@ -83,8 +92,21 @@ public class AutoScheduleService {
                 })
                 .toList();
 
-        // 정책 필드 → AI 프롬프트용 한국어 규칙 문자열 리스트로 변환
-        List<String> rules = buildRules(policy);
+        // 요청에 값이 있으면 요청값 사용, 없으면 DB 정책값 사용
+        Map<String, Integer> minStaffMap = request.getMinStaffMap() != null
+                ? request.getMinStaffMap() : policy.getMinStaffMap();
+        Integer maxConsecutiveNight = request.getMaxConsecutiveNight() != null
+                ? request.getMaxConsecutiveNight() : policy.getMaxConsecutiveNight();
+        Boolean blockNightToDay = request.getBlockNightToDay() != null
+                ? request.getBlockNightToDay() : policy.getBlockNightToDay();
+        Boolean blockNightToEvening = request.getBlockNightToEvening() != null
+                ? request.getBlockNightToEvening() : policy.getBlockNightToEvening();
+        Integer maxWorkDaysPerWeek = request.getMaxWorkDaysPerWeek() != null
+                ? request.getMaxWorkDaysPerWeek() : policy.getMaxWorkDaysPerWeek();
+
+        // 규칙 문자열 생성
+        List<String> rules = buildRules(maxConsecutiveNight, blockNightToDay,
+                blockNightToEvening, maxWorkDaysPerWeek);
 
         return AiScheduleInputDto.builder()
                 .departmentId(policy.getDepartmentId())
@@ -93,35 +115,35 @@ public class AutoScheduleService {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .shiftTypes(policy.getShiftTypes())
-                .minStaffMap(policy.getMinStaffMap())
+                .minStaffMap(minStaffMap)
                 .staffList(staffMapList)
                 .manualConditionList(parsed.getManualConditionList())
                 .rules(rules)
                 .build();
     }
 
-    // 정책 DTO의 Boolean/Integer 필드를 AI가 이해할 수 있는 규칙 문장으로 변환
-    private List<String> buildRules(DepartmentSchedulePolicyDto policy) {
+    // Boolean/Integer 값을 AI가 이해할 수 있는 규칙 문장으로 변환
+    private List<String> buildRules(Integer maxConsecutiveNight, Boolean blockNightToDay,
+                                    Boolean blockNightToEvening, Integer maxWorkDaysPerWeek) {
         List<String> rules = new ArrayList<>();
 
-        if (policy.getMaxConsecutiveNight() != null) {
-            rules.add("연속 야간(NIGHT) 근무 최대 " + policy.getMaxConsecutiveNight() + "일");
+        if (maxConsecutiveNight != null) {
+            rules.add("연속 야간(NIGHT) 근무 최대 " + maxConsecutiveNight + "일");
         }
-        if (Boolean.TRUE.equals(policy.getBlockNightToDay())) {
+        if (Boolean.TRUE.equals(blockNightToDay)) {
             rules.add("야간(NIGHT) 다음날 데이(DAY) 배정 금지");
         }
-        if (Boolean.TRUE.equals(policy.getBlockNightToEvening())) {
+        if (Boolean.TRUE.equals(blockNightToEvening)) {
             rules.add("야간(NIGHT) 다음날 이브닝(EVENING) 배정 금지");
         }
-        if (policy.getMaxWorkDaysPerWeek() != null) {
-            rules.add("주당 최대 근무일 " + policy.getMaxWorkDaysPerWeek() + "일");
+        if (maxWorkDaysPerWeek != null) {
+            rules.add("주당 최대 근무일 " + maxWorkDaysPerWeek + "일");
         }
 
         return rules;
     }
 
     // Python FastAPI 서버로 POST 요청을 보내고 결과를 받아옴
-    // Python 응답: { "scheduleList": [...] } → AiScheduleResultDto로 변환
     private AiScheduleResultDto callAiServer(AiScheduleInputDto input) {
         try {
             PythonScheduleResponseDto pythonResponse =

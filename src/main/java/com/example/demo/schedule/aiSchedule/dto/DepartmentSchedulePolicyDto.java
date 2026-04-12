@@ -26,5 +26,5 @@ public class DepartmentSchedulePolicyDto {
     private Boolean blockNightToEvening;
     //주 최대 근무일
     private Integer maxWorkDaysPerWeek;
-
+    private Boolean isActive;
 }

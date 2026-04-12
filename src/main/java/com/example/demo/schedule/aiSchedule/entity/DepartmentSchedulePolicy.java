@@ -25,4 +25,7 @@ public class DepartmentSchedulePolicy {
     private Boolean blockNightToDay;
     private Boolean blockNightToEvening;
     private Integer maxWorkDaysPerWeek;
+
+    @Builder.Default
+    private Boolean isActive = true;
 }

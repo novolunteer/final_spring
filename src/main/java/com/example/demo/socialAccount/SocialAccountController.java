@@ -29,6 +29,8 @@ public class SocialAccountController {
     private String naverRedirectUri;
     @Value("${naver.login.uri}")
     private String naverLoginUri;
+    @Value("${kakao.login.uri}")
+    private String kakaoLoginUri;
     @Value("${react.uri}")
     private String reactUri;
 
@@ -36,16 +38,36 @@ public class SocialAccountController {
     private final JWTUtil jwtUtil;
 
     @GetMapping("/social/login/kakao/callback")
-    public ResponseEntity<KakaoLoginResponse> kakaoCallback(@RequestParam("code") String code){
-        try{
-            Map<String,Object> result=socialAccountService.kakaoLogin(code);
-            KakaoLoginResponse response=KakaoLoginResponse.builder()
-                    .providerId(result.get("providerId").toString()).provider(result.get("provider").toString()).build();
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    public void kakaoCallback(@RequestParam("code") String code, HttpSession session,
+                              HttpServletResponse response) throws IOException{
+        Map<String,Object> result=socialAccountService.kakaoLogin(code);
+        String providerId= result.get("providerId").toString();
+        UserDto userDto=socialAccountService.verifyUser(SocialAccountProvider.KAKAO, providerId);
+        if (userDto == null){
+            session.setAttribute("provider", "KAKAO");
+            session.setAttribute("providerId", providerId);
+
+            response.sendRedirect(kakaoLoginUri);
+            return;
         }
+
+        Map<String, Object> claims=new HashMap<>();
+        claims.put("email", userDto.getEmail());
+        claims.put("userId", userDto.getUserId());
+        claims.put("roles", userDto.getRoles());
+        claims.put("status", userDto.getStatus());
+
+        String accessToken=jwtUtil.generateToken(claims, 5);
+        String refreshToken=jwtUtil.generateToken(claims, 60*2);
+
+        session.setAttribute("email", userDto.getEmail());
+        session.setAttribute("userId", userDto.getUserId());
+        session.setAttribute("roles", userDto.getRoles());
+        session.setAttribute("status", userDto.getStatus());
+        session.setAttribute("accessToken", accessToken);
+        session.setAttribute("refreshToken", refreshToken);
+
+        response.sendRedirect(reactUri + "/login?mode=kakaoLogin");
     }
 
     @GetMapping("/social/login/naver")

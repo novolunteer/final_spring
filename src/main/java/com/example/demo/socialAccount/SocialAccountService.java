@@ -49,7 +49,6 @@ public class SocialAccountService {
         String providerId=String.valueOf(kakaoId);
 
         Map<String, Object> result=new HashMap<>();
-        result.put("provider", SocialAccountProvider.KAKAO.name());
         result.put("providerId", providerId);
 
         return result;

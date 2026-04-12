@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface DepartmentSchedulePolicyShiftRepository extends JpaRepository<DepartmentSchedulePolicyShift, Integer> {
     List<DepartmentSchedulePolicyShift> findByPolicyPolicyId(Integer policyId);
+    void deleteByPolicyPolicyId(Integer policyId);
 }

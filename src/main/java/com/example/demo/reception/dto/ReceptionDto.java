@@ -30,7 +30,6 @@ public class ReceptionDto {
 
     public Reception toEntity(Reservation reservation){
         return Reception.builder()
-                .receptionId(reservationId)
                 .reservation(reservation)
                 .status(status)
                 .receptionTime(receptionTime)

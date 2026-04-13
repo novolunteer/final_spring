@@ -1,5 +1,7 @@
 package com.example.demo.medicalRecord;
 
+import com.example.demo.elasticSearch.MedicalRecordDocument;
+import com.example.demo.elasticSearch.MedicalRecordSearchRepository;
 import com.example.demo.medicalRecord.dto.MedicalRecordDto;
 import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
 import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
@@ -33,6 +35,7 @@ public class MedicalRecordService {
     private final StaffRepository staffRepository;
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
+    private final MedicalRecordSearchRepository medicalRecordSearchRepository;
 
     public Page<ReceptionResponse> waitingList(Integer userId,
                                                ReceptionStatus status,
@@ -92,6 +95,16 @@ public class MedicalRecordService {
 
         MedicalRecord medicalRecord=medicalRecordDto.toEntity();
         medicalRecordRepository.save(medicalRecord);
+
+        MedicalRecordDocument doc = new MedicalRecordDocument();
+        doc.setId(medicalRecord.getRecordId());
+        doc.setPatientId(medicalRecord.getPatient().getPatientId());
+        doc.setSymptom(medicalRecord.getSymptom());
+        doc.setMedicalRecordStatus(medicalRecord.getMedicalRecordStatus());
+        doc.setContent(medicalRecord.getContent());
+        doc.setTitle(medicalRecord.getTitle());
+
+        medicalRecordSearchRepository.save(doc);
 
         return medicalRecord.getRecordId();
     }

@@ -52,6 +52,7 @@ public class MedicalRecordController {
     public Integer medicalRecordInsert(@RequestBody MedicalRecordRequest request,
                                        @AuthenticationPrincipal CustomUserDetails customUserDetails){
         Integer doctorId=3;
+        System.out.println("===========>"+request.getSymptom());
         return medicalRecordService.MedicalRecordInsert(request, doctorId);
     }
 }

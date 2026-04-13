@@ -82,6 +82,7 @@ public class ReservationService {
 
         Department department=departmentRepository.findByDepartmentId(staff.getDepartment().getDepartmentId());
 
+        System.out.println("department==================>"+department);
         Slot slot=slotRepository.findByStartTimeAndStaff(reservationDto.getReservationDate(),staff)
                 .orElseGet(() -> {
                     Slot newSlot=Slot.builder()
@@ -91,6 +92,7 @@ public class ReservationService {
                             .staff(staff)
                             .department(department)
                             .build();
+                    System.out.println("newSlot==================>"+newSlot);
                     slotRepository.save(newSlot);
                     return newSlot;
                 });

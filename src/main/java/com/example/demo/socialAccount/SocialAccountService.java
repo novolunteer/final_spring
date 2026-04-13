@@ -4,10 +4,7 @@ import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
-import com.example.demo.socialAccount.dto.KakaoTokenResponse;
-import com.example.demo.socialAccount.dto.NaverLoginRequest;
-import com.example.demo.socialAccount.dto.NaverTokenResponse;
-import com.example.demo.socialAccount.dto.NaverUserInfoResponse;
+import com.example.demo.socialAccount.dto.*;
 import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
 import com.example.demo.user.UserRepository;
@@ -39,6 +36,97 @@ public class SocialAccountService {
     private String kakaoClientId;
     @Value("${kakao.redirect-uri}")
     private String kakaoRedirectUri;
+    @Value("${kakao.client-secret}")
+    private String kakaoClientSecret;
+
+    private final RestTemplate restTemplate=new RestTemplate();
+    private final SocialAccountRepository socialAccountRepository;
+    private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+
+    public User registerKakaoAccount(KakaoLoginRequest request){
+        String provider=request.getProvider();
+        if (provider == null || provider.trim().isEmpty() || !"KAKAO".equals(provider)){
+            throw new RuntimeException("PROVIDER_IS_INCORRECT");
+        }
+
+        String providerId=request.getProviderId();
+        if(providerId == null || providerId.trim().isEmpty()){
+            throw new RuntimeException("PROVIDER_ID_IS_NULL");
+        }
+
+        String name=request.getName();
+        if (name == null || name.trim().isEmpty()){
+            throw new RuntimeException("NAME_IS_NULL");
+        }
+
+        String rrn=request.getRrn();
+        if (rrn == null || rrn.trim().isEmpty()){
+            throw new RuntimeException("RRN_IS_NULL");
+        }
+
+        Patient patient=patientRepository.findByRrn(rrn);
+        if (patient == null){
+            //신규 회원가입
+            String makeEmail="SOCIAL_KAKAO_" + UUID.randomUUID();
+            String email=makeEmail.substring(0, 49);
+            String password="SOCIAL";
+
+            User user=userRepository.save(User.builder()
+                    .email(email)
+                    .password(password)
+                    .status("Y").build());
+
+            Role role=roleRepository.findByRoleName("PATIENT");
+            userRoleRepository.save(UserRole.builder()
+                    .user(user)
+                    .role(role).build());
+
+            Patient savedPatient=patientRepository.save(Patient.builder()
+                    .user(user)
+                    .rrn(rrn)
+                    .name(name).build());
+
+            SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                    .user(savedPatient.getUser())
+                    .provider(SocialAccountProvider.KAKAO)
+                    .providerId(providerId).build());
+            return account.getUser();
+        } else {
+            if (patient.getUser() == null){
+                //유저 계정 생성 후 소셜 로그인
+                String makeEmail="SOCIAL_KAKAO_" + UUID.randomUUID();
+                String email=makeEmail.substring(0, 49);
+                String password="SOCIAL";
+
+                User user=userRepository.save(User.builder()
+                        .email(email)
+                        .password(password)
+                        .status("Y").build());
+
+                Role role=roleRepository.findByRoleName("PATIENT");
+                userRoleRepository.save(UserRole.builder()
+                        .user(user)
+                        .role(role).build());
+                patient.setUser(user);
+
+                SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                        .user(user)
+                        .provider(SocialAccountProvider.KAKAO)
+                        .providerId(providerId).build());
+                return account.getUser();
+            } else {
+                //소셜 로그인 등록
+                SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
+                        .user(patient.getUser())
+                        .provider(SocialAccountProvider.KAKAO)
+                        .providerId(providerId).build());
+                return account.getUser();
+            }
+        }
+    }
 
     public Map<String, Object> kakaoLogin(String code){
         String accessToken=getKakaoAccessToken(code);
@@ -67,6 +155,7 @@ public class SocialAccountService {
         params.add("client_id", kakaoClientId);
         params.add("redirect_uri", kakaoRedirectUri);
         params.add("code", code);
+        params.add("client_secret", kakaoClientSecret);
 
         HttpEntity<MultiValueMap<String, String>> request=new HttpEntity<>(params, headers);
 
@@ -106,13 +195,6 @@ public class SocialAccountService {
 
         return body;
     }
-
-    private final RestTemplate restTemplate=new RestTemplate();
-    private final SocialAccountRepository socialAccountRepository;
-    private final PatientRepository patientRepository;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final UserRoleRepository userRoleRepository;
 
     public User registerNaverAccount(NaverLoginRequest request){
         String provider=request.getProvider();

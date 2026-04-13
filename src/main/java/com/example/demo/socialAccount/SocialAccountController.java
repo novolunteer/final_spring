@@ -70,6 +70,54 @@ public class SocialAccountController {
         response.sendRedirect(reactUri + "/login?mode=kakaoLogin");
     }
 
+    @GetMapping("/social/login/kakao/info")
+    public ResponseEntity<KakaoLoginResponse> getKakaoUserInfo(HttpSession session){
+        try{
+            KakaoLoginResponse response=KakaoLoginResponse.builder()
+                    .provider((String) session.getAttribute("provider"))
+                    .providerId((String) session.getAttribute("providerId")).build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/social/login/kakao/complete")
+    public ResponseEntity<SocialLoginResponse> kakaoLogin(@RequestBody KakaoLoginRequest request,
+                                                          HttpSession session){
+        try{
+            User user=socialAccountService.registerKakaoAccount(request);
+            List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
+
+            Map<String, Object> claims=new HashMap<>();
+            claims.put("email", user.getEmail());
+            claims.put("userId", user.getUserId());
+            claims.put("roles", roles);
+            claims.put("status", user.getStatus().toString());
+
+            String accessToken=jwtUtil.generateToken(claims, 5);
+            String refreshToken=jwtUtil.generateToken(claims, 60*2);
+
+            SocialLoginResponse response=SocialLoginResponse.builder()
+                    .userId(user.getUserId())
+                    .email(user.getEmail())
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .roles(roles)
+                    .status(user.getStatus())
+                    .departmentId(null).build();
+
+            session.invalidate();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/social/login/naver")
     public void redirectToNaver(HttpServletResponse response, HttpSession session) throws IOException {
         String state= UUID.randomUUID().toString();
@@ -192,8 +240,8 @@ public class SocialAccountController {
         }
     }
 
-    @GetMapping("/social/login/naver/complete")
-    public ResponseEntity<SocialLoginResponse> naverUserLogin(HttpSession session){
+    @GetMapping("/social/login/complete")
+    public ResponseEntity<SocialLoginResponse> socialUserLogin(HttpSession session){
         try{
             SocialLoginResponse response=SocialLoginResponse.builder()
                     .userId((Integer) session.getAttribute("userId"))

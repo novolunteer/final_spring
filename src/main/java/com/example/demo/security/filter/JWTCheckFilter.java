@@ -36,7 +36,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         String path=request.getRequestURI();
         if (path.startsWith("/none") || path.startsWith("/login") ||
                 path.startsWith("/join") || path.startsWith("/jwt/token/refresh") || path.startsWith("/ws")
-            || path.startsWith("/upload") || path.startsWith("/social")){
+            || path.startsWith("/upload") || path.startsWith("/social") || path.startsWith("/test/upload")){
             return true;
         }
 

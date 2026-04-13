@@ -28,17 +28,12 @@ public class ChatAttachment {
     private String storedFileName;
 
     @Column(nullable = false)
-    private String fileUrl;
-
-    @Column(nullable = false)
     private String contentType;
 
     private String fileExtension;
 
     @Column(nullable = false)
     private Long fileSize;
-
-    private String thumbnailUrl;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -68,7 +68,7 @@ public class SecurityConfig {
 
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh",
-                                "/join/**", "/social/**").permitAll()
+                                "/join/**", "/social/**", "/test/upload").permitAll()
                         .anyRequest().authenticated()
         );
 

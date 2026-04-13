@@ -38,6 +38,7 @@ public class ChatMessageService {
     private final StaffRepository staffRepository;
     private final ChatRoomService roomService;
     private final ChatAttachmentRepository attachmentRepository;
+    private final ChatAttachmentService attachmentService;
 
     public ChatMessageDto sendChatMessage(SendMessageRequest request, Integer userId){
         User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
@@ -97,7 +98,6 @@ public class ChatMessageService {
                         .message(saveMessage)
                         .originalFileName(file.getOriginalFileName())
                         .storedFileName(file.getStoredFileName())
-                        .fileUrl(file.getFileUrl())
                         .contentType(file.getContentType())
                         .fileExtension(file.getFileExtension())
                         .fileSize(file.getFileSize()).build();
@@ -305,7 +305,7 @@ public class ChatMessageService {
                         .messageId(a.getMessage().getMessageId())
                         .originalFileName(a.getOriginalFileName())
                         .storedFileName(a.getStoredFileName())
-                        .fileUrl(a.getFileUrl())
+                        .fileUrl(attachmentService.generatePresignedUrl(a.getStoredFileName()))
                         .contentType(a.getContentType())
                         .fileExtension(a.getFileExtension())
                         .fileSize(a.getFileSize())

@@ -5,20 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @AllArgsConstructor
-@Data
 @NoArgsConstructor
+@Data
 @Builder
-public class ChatAttachmentDto {
-    private Integer attachmentId;
-    private Integer messageId;
+public class UploadAttachmentResponse {
     private String originalFileName;
     private String storedFileName;
-    private String fileUrl;
     private String contentType;
     private String fileExtension;
     private Long fileSize;
-    private LocalDateTime createdAt;
 }

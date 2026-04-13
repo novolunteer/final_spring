@@ -2,12 +2,14 @@ package com.example.demo.chat.controller;
 
 import com.example.demo.chat.dto.ChatAttachmentDto;
 import com.example.demo.chat.dto.ChatAttachmentSlice;
+import com.example.demo.chat.dto.UploadAttachmentResponse;
 import com.example.demo.chat.service.ChatAttachmentService;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,9 +22,9 @@ public class ChatAttachmentController {
     private final ChatAttachmentService attachmentService;
 
     @PostMapping("/chat/upload/attachment")
-    public ResponseEntity<Map<String,Object>> uploadAttachment(@RequestParam("files") List<MultipartFile> files){
-        List<ChatAttachmentDto> result=attachmentService.uploadFiles(files);
-        return ResponseEntity.ok(Map.of("result", result));
+    public ResponseEntity<Map<String, Object>> testUpload(@RequestParam("files") List<MultipartFile> files){
+        List<UploadAttachmentResponse> responses=attachmentService.uploadFiles(files);
+        return ResponseEntity.ok(Map.of("result", responses));
     }
 
     @GetMapping("/chat/room/{roomId}/attachment")

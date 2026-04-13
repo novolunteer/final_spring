@@ -3,6 +3,7 @@ package com.example.demo.chat.service;
 import com.example.demo.chat.dto.ChatAttachmentDto;
 import com.example.demo.chat.dto.ChatAttachmentSlice;
 import com.example.demo.chat.dto.ChatAttachmentSummaryDto;
+import com.example.demo.chat.dto.UploadAttachmentResponse;
 import com.example.demo.chat.entity.ChatAttachment;
 import com.example.demo.chat.entity.ChatRoom;
 import com.example.demo.chat.entity.ChatRoomParticipant;
@@ -20,10 +21,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +41,16 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ChatAttachmentService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    private final S3Client s3Client;
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
     private final ChatRoomRepository roomRepository;
     private final ChatAttachmentRepository attachmentRepository;
     private final ChatRoomParticipantRepository participantRepository;
+    private final S3Presigner s3Presigner;
 
     public ChatAttachmentSlice getChatRoomAttachments(Integer userId, Integer roomId, Integer cursor, int size){
         User user=userRepository.findByUserId(userId)
@@ -73,7 +85,7 @@ public class ChatAttachmentService {
                             .attachmentId(a.getAttachmentId())
                             .originalFileName(a.getOriginalFileName())
                             .storedFileName(a.getStoredFileName())
-                            .fileUrl(a.getFileUrl())
+                            .fileUrl(generatePresignedUrl(a.getStoredFileName()))
                             .contentType(a.getContentType())
                             .fileExtension(a.getFileExtension())
                             .fileSize(a.getFileSize())
@@ -91,69 +103,82 @@ public class ChatAttachmentService {
         return attachmentSlice;
     }
 
-    public List<ChatAttachmentDto> uploadFiles(List<MultipartFile> files){
+    public List<UploadAttachmentResponse> uploadFiles(List<MultipartFile> files){
         if (files == null || files.isEmpty()){
-            throw new RuntimeException("업로드 할 파일이 없습니다.");
+            throw new IllegalArgumentException("업로드 할 파일이 없습니다.");
         }
 
-        List<ChatAttachmentDto> result=new ArrayList<>();
+        List<UploadAttachmentResponse> responses=new ArrayList<>();
 
         for (MultipartFile file:files){
             if (file == null || file.isEmpty()){
                 continue;
             }
 
-            String originalFileName= file.getOriginalFilename();
-            if (originalFileName == null || originalFileName.isBlank()){
-                throw new RuntimeException("파일명이 올바르지 않습니다.");
-            }
+            validateFile(file);
 
-            String fileExtension=getFileExtension(originalFileName);
-
-            String storedFileName= UUID.randomUUID().toString();
-            if (!fileExtension.isBlank()){
-                storedFileName += "." + fileExtension;
-            }
-
+            String originalFileName=file.getOriginalFilename();
+            String storedFileName=UUID.randomUUID() + "_" + originalFileName;
             String contentType=file.getContentType();
-            if (contentType == null || contentType.isBlank()){
-                contentType = "application/octet-stream";
-            }
-
+            String fileExtension=extractExtension(originalFileName);
             Long fileSize=file.getSize();
 
-            Path chatUploadPath= Paths.get(uploadDir, "chat");
-
             try{
-                if (Files.notExists(chatUploadPath)){
-                    Files.createDirectories(chatUploadPath);
-                }
+                PutObjectRequest putObjectRequest=PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(storedFileName)
+                        .contentType(file.getContentType())
+                        .build();
 
-                Path savePath=chatUploadPath.resolve(storedFileName);
-                file.transferTo(savePath.toFile());
-            } catch (Exception e) {
-                throw new RuntimeException("파일 저장 중 오류가 발생했습니다. ==> " + originalFileName, e);
+                s3Client.putObject(
+                        putObjectRequest,
+                        RequestBody.fromBytes(file.getBytes())
+                );
+
+                responses.add(UploadAttachmentResponse.builder()
+                        .originalFileName(originalFileName)
+                        .storedFileName(storedFileName)
+                        .contentType(contentType)
+                        .fileExtension(fileExtension)
+                        .fileSize(fileSize)
+                        .build());
+
+            } catch (IOException e) {
+                throw new RuntimeException("파일 업로드 중 오류가 발생했습니다. " , e);
             }
-
-            String fileUrl="/upload/chat/" + storedFileName;
-
-            result.add(ChatAttachmentDto.builder()
-                    .originalFileName(originalFileName)
-                    .storedFileName(storedFileName)
-                    .fileUrl(fileUrl)
-                    .contentType(contentType)
-                    .fileExtension(fileExtension)
-                    .fileSize(fileSize)
-                    .thumbnailUrl(null)
-                    .build());
         }
 
-        return result;
+        if (responses.isEmpty()){
+            throw new RuntimeException("유효한 파일이 없습니다.");
+        }
+
+        return responses;
     }
 
-    private String getFileExtension(String fileName){
-        int lastDotIndex=fileName.lastIndexOf(".");
-        if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1){
+    public String generatePresignedUrl(String storedFileName){
+        GetObjectRequest getObjectRequest=GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(storedFileName)
+                .build();
+
+        GetObjectPresignRequest presignRequest=GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(60))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        return s3Presigner.presignGetObject(presignRequest).url().toString();
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file.getOriginalFilename() == null || file.getOriginalFilename().isBlank()) {
+            throw new IllegalArgumentException("파일명이 올바르지 않습니다.");
+        }
+    }
+
+    private String extractExtension(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf(".");
+
+        if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1) {
             return "";
         }
 

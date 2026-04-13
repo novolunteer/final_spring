@@ -37,6 +37,7 @@ public class ReceptionService {
                 .build();
 
         Reception reception=receptionRepository.save(receptionDto.toEntity(reservation));
+        System.out.println("reception id = " + reception.getReceptionId());
 
         return reception.getReceptionId();
     }

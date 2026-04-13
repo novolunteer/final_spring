@@ -2,6 +2,7 @@ package com.example.demo.security.controller;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.security.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -16,18 +17,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiRefreshController {
     private final JWTUtil jwtUtil;
+    private final RedisService redisService;
 
     //토큰 유효기간 검사/재발급
     @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              @RequestParam("refreshToken") String refreshToken){
 
-        System.out.println("================>point3"+refreshToken);
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");
         }
-
-        System.out.println("================>point3"+refreshToken);
 
         if (authorization == null || authorization.length() < 7){
             throw new CustomJWTException("INVALID_REFRESH");
@@ -39,6 +38,16 @@ public class ApiRefreshController {
         }
 
         Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
+        Integer userId = (Integer) claims.get("userId");
+
+        // 🔥 2. Redis 검증
+        String savedToken = redisService.get(userId);
+
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
+            throw new CustomJWTException("INVALID_REFRESH");
+        }
+
+
         String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){

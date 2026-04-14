@@ -1,7 +1,7 @@
 package com.example.demo.reception;
 
 import com.example.demo.reception.dto.ReceptionResponse;
-import com.example.demo.reservation.ReservationService;
+import com.example.demo.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

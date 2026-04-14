@@ -2,6 +2,7 @@ package com.example.demo.surgery;
 
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
+import com.example.demo.reservation.service.AvailabilityService;
 import com.example.demo.slot.Slot;
 import com.example.demo.slot.SlotRepository;
 import com.example.demo.slot.SlotStatus;
@@ -13,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,7 @@ public class SurgeryService {
     private final SlotRepository slotRepository;
     private final StaffRepository staffRepository;
     private final PatientRepository patientRepository;
+    private final AvailabilityService availabilityService;
 
     // 일반 수술 예약 - 충돌 체크 후 슬롯 생성
     public SurgeryResponse scheduleSurgery(SurgeryDto dto) {
@@ -35,6 +39,19 @@ public class SurgeryService {
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         LocalDateTime endTime = dto.getStartTime().plusHours(dto.getDurationHours());
+
+        LocalDate workDate = dto.getStartTime().toLocalDate();
+        LocalTime requestStart = dto.getStartTime().toLocalTime();
+        LocalTime requestEnd = endTime.toLocalTime();
+
+        if(!availabilityService.isStaffAvailable(
+                doctor.getStaffId(),
+                workDate,
+                requestStart,
+                requestEnd
+        )){
+            throw new IllegalStateException("해당 의사의 근무시간이 아닙니다");
+        }
 
         // startTime ~ endTime 각 시간대 충돌 체크 (점유 중인 슬롯만)
         LocalDateTime current = dto.getStartTime();
@@ -93,10 +110,18 @@ public class SurgeryService {
                     surgery.getStartTime(),
                     surgery.getEndTime().minusHours(1),
                     surgery.getDoctor()
-            ).forEach(slot -> slot.setCurrentPatient(0));
+            ).forEach(slot -> {
+                if (slot.getType() == SlotStatus.SURGERY){
+                    slotRepository.delete(slot);
+                }
+            });
         } else {
             slotRepository.findByStartTimeAndStaff(surgery.getStartTime(), surgery.getDoctor())
-                    .ifPresent(slot -> slot.setCurrentPatient(0));
+                    .ifPresent(slot -> {
+                        if(slot.getType() == SlotStatus.SURGERY){
+                            slotRepository.delete(slot);
+                        }
+                    });
         }
 
         surgery.setStatus(SurgeryStatus.CANCELLED);
@@ -112,6 +137,20 @@ public class SurgeryService {
         Patient patient = patientRepository.findById(dto.getPatientId())
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
+        LocalDateTime newEndTime = dto.getStartTime().plusHours(dto.getDurationHours());
+
+        LocalDate workDate = dto.getStartTime().toLocalDate();
+        LocalTime requestStart = dto.getStartTime().toLocalTime();
+        LocalTime requestEnd = newEndTime.toLocalTime();
+
+        if(!availabilityService.isStaffAvailable(
+                doctor.getStaffId(),
+                workDate,
+                requestStart,
+                requestEnd
+        )){
+            throw new IllegalStateException("해당 의사의 근무시간이 아닙니다");
+        }
         // 기존 슬롯 해제
         if (surgery.getEndTime() != null) {
             slotRepository.findAllByStartTimeBetweenAndStaff(
@@ -123,8 +162,6 @@ public class SurgeryService {
             slotRepository.findByStartTimeAndStaff(surgery.getStartTime(), surgery.getDoctor())
                     .ifPresent(slot -> slot.setCurrentPatient(0));
         }
-
-        LocalDateTime newEndTime = dto.getStartTime().plusHours(dto.getDurationHours());
 
         // 새 시간 충돌 체크 (점유 중인 슬롯만)
         LocalDateTime current = dto.getStartTime();

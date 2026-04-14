@@ -1,4 +1,4 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
 public enum MedicalRecordStatus {
     DIAGNOSIS,

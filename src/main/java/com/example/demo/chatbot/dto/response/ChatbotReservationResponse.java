@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 public class ChatbotReservationResponse {
     private String department;
     private String date;
+    private String startDate;
+    private String endDate;
     private Integer totalCount;
     private Integer availableCount;
+    private boolean schedulePublished;
 }

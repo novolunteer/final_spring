@@ -19,7 +19,7 @@ public class ApiRefreshController {
 
     //토큰 유효기간 검사/재발급
     @RequestMapping("/jwt/token/refresh")
-    public ResponseEntity<Map<String,Object>> getRefreshToken(@RequestHeader("Authorization") String authorization,
+    public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              @RequestParam("refreshToken") String refreshToken){
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");
@@ -35,7 +35,7 @@ public class ApiRefreshController {
         }
 
         Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
-        String newAccessToken=jwtUtil.generateToken(claims, 5);
+        String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){
             newRefreshToken= jwtUtil.generateToken(claims, 60*2);

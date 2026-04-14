@@ -1,9 +1,8 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
-import com.example.demo.MedicalRecord.dto.MedicalRecordRequest;
-import com.example.demo.MedicalRecord.dto.MedicalRecordResponse;
+import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
+import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
 import com.example.demo.reception.ReceptionStatus;
-import com.example.demo.reception.dto.ReceptionDto;
 import com.example.demo.reception.dto.ReceptionResponse;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ public class MedicalRecordController {
     public Page<ReceptionResponse> waitingList(@AuthenticationPrincipal CustomUserDetails customUserDetails,
                                                ReceptionStatus status,
                                                Pageable pageable){
-        Integer userId=7;
+        Integer userId=customUserDetails.getUserId();
         return medicalRecordService.waitingList(userId,status,pageable);
     }
 

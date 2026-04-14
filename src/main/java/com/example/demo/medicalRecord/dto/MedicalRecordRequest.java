@@ -1,7 +1,7 @@
-package com.example.demo.MedicalRecord.dto;
+package com.example.demo.medicalRecord.dto;
 
-import com.example.demo.MedicalRecord.MedicalRecord;
-import com.example.demo.MedicalRecord.MedicalRecordStatus;
+import com.example.demo.medicalRecord.MedicalRecord;
+import com.example.demo.medicalRecord.MedicalRecordStatus;
 import com.example.demo.patient.Patient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +16,7 @@ public class MedicalRecordRequest {
     private Integer patientId;
     private MedicalRecordStatus medicalRecordStatus;
     private String title;
+    private String symptom;
     private String content;
     private Boolean isSensitive;
 

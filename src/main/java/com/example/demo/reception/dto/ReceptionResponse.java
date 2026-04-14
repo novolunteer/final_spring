@@ -21,6 +21,8 @@ public class ReceptionResponse {
     private String patientName;
     private Integer doctorId;
     private String doctorName;
+    private Integer departmentId;
+    private String departmentName;
     private LocalDateTime reservationDate;
     private ReceptionStatus status;
     private String symptom;
@@ -32,6 +34,8 @@ public class ReceptionResponse {
         this.patientName = reception.getReservation().getPatient().getName();
         this.doctorId=reception.getReservation().getStaff().getStaffId();
         this.doctorName = reception.getReservation().getStaff().getName();
+        this.departmentId=reception.getReservation().getDepartment().getDepartmentId();
+        this.departmentName=reception.getReservation().getDepartment().getDepartmentName();
         this.reservationDate = reception.getReservation().getSlot().getStartTime();
         this.status=reception.getStatus();
         this.symptom=reception.getReservation().getSymptom();

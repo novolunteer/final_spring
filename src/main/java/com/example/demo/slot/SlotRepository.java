@@ -22,5 +22,8 @@ public interface SlotRepository extends JpaRepository<Slot,Integer> {
     List<Slot> findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(Department department,
                                                                                 LocalDateTime start,
                                                                                 LocalDateTime end);
-    List<Slot> findByDepartmentAndStartTimeBetween(Department department, LocalDateTime startDate, LocalDateTime endDate);
+    List<Slot> findByDepartmentAndStaffAndStartTimeGreaterThanEqualAndStartTimeLessThan(Department department,
+                                                                                        Staff staff,
+                                                                                        LocalDateTime start,
+                                                                                        LocalDateTime end);
 }

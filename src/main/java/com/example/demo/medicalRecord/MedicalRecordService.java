@@ -1,8 +1,8 @@
-package com.example.demo.MedicalRecord;
+package com.example.demo.medicalRecord;
 
-import com.example.demo.MedicalRecord.dto.MedicalRecordDto;
-import com.example.demo.MedicalRecord.dto.MedicalRecordRequest;
-import com.example.demo.MedicalRecord.dto.MedicalRecordResponse;
+import com.example.demo.medicalRecord.dto.MedicalRecordDto;
+import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
+import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientDto;
 import com.example.demo.patient.PatientRepository;
@@ -76,9 +76,13 @@ public class MedicalRecordService {
                 .content(medicalRecordRequest.getContent())
                 .isSensitive(medicalRecordRequest.getIsSensitive())
                 .build();
+        if(medicalRecordRequest.getSymptom() != null){
+            medicalRecordDto.setSymptom(medicalRecordRequest.getSymptom());
+        }
 
         MedicalRecord medicalRecord=medicalRecordDto.toEntity();
         medicalRecordRepository.save(medicalRecord);
+
         return medicalRecord.getRecordId();
     }
 }

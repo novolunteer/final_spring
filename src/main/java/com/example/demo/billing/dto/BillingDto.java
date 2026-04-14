@@ -1,7 +1,6 @@
 package com.example.demo.billing.dto;
 
-import com.example.demo.MedicalRecord.MedicalRecord;
-import com.example.demo.patient.Patient;
+import com.example.demo.medicalRecord.MedicalRecord;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

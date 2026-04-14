@@ -1,19 +1,26 @@
 package com.example.demo.chatbot;
 
+import com.example.demo.chatbot.dto.request.DoctorScheduleInquiryRequest;
 import com.example.demo.chatbot.dto.response.*;
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
+import com.example.demo.schedule.staff.entity.StaffSchedule;
+import com.example.demo.schedule.staff.repository.StaffScheduleRepository;
 import com.example.demo.slot.Slot;
 import com.example.demo.slot.SlotRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +28,7 @@ public class ChatbotService {
     private final DepartmentRepository departmentRepository;
     private final StaffRepository staffRepository;
     private final SlotRepository slotRepository;
+    private final StaffScheduleRepository scheduleRepository;
 
     public ChatbotDepartmentResponse getDepartmentList() {
         List<ChatbotDepartmentDto> departmentList = departmentRepository.findByStatus("Y")
@@ -52,24 +60,319 @@ public class ChatbotService {
         return ChatbotDoctorResponse.builder().department(departmentName).doctors(doctors).build();
     }
 
-//    public ChatbotReservationResponse getReservationStatus(String departmentName, String date, String startDate, String endDate){
+    public ChatbotReservationResponse getReservationStatus(String departmentName, String date, String startDate, String endDate){
+        if (departmentName == null || departmentName.isEmpty()){
+            throw new RuntimeException("진료과명이 포함되지 않은 질문입니다.");
+        }
+
+        boolean hasDate = date != null && !date.isEmpty();
+        boolean hasRange = startDate != null && !startDate.isEmpty() && endDate != null && !endDate.isEmpty();
+
+        if (!hasDate && !hasRange) {
+            throw new RuntimeException("날짜 정보가 포함되지 않은 질문입니다.");
+        }
+
+        if (hasRange && LocalDate.parse(startDate).isAfter(LocalDate.parse(endDate))) {
+            throw new RuntimeException("시작일이 종료일보다 늦습니다.");
+        }
+
+        Department department=departmentRepository.findByDepartmentName(departmentName)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 진료과명입니다."));
+
+        List<Staff> doctors=staffRepository.findDoctorsByDepartment(department)
+                .orElseThrow(() -> new RuntimeException("해당 진료과에 의사가 존재하지 않습니다."));
+
+        if (hasDate){
+            LocalDate localDate=LocalDate.parse(date);
+            LocalDateTime start=localDate.atStartOfDay();
+            LocalDateTime end=localDate.plusDays(1).atStartOfDay();
+
+            Integer totalCount=0;
+            Integer currentCount=0;
+            Integer availableCount=0;
+            boolean schedulePublished=true;
+
+            List<StaffSchedule> schedules=scheduleRepository.findByStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDateAndStaffIn(
+                    "CONFIRMED", 1, localDate,doctors
+            );
+
+            if (schedules == null || schedules.isEmpty()){
+                totalCount=(3*8) * doctors.size();
+
+                List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(
+                        department, start, end);
+                if (slots != null && !slots.isEmpty()){
+                    for (Slot s:slots){
+                        currentCount += s.getCurrentPatient();
+                    }
+
+                    availableCount=Math.max(totalCount - currentCount, 0);
+                    schedulePublished=false;
+
+                    return ChatbotReservationResponse.builder()
+                            .department(departmentName)
+                            .date(date)
+                            .totalCount(totalCount)
+                            .availableCount(availableCount)
+                            .schedulePublished(schedulePublished).build();
+                }
+
+                availableCount=totalCount;
+                schedulePublished=false;
+
+                return ChatbotReservationResponse.builder()
+                        .department(departmentName)
+                        .date(date)
+                        .totalCount(totalCount)
+                        .availableCount(availableCount)
+                        .schedulePublished(schedulePublished).build();
+            }
+
+            totalCount=(3*8)*schedules.size();
+
+            List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(
+                    department, start, end);
+
+            if (slots != null && !slots.isEmpty()){
+                for (Slot s:slots){
+                    currentCount += s.getCurrentPatient();
+                }
+
+                availableCount=Math.max(totalCount - currentCount, 0);
+
+                return ChatbotReservationResponse.builder()
+                        .department(departmentName)
+                        .date(date)
+                        .totalCount(totalCount)
+                        .availableCount(availableCount)
+                        .schedulePublished(schedulePublished).build();
+            }
+
+            availableCount=totalCount;
+
+            return ChatbotReservationResponse.builder()
+                    .department(departmentName)
+                    .date(date)
+                    .totalCount(totalCount)
+                    .availableCount(availableCount)
+                    .schedulePublished(schedulePublished).build();
+        }
+
+        LocalDate localStart=LocalDate.parse(startDate);
+        LocalDateTime start=localStart.atStartOfDay();
+
+        LocalDate localEnd=LocalDate.parse(endDate);
+        LocalDateTime end=localEnd.plusDays(1).atStartOfDay();
+
+        Integer totalCount=0;
+        Integer currentCount=0;
+        Integer availableCount=0;
+        boolean schedulePublished=true;
+        long days= ChronoUnit.DAYS.between(localStart, localEnd)+1;
+
+        List<StaffSchedule> schedules=
+                scheduleRepository.findByStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDateBetweenAndStaffIn(
+                "CONFIRMED", 1, localStart, localEnd, doctors
+        );
+
+        if (schedules == null || schedules.isEmpty()){
+            totalCount=(int) (((3*8)*doctors.size())*days);
+
+            List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(department, start, end);
+            if (slots != null && !slots.isEmpty()){
+                for (Slot s:slots){
+                    currentCount += s.getCurrentPatient();
+                }
+
+                availableCount=Math.max(totalCount - currentCount, 0);
+                schedulePublished=false;
+
+                return ChatbotReservationResponse.builder()
+                        .department(departmentName)
+                        .totalCount(totalCount)
+                        .availableCount(availableCount)
+                        .schedulePublished(schedulePublished).build();
+            }
+
+            availableCount=totalCount;
+            schedulePublished=false;
+
+            return ChatbotReservationResponse.builder()
+                    .department(departmentName)
+                    .totalCount(totalCount)
+                    .availableCount(availableCount)
+                    .schedulePublished(schedulePublished).build();
+        }
+
+        totalCount=(3*8)*schedules.size();
+
+        Set<LocalDate> confirmDates=schedules.stream()
+                .map(StaffSchedule :: getWorkDate)
+                .collect(Collectors.toSet());
+
+        boolean hasUnpublish=false;
+        for (int i=0; i < days; i++){
+            if (!confirmDates.contains(localStart.plusDays(i))){
+                hasUnpublish=true;
+                break;
+            }
+        }
+
+        if (hasUnpublish){
+            List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(department, start, end);
+            if (slots != null && !slots.isEmpty()){
+                for (Slot s:slots){
+                    currentCount += s.getCurrentPatient();
+                }
+
+                availableCount=Math.max(totalCount - currentCount, 0);
+                schedulePublished=false;
+
+                return ChatbotReservationResponse.builder()
+                        .department(departmentName)
+                        .totalCount(totalCount)
+                        .availableCount(availableCount)
+                        .schedulePublished(schedulePublished).build();
+            }
+
+
+
+            availableCount=totalCount;
+            schedulePublished=false;
+
+            return ChatbotReservationResponse.builder()
+                    .department(departmentName)
+                    .totalCount(totalCount)
+                    .availableCount(availableCount)
+                    .schedulePublished(schedulePublished).build();
+        }
+
+        List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(department, start, end);
+        if (slots != null && !slots.isEmpty()){
+            for (Slot s:slots){
+                currentCount += s.getCurrentPatient();
+            }
+
+            availableCount=Math.max(totalCount - currentCount, 0);
+
+            return ChatbotReservationResponse.builder()
+                    .department(departmentName)
+                    .totalCount(totalCount)
+                    .availableCount(availableCount)
+                    .schedulePublished(schedulePublished).build();
+        }
+
+
+
+        availableCount=totalCount;
+
+        return ChatbotReservationResponse.builder()
+                .department(departmentName)
+                .totalCount(totalCount)
+                .availableCount(availableCount)
+                .schedulePublished(schedulePublished).build();
+    }
+
+//    public ChatbotDoctorScheduleResponse getDoctorSchedule(DoctorScheduleInquiryRequest request){
+//        String name= request.getDoctorName();
+//        if (name == null || name.isEmpty()){
+//            throw new RuntimeException("의사 이름이 포함되지 않은 질문입니다.");
+//        }
+//
+//        String departmentName= request.getDepartment();
+//        if (departmentName == null || departmentName.isEmpty()){
+//            throw new RuntimeException("진료과명이 포함되지 않은 질문입니다.");
+//        }
+//
+//        boolean hasDate = request.getDate() != null && !request.getDate().isEmpty();
+//        boolean hasRange = request.getStartDate() != null && !request.getStartDate().isEmpty()
+//                && request.getEndDate() != null && !request.getEndDate().isEmpty();
+//
+//        if (!hasDate && !hasRange) {
+//            throw new RuntimeException("날짜 정보가 포함되지 않은 질문입니다.");
+//        }
+//
+//        if (hasRange && LocalDate.parse(request.getStartDate()).isAfter(LocalDate.parse(request.getEndDate()))) {
+//            throw new RuntimeException("시작일이 종료일보다 늦습니다.");
+//        }
+//
 //        Department department=departmentRepository.findByDepartmentName(departmentName)
-//                .orElseThrow(() -> new RuntimeException("존재하지 않는 진료과명입니다."));
+//                .orElseThrow(() -> new RuntimeException("존재하지 않는 진료과입니다."));
 //
-//        if (date != null && !date.isEmpty()){
-//            LocalDate localDate=LocalDate.parse(date);
-//            LocalDateTime start=localDate.atStartOfDay();
-//            LocalDateTime end=localDate.plusDays(1).atStartOfDay();
-//            List<Slot> slots=slotRepository.findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(
-//                    department, start, end);
+//        Staff doctor=staffRepository.findByDepartmentAndName(department, name)
+//                .orElseThrow(()->new RuntimeException("존재하지 않는 의사입니다."));
 //
-//            Integer totalCount=0;
-//            Integer currentCount=0;
-//            Integer availableCount=0;
+//        List<String> times = List.of("09","10","11","12","14","15","16","17");
 //
-//            //스케쥴 아직 안 나왔을 때(스케쥴 테이블이랑 예약 테이블 조회)
-//            if (slots == null || slots.isEmpty()){
+//        if (hasDate){
+//            boolean published=true;
 //
+//            LocalDate date=LocalDate.parse(request.getDate());
+//            StaffSchedule schedule=scheduleRepository.findByStaffAndStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDate(
+//                    doctor, "CONFIRMED", 1, date
+//            );
+//            if (schedule == null){
+//                LocalDate today=LocalDate.now();
+//                if (date == today){
+//                    return ChatbotDoctorScheduleResponse.builder()
+//                            .department(departmentName)
+//                            .doctorName(name)
+//                            .date(request.getDate())
+//                            .schedules(null)
+//                            .schedulePublished(published).build();
+//                }
+//
+//                LocalDateTime start=date.atStartOfDay();
+//                LocalDateTime end=date.plusDays(1).atStartOfDay();
+//
+//                List<Slot> slots=slotRepository.findByDepartmentAndStaffAndStartTimeGreaterThanEqualAndStartTimeLessThan(
+//                        department, doctor, start, end
+//                );
+//
+//                if (slots == null || slots.isEmpty()){
+//                    List<ChatbotDoctorScheduleDto> schedules=new ArrayList<>();
+//
+//                    for (String s:times){
+//                        schedules.add(ChatbotDoctorScheduleDto.builder()
+//                                .date(request.getDate())
+//                                .time(s + ":00:00").build());
+//                    }
+//
+//                    published=false;
+//
+//                    return ChatbotDoctorScheduleResponse.builder()
+//                            .department(departmentName)
+//                            .doctorName(name)
+//                            .date(request.getDate())
+//                            .schedules(schedules)
+//                            .schedulePublished(published).build();
+//                }
+//
+//                List<LocalDateTime> slotTimes=slots.stream().map(s -> s.getStartTime()).toList();
+//                Set<Integer> slotHours = slots.stream()
+//                        .map(s -> s.getStartTime().getHour())
+//                        .collect(Collectors.toSet());
+//
+//                List<String> leftTimes = times.stream()
+//                        .filter(t -> !slotHours.contains(Integer.parseInt(t)))
+//                        .toList();
+//
+//                List<ChatbotDoctorScheduleDto> schedules=new ArrayList<>();
+//
+//                for (String s:leftTimes){
+//                    schedules.add(ChatbotDoctorScheduleDto.builder()
+//                            .date(request.getDate())
+//                            .time(s + ":00:00").build());
+//                }
+//
+//                published=false;
+//
+//                return ChatbotDoctorScheduleResponse.builder()
+//                        .department(departmentName)
+//                        .doctorName(name)
+//                        .date(request.getDate())
+//                        .schedules(schedules)
+//                        .schedulePublished(published).build();
 //            }
 //        }
 //    }

@@ -19,4 +19,5 @@ public class ChatbotDoctorScheduleResponse {
     private String endDate;
     private boolean available;
     private List<ChatbotDoctorScheduleDto> schedules;
+    private boolean schedulePublished;
 }

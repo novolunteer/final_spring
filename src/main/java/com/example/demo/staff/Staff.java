@@ -20,15 +20,16 @@ public class Staff {
     @JoinColumn(name = "userId")
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "departmentId")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
     private Department department;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "managerId")
     private Staff manager;
-
+    private String position;
     private String name;
     private String phone;
     private String address;
+    private String isActive;
 }

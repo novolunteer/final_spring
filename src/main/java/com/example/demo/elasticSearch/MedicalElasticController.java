@@ -30,8 +30,6 @@ public class MedicalElasticController {
     public Page<MedicalRecordResponse> search(@RequestBody SearchRequest req) {
         Pageable pageable = PageRequest.of(req.getPage(), 3);
 
-        System.out.println("===============>"+req);
-
         Query query = NativeQuery.builder()
                 .withQuery(q -> q
                         .bool(b -> b

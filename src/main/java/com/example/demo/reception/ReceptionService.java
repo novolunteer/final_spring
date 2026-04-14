@@ -37,6 +37,7 @@ public class ReceptionService {
                 .build();
 
         Reception reception=receptionRepository.save(receptionDto.toEntity(reservation));
+        System.out.println("reception id = " + reception.getReceptionId());
 
         return reception.getReceptionId();
     }
@@ -105,9 +106,17 @@ public class ReceptionService {
         return reception.getReceptionId();
     }
 
+    public Integer receptionCancel(Integer reservationId){
+        Reservation reservation=reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Not exist"));
+        Reception reception=receptionRepository.findByReservation(reservation);
+        reception.setStatus(ReceptionStatus.CANCELED);
+
+        return reception.getReceptionId();
+    }
     public Integer receptionCancel(Reservation reservation){
         Reception reception=receptionRepository.findByReservation(reservation);
-        receptionRepository.delete(reception);
+        reception.setStatus(ReceptionStatus.CANCELED);
 
         return reception.getReceptionId();
     }

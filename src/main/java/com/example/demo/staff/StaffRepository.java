@@ -2,6 +2,8 @@ package com.example.demo.staff;
 
 import com.example.demo.department.Department;
 import com.example.demo.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,4 +50,15 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
     """)
     List<Staff> searchStaff(@Param("userId") Integer userId, @Param("keyword") String keyword);
     List<Staff> findByDepartmentDepartmentId(Integer departmentId);
+
+    @Query("""
+        select distinct s from Staff s
+        left join s.department d
+        where (:keyword is null
+            or lower(s.name) like lower(concat('%', :keyword, '%'))
+            or lower(d.departmentName) like lower(concat('%', :keyword, '%'))
+            or lower(s.position) like lower(concat('%', :keyword, '%'))
+        )
+    """)
+    Page<Staff> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

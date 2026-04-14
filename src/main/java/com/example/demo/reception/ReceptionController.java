@@ -46,4 +46,9 @@ public class ReceptionController {
             return receptionService.receptionStatusList(ReceptionStatus.valueOf(status), name, pageable);
         }
     }
+
+    @GetMapping("/api/reception/cancel")
+    public Integer receptionCancel(@RequestParam Integer reservationId){
+        return receptionService.receptionCancel(reservationId);
+    }
 }

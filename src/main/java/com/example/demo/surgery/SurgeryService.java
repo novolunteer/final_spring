@@ -151,16 +151,20 @@ public class SurgeryService {
         )){
             throw new IllegalStateException("해당 의사의 근무시간이 아닙니다");
         }
-        // 기존 슬롯 해제
+        // 기존 슬롯 삭제
         if (surgery.getEndTime() != null) {
             slotRepository.findAllByStartTimeBetweenAndStaff(
                     surgery.getStartTime(),
                     surgery.getEndTime().minusHours(1),
                     surgery.getDoctor()
-            ).forEach(slot -> slot.setCurrentPatient(0));
+            ).forEach(slot -> {
+                if (slot.getType() == SlotStatus.SURGERY) slotRepository.delete(slot);
+            });
         } else {
             slotRepository.findByStartTimeAndStaff(surgery.getStartTime(), surgery.getDoctor())
-                    .ifPresent(slot -> slot.setCurrentPatient(0));
+                    .ifPresent(slot -> {
+                        if (slot.getType() == SlotStatus.SURGERY) slotRepository.delete(slot);
+                    });
         }
 
         // 새 시간 충돌 체크 (점유 중인 슬롯만)

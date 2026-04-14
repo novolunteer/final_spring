@@ -5,9 +5,14 @@ import com.example.demo.schedule.staff.dto.BulkStaffScheduleDto;
 import com.example.demo.schedule.staff.dto.StaffScheduleDto;
 import com.example.demo.schedule.staff.service.StaffScheduleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -22,8 +27,12 @@ public class StaffScheduleController {
     }
 
     @GetMapping("/list")
-    public List<StaffScheduleDto> selectAll(){
-        return staffScheduleService.selectAll();
+    public Page<StaffScheduleDto> selectAll(
+            @RequestParam(required = false) Integer staffId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @PageableDefault(size = 10, sort = "workDate", direction = Sort.Direction.DESC) Pageable pageable){
+        return staffScheduleService.selectAll(staffId, startDate, endDate, pageable);
     }
 
     @GetMapping("/{scheduleId}")

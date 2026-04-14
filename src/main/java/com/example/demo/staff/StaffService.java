@@ -9,15 +9,13 @@ import com.example.demo.staff.dto.StaffUpdateDto;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,19 +56,17 @@ public class StaffService {
                 .isActive(dto.getIsActive() !=null ? dto.getIsActive() : "Y")
                 .build();
 
-
         Staff savedStaff = staffRepository.save(staff);
 
         return savedStaff.getStaffId();
     }
 
-    //전체조회
-    public List<StaffResponseDto> getAllStaff(){
-        List<Staff> staffList = staffRepository.findAll();
-
-        return staffList.stream()
-                .map(this::entityToDto)
-                .collect(Collectors.toList());
+    //전체조회 (페이징 + 키워드 검색)
+    public Page<StaffResponseDto> getAllStaff(String keyword, Pageable pageable){
+        if (keyword == null || keyword.isBlank()) {
+            return staffRepository.findAll(pageable).map(this::entityToDto);
+        }
+        return staffRepository.findAllWithKeyword(keyword, pageable).map(this::entityToDto);
     }
 
     //Entity->dto
@@ -103,13 +99,13 @@ public class StaffService {
                 .toList();
         return Map.of("content", list);
     }
+
     //상세조회
     public StaffResponseDto getStaffById(Integer staffId){
         Staff staff=staffRepository.findById(staffId)
                 .orElseThrow(()->new RuntimeException("해당 직원이 없습니다"));
         return entityToDto(staff);
     }
-
 
     //수정
     public void updateStaff(StaffUpdateDto dto) {

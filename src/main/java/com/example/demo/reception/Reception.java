@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class Reception {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer receptionId;
 
     @OneToOne(fetch = FetchType.LAZY)

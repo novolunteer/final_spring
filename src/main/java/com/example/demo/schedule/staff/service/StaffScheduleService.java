@@ -12,11 +12,11 @@ import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.parameters.P;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,12 +69,10 @@ public class StaffScheduleService {
                 .build();
     }
 
-    //전체조회
-    public List<StaffScheduleDto> selectAll(){
-        List<StaffSchedule> result=staffScheduleRepository.findAll();
-        return result.stream()
-                .map(this::entityToDto)
-                .toList();
+    //전체조회 (페이징 + 직원/날짜 필터)
+    public Page<StaffScheduleDto> selectAll(Integer staffId, LocalDate startDate, LocalDate endDate, Pageable pageable){
+        return staffScheduleRepository.findAllWithFilter(staffId, startDate, endDate, pageable)
+                .map(this::entityToDto);
     }
     private StaffScheduleDto entityToDto(StaffSchedule entity){
         return StaffScheduleDto.builder()

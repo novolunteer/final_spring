@@ -1,6 +1,7 @@
 package com.example.demo.schedule.staff.repository;
 
 import com.example.demo.schedule.staff.entity.StaffSchedule;
+import com.example.demo.staff.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -22,4 +23,5 @@ public interface StaffScheduleRepository extends JpaRepository<StaffSchedule, In
             LocalDate workDate,
             Integer scheduleId
     );
+
 }

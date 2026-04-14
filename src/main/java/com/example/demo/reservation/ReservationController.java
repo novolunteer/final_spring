@@ -2,6 +2,7 @@ package com.example.demo.reservation;
 
 import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
+import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

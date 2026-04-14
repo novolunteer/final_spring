@@ -34,4 +34,7 @@ public interface StaffScheduleRepository extends JpaRepository<StaffSchedule, In
 
     StaffSchedule findByStaffAndStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDate(Staff staff, String status,
                                                                                      Integer typeId, LocalDate date);
+    List<StaffSchedule> findByStaffAndStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDateBetween(Staff staff, String status,
+                                                                                                  Integer typeId, LocalDate start,
+                                                                                                  LocalDate end);
 }

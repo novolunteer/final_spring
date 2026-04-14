@@ -14,8 +14,12 @@ public class LogoutController {
     private final RedisService redisService;
     private final JWTUtil jwtUtil;
 
-    @PostMapping("/api/auth/logout")
+    @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String accessToken) {
+
+        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+            return ResponseEntity.ok("already logged out");
+        }
 
         String token = accessToken.replace("Bearer ", "");
 

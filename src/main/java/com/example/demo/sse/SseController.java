@@ -35,7 +35,7 @@ public class SseController {
 
         SseEmitter emitter = new SseEmitter(60 * 1000L);
 
-        System.out.println("accessToken=====>"+accessToken);
+        System.out.println("accessToken======>"+accessToken);
         System.out.println("refreshToken======>"+refreshToken);
 
         try {

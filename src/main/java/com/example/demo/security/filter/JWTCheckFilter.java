@@ -34,7 +34,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path=request.getRequestURI();
-        if (path.startsWith("/none") || path.startsWith("/login") ||
+        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/logout") ||
                 path.startsWith("/join") || path.startsWith("/jwt/token/refresh") || path.startsWith("/ws")
             || path.startsWith("/upload") || path.startsWith("/api/sse")){
             return true;
@@ -54,6 +54,9 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             //토큰 값
             String accessToken=authorizationStr.substring(7);
+
+            System.out.println("REQUEST URI = " + request.getRequestURI());
+            System.out.println("AUTH HEADER = " + request.getHeader("Authorization"));
 
             //유효한 토큰인지 검사
             Claims claims=jwtUtil.validateToken(accessToken);

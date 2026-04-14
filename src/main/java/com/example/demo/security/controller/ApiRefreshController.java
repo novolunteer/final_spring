@@ -48,10 +48,10 @@ public class ApiRefreshController {
         }
 
 
-        String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
+        String newAccessToken=jwtUtil.generateToken(claims, 5);
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken= jwtUtil.generateToken(claims, 60*2);
+            newRefreshToken= jwtUtil.generateToken(claims, 60 * 60 * 24 * 7);
         }
 
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken));

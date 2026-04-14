@@ -42,6 +42,7 @@ public class JWTUtil {
                     .parseClaimsJws(token)
                     .getPayload();
         }catch (MalformedJwtException malformedJwtException){
+            System.out.println("=============>"+token);
             throw new CustomJWTException("Malformed");
         }catch (ExpiredJwtException expiredJwtException){
             throw new CustomJWTException("Expired");

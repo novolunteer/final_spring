@@ -10,22 +10,29 @@ import com.example.demo.reservation.ReservationRepository;
 import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
+import com.example.demo.reservation.dto.ReservationSSEResponse;
+import com.example.demo.reservation.dto.ReservationScheduleDto;
 import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.slot.Slot;
 import com.example.demo.slot.SlotRepository;
+import com.example.demo.sse.ReservationConfirmedEvent;
+import com.example.demo.sse.SseService;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +45,7 @@ public class ReservationService {
     private final ReceptionService receptionService;
     private final DepartmentRepository departmentRepository;
     private final SlotRepository slotRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final AvailabilityService availabilityService;
 
     public Integer reservationReceived(ReservationDto reservationDto,
@@ -78,7 +86,8 @@ public class ReservationService {
 
         Department department=departmentRepository.findByDepartmentId(staff.getDepartment().getDepartmentId());
 
-        Slot slot=slotRepository.findByStartTime(reservationDto.getReservationDate())
+        System.out.println("department==================>"+department);
+        Slot slot=slotRepository.findByStartTimeAndStaff(reservationDto.getReservationDate(),staff)
                 .orElseGet(() -> {
                     Slot newSlot=Slot.builder()
                             .currentPatient(0)
@@ -87,6 +96,7 @@ public class ReservationService {
                             .staff(staff)
                             .department(department)
                             .build();
+                    System.out.println("newSlot==================>"+newSlot);
                     slotRepository.save(newSlot);
                     return newSlot;
                 });
@@ -115,6 +125,23 @@ public class ReservationService {
 
         reservationRepository.save(reservation);
         receptionService.receptionInsert(reservation);
+
+        Integer userId=staff.getUser().getUserId();
+
+//        Patient patient=patientRepository.findById(reservationDto.getPatientId())
+//                .orElseThrow(() -> new RuntimeException("Not exist"));
+        ReservationSSEResponse reservationSSEResponse= ReservationSSEResponse.builder()
+                .reservationId(reservationDto.getReservationId())
+                .reservationDate(reservationDto.getReservationDate())
+                .patientId(reservationDto.getPatientId())
+                .patientName("Peter")
+                .build();
+        eventPublisher.publishEvent(
+                new ReservationConfirmedEvent(
+                        userId,
+                        reservationSSEResponse
+                )
+        );
 
         return reservationDto.getReservationId();
     }
@@ -220,7 +247,7 @@ public class ReservationService {
             receptionService.receptionCancel(reservation);
         }
 
-        reservationRepository.delete(reservation);
+        reservation.setStatus(ReservationStatus.CANCELED);
 
         return reservationId;
     }

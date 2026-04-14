@@ -45,6 +45,9 @@ dependencies {
     implementation 'org.modelmapper:modelmapper:3.2.1'
 
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {

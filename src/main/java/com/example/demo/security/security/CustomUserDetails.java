@@ -7,17 +7,35 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CustomUserDetails implements UserDetails {
-    private final User user;
-    private final Integer departmentId;
+    private Integer userId;
+    private String email;
+    private String password;
+    private String status;
+    private Integer departmentId;
+    private List<GrantedAuthority> authorities;
+
     public CustomUserDetails(User user, Integer departmentId){
-        this.user=user;
-        this.departmentId=departmentId;
+        this.userId = user.getUserId();
+        this.email = user.getEmail();
+        this.password = user.getPassword();
+        this.status = user.getStatus();
+        this.departmentId = departmentId;
+
+        this.authorities = user.getUserRoles().stream()
+                .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r.getRole().getRoleName()))
+                .toList();
+    }
+    public CustomUserDetails(Integer userId, String email,
+                             String status, Integer departmentId,
+                             List<GrantedAuthority> authorities){
+        this.userId = userId;
+        this.email = email;
+        this.status = status;
+        this.departmentId = departmentId;
+        this.authorities = authorities;
     }
 
     public Integer getDepartmentId(){
@@ -25,39 +43,36 @@ public class CustomUserDetails implements UserDetails {
     }
 
     public Integer getUserId(){
-        return user.getUserId();
+        return userId;
     }
 
     public String getStatus(){
-        return user.getStatus();
+        return status;
     }
 
     //사용자 권한을 Collection으로 반환
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> authorities=new ArrayList<>();
-        for (UserRole role: user.getUserRoles()){
-            String roleName=role.getRole().getRoleName();
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
-        }
-
         return authorities;
     }
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return password;
     }
     @Override
     public String getUsername() {
-        return user.getEmail();
+        return email;
     }
 
     public Map<String,Object> getClaims(){ //JWT 관련
         Map<String,Object> dataMap=new HashMap<>();
-        dataMap.put("userId", user.getUserId());
-        dataMap.put("email", user.getEmail());
-        dataMap.put("status", user.getStatus());
-        dataMap.put("roles",user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList());
+        dataMap.put("userId", userId);
+        dataMap.put("email", email);
+        dataMap.put("status", status);
+        dataMap.put("roles", authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .map(r -> r.replace("ROLE_", ""))
+                .toList());
         if (departmentId != null){
             dataMap.put("departmentId", departmentId);
         }

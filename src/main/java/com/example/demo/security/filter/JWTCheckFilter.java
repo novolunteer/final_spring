@@ -11,13 +11,17 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class JWTCheckFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
@@ -62,9 +66,23 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             Claims claims=jwtUtil.validateToken(accessToken);
 
             //사용자 정보 꺼내와서 UserDetails 객체에 저장
-            String email=claims.getSubject();
-            CustomUserDetails details=
-                    (CustomUserDetails) customUserDetailsService.loadUserByUsername(email);
+            Integer userId = (Integer) claims.get("userId");
+            String email = (String) claims.get("email");
+            String status = (String) claims.get("status");
+            Integer departmentId = (Integer) claims.get("departmentId");
+
+            List<String> roles = (List<String>) claims.get("roles");
+
+            List<GrantedAuthority> authorities = roles.stream()
+                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                    .collect(Collectors.toList());
+
+            CustomUserDetails details = new CustomUserDetails(
+                    userId, email, status, departmentId, authorities
+            );
+
+            System.out.println("ROLES FROM JWT = " + roles);
+            System.out.println("AUTHORITIES = " + authorities);
 
             //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
             UsernamePasswordAuthenticationToken authenticationToken=

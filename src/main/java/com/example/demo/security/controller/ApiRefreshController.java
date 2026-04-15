@@ -22,7 +22,7 @@ public class ApiRefreshController {
     //토큰 유효기간 검사/재발급
     @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
-                                             @RequestParam("refreshToken") String refreshToken){
+                                             @RequestParam(value = "refreshToken", required = false) String refreshToken){
 
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");
@@ -42,18 +42,23 @@ public class ApiRefreshController {
 
         // 🔥 2. Redis 검증
         String savedToken = redisService.get(userId);
+        System.out.println("saved====>"+savedToken);
+        System.out.println("refresh==>"+refreshToken);
 
         if (savedToken != null && !savedToken.equals(refreshToken)) {
+            System.out.println("두번째 if==>"+savedToken);
             throw new CustomJWTException("INVALID_REFRESH");
         }
 
         String newAccessToken=jwtUtil.generateToken(claims, 1);
         String newRefreshToken=refreshToken;
+
         if (checkTime((Long)claims.get("exp"))){
             newRefreshToken= jwtUtil.generateToken(claims, 2);
+            System.out.println("redis=========>"+newRefreshToken);
             redisService.save(userId, newRefreshToken, 2);
         }
-
+        System.out.println("✅ newrefreshToken==========>"+newRefreshToken);
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken));
     }
 

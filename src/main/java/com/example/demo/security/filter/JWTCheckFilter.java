@@ -69,7 +69,11 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             Integer userId = (Integer) claims.get("userId");
             String email = (String) claims.get("email");
             String status = (String) claims.get("status");
-            Integer departmentId = (Integer) claims.get("departmentId");
+            Object deptObj = claims.get("departmentId");
+
+            Integer departmentId = deptObj != null
+                    ? Integer.valueOf(deptObj.toString())
+                    : null;
 
             List<String> roles = (List<String>) claims.get("roles");
 

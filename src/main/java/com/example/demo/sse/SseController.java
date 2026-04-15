@@ -51,12 +51,12 @@ public class SseController {
                 System.out.println("==========>"+claims);
             } catch (CustomJWTException e) {
                 if ("Expired".equals(e.getMessage())) {
-
-                    Map<String, Object> response = sseService.getToken(accessToken, refreshToken);
-
-                    emitter.send(SseEmitter.event()
-                            .name("TOKEN_REFRESH")
-                            .data(response));
+//                    Map<String, Object> response = sseService.getToken(accessToken, refreshToken);
+//                    emitter.send(SseEmitter.event()
+//                            .name("TOKEN_REFRESH")
+//                            .data(response));
+                    emitter.send(SseEmitter.event().name("error").data("TOKEN_EXPIRED"));
+                    emitter.complete();
                 } else {
                     throw e;
                 }

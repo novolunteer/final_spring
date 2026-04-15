@@ -30,13 +30,17 @@ public class SseController {
 
     @GetMapping(value = "/api/sse/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Integer userId,
-                                @CookieValue(value = "accessToken", required = false) String accessToken,
-                                @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+                                @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         SseEmitter emitter = new SseEmitter(60 * 1000L);
 
+        String accessToken = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7);
+        }
+
         System.out.println("accessToken======>"+accessToken);
-        System.out.println("refreshToken======>"+refreshToken);
 
         try {
             if (accessToken == null || accessToken.isBlank()) {
@@ -57,6 +61,7 @@ public class SseController {
 //                            .data(response));
                     emitter.send(SseEmitter.event().name("error").data("TOKEN_EXPIRED"));
                     emitter.complete();
+                    return emitter;
                 } else {
                     throw e;
                 }

@@ -66,37 +66,37 @@ public class SseService {
         }
     }
 
-    public Map<String, Object> getToken(String accessToken,
-                                             String refreshToken){
-        if (refreshToken == null){
-            throw new CustomJWTException("NULL_REFRESH");
-        }
-
-//        if (accessToken == null){
+//    public Map<String, Object> getToken(String accessToken,
+//                                             String refreshToken){
+//        if (refreshToken == null){
+//            throw new CustomJWTException("NULL_REFRESH");
+//        }
+//
+////        if (accessToken == null){
+////            throw new CustomJWTException("INVALID_REFRESH");
+////        }
+//
+//        Map<String, Object> claims = jWTUtil.validateToken(refreshToken);
+//
+//        Integer userId = Integer.valueOf(claims.get("userId").toString());
+//
+//        if (!redisService.validate(userId, refreshToken)) {
 //            throw new CustomJWTException("INVALID_REFRESH");
 //        }
-
-        Map<String, Object> claims = jWTUtil.validateToken(refreshToken);
-
-        Integer userId = Integer.valueOf(claims.get("userId").toString());
-
-        if (!redisService.validate(userId, refreshToken)) {
-            throw new CustomJWTException("INVALID_REFRESH");
-        }
-
-        if (!checkExpiredToken(accessToken)){ //유효기간 아직 남음
-            return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
-        }
-
-        String newAccessToken=jWTUtil.generateToken(claims, 5); //테스트 하려고 1분 설정
-        String newRefreshToken=refreshToken;
-        if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken= jWTUtil.generateToken(claims, 30);
-            redisService.save(userId, newRefreshToken, 30);
-        }
-
-        return Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken);
-    }
+//
+//        if (!checkExpiredToken(accessToken)){ //유효기간 아직 남음
+//            return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
+//        }
+//
+//        String newAccessToken=jWTUtil.generateToken(claims, 5); //테스트 하려고 1분 설정
+//        String newRefreshToken=refreshToken;
+//        if (checkTime((Long)claims.get("exp"))){
+//            newRefreshToken= jWTUtil.generateToken(claims, 30);
+//            redisService.save(userId, newRefreshToken, 30);
+//        }
+//
+//        return Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken);
+//    }
 
     //리프레쉬 토큰 유효기간이 1시간 미만으로 남았는지 검사
     private boolean checkTime(Long exp){

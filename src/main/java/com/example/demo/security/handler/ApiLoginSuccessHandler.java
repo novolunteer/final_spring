@@ -32,24 +32,24 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
 
         Map<String,Object> claims=details.getClaims();
 
-        String accessToken=jwtUtil.generateToken(claims,5);
-        String refreshToken= jwtUtil.generateToken(claims,30);
+        String accessToken=jwtUtil.generateToken(claims,1);
+        String refreshToken= jwtUtil.generateToken(claims,2);
         claims.put("accessToken",accessToken);
         claims.put("refreshToken",refreshToken);
 
-        redisService.save(details.getUserId(), refreshToken, 30);
+        redisService.save(details.getUserId(), refreshToken, 2);
 
-        Cookie cookie = new Cookie("accessToken", accessToken);
-        cookie.setHttpOnly(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(5);
-        response.addCookie(cookie);
-
-        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(30);
-        response.addCookie(refreshCookie);
+//        Cookie cookie = new Cookie("accessToken", accessToken);
+//        cookie.setHttpOnly(false);
+//        cookie.setPath("/");
+//        cookie.setMaxAge(5);
+//        response.addCookie(cookie);
+//
+//        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+//        refreshCookie.setHttpOnly(true);
+//        refreshCookie.setPath("/");
+//        refreshCookie.setMaxAge(30);
+//        response.addCookie(refreshCookie);
 
         Gson gson=new Gson();
         String jsonStr=gson.toJson(claims);

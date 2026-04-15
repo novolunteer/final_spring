@@ -11,5 +11,4 @@ import lombok.NoArgsConstructor;
 @Builder
 public class DoctorInquiryRequest {
     private String department;
-    private String date;
 }

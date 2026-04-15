@@ -11,21 +11,24 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class JWTCheckFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
-    private final CustomUserDetailsService customUserDetailsService;
 
     public JWTCheckFilter(JWTUtil jwtUtil, CustomUserDetailsService customUserDetailsService){
         this.jwtUtil=jwtUtil;
-        this.customUserDetailsService=customUserDetailsService;
     }
 
     //필터가 동작되지 않을 경로 설정
@@ -36,7 +39,8 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         String path=request.getRequestURI();
         if (path.startsWith("/none") || path.startsWith("/login") ||
                 path.startsWith("/join") || path.startsWith("/jwt/token/refresh") || path.startsWith("/ws")
-            || path.startsWith("/upload") || path.startsWith("/social") || path.startsWith("/test/upload")){
+            || path.startsWith("/upload") || path.startsWith("/social") || path.startsWith("/test/upload")
+                || path.startsWith("/chatbot/inquiry")){
             return true;
         }
 
@@ -60,8 +64,19 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             //사용자 정보 꺼내와서 UserDetails 객체에 저장
             String email=claims.getSubject();
+            Integer userId=claims.get("userId", Integer.class);
+            String status=claims.get("status", String.class);
+
+            List<String> roles=claims.get("roles", List.class);
+            Collection<GrantedAuthority> authorities=new ArrayList<>();
+            for (String role:roles){
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            }
+
+            Integer departmentId=claims.get("departmentId", Integer.class);
+
             CustomUserDetails details=
-                    (CustomUserDetails) customUserDetailsService.loadUserByUsername(email);
+                    new CustomUserDetails(email, userId, status, authorities, departmentId);
 
             //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
             UsernamePasswordAuthenticationToken authenticationToken=

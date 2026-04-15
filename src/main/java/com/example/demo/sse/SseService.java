@@ -2,6 +2,7 @@ package com.example.demo.sse;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.security.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SseService {
     private final Map<Integer, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final JWTUtil jWTUtil;
+    private final RedisService redisService;
 
     public SseEmitter subscribe(Integer doctorId) {
         SseEmitter emitter = new SseEmitter(60 * 60 * 1000L);
@@ -70,7 +72,15 @@ public class SseService {
             throw new CustomJWTException("NULL_REFRESH");
         }
 
-        if (accessToken == null){
+//        if (accessToken == null){
+//            throw new CustomJWTException("INVALID_REFRESH");
+//        }
+
+        Map<String, Object> claims = jWTUtil.validateToken(refreshToken);
+
+        Integer userId = Integer.valueOf(claims.get("userId").toString());
+
+        if (!redisService.validate(userId, refreshToken)) {
             throw new CustomJWTException("INVALID_REFRESH");
         }
 
@@ -78,11 +88,11 @@ public class SseService {
             return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
         }
 
-        Map<String, Object> claims=jWTUtil.validateToken(refreshToken);
-        String newAccessToken=jWTUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
+        String newAccessToken=jWTUtil.generateToken(claims, 5); //테스트 하려고 1분 설정
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken= jWTUtil.generateToken(claims, 60*2);
+            newRefreshToken= jWTUtil.generateToken(claims, 30);
+            redisService.save(userId, newRefreshToken, 30);
         }
 
         return Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken);
@@ -97,7 +107,7 @@ public class SseService {
         //분 단위 계산
         long leftMin=gap/(1000*60);
         //1시간 남았는지
-        return leftMin < 60;
+        return leftMin < 20;
     }
 
     //어세스 토큰 유효기간이 남았는지 검사(안 남았으면 true, 남았으면 false)

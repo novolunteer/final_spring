@@ -2,14 +2,18 @@ package com.example.demo.security.controller;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import com.example.demo.security.redis.RedisService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
 
@@ -19,22 +23,25 @@ public class ApiRefreshController {
     private final JWTUtil jwtUtil;
     private final RedisService redisService;
 
-    //토큰 유효기간 검사/재발급
-    @RequestMapping("/jwt/token/refresh")
-    public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
-                                             @RequestParam(value = "refreshToken", required = false) String refreshToken){
-
-        if (refreshToken == null){
+    @PostMapping("/jwt/token/refresh")
+    public ResponseEntity<?> getRefreshToken(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
+        if (refreshToken == null || refreshToken.isBlank()) {
             throw new CustomJWTException("NULL_REFRESH");
         }
 
-        if (authorization == null || authorization.length() < 7){
-            throw new CustomJWTException("INVALID_REFRESH");
+        String accessToken = null;
+
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            accessToken = authorization.substring(7);
         }
 
-        String accessToken=authorization.substring(7);
-        if (!checkExpiredToken(accessToken)){ //유효기간 아직 남음
-            return ResponseEntity.ok(Map.of("accessToken", accessToken, "refreshToken", refreshToken));
+        // accessToken이 있고 아직 안 만료됐으면 그대로 반환
+        if (accessToken != null && !checkExpiredToken(accessToken)) {
+            return ResponseEntity.ok(Map.of("accessToken", accessToken));
         }
 
         Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
@@ -53,36 +60,51 @@ public class ApiRefreshController {
         String newAccessToken=jwtUtil.generateToken(claims, 1);
         String newRefreshToken=refreshToken;
 
-        if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken= jwtUtil.generateToken(claims, 2);
-            System.out.println("redis=========>"+newRefreshToken);
+        if (checkTime((Long)claims.get("exp"))) {
+            newRefreshToken = jwtUtil.generateToken(claims, 2);
+            System.out.println("redis=========>" + newRefreshToken);
             redisService.save(userId, newRefreshToken, 2);
         }
-        System.out.println("✅ newrefreshToken==========>"+newRefreshToken);
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken));
+
+
+
+
+            if (checkTime((Long) claims.get("exp"))) {
+                newRefreshToken = jwtUtil.generateToken(claims, 2);
+
+                ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                        .httpOnly(true)
+                        .secure(false) // 운영 HTTPS면 true
+                        .path("/")
+                        .sameSite("Lax") // cross-origin 쿠키면 None 검토
+                        .maxAge(Duration.ofDays(14))
+                        .build();
+
+                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            }
+
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+
     }
 
-    //리프레쉬 토큰 유효기간이 1시간 미만으로 남았는지 검사
-    private boolean checkTime(Long exp){
-        //JWT exp를 날짜로 변환
-        Date expDate=new Date((long) exp * (1000));
-        //현재 시간과의 차이 계산 - 밀리세컨즈
-        long gap=expDate.getTime() - System.currentTimeMillis();
-        //분 단위 계산
-        long leftMin=gap/(1000*60);
-        //1시간 남았는지
-        return leftMin < 1;
+    // refresh token 유효기간이 1시간 미만으로 남았는지 검사
+    private boolean checkTime(Long exp) {
+        Date expDate = new Date(exp * 1000);
+        long gap = expDate.getTime() - System.currentTimeMillis();
+        long leftMin = gap / (1000 * 60);
+        return leftMin < 60;
     }
 
-    //어세스 토큰 유효기간이 남았는지 검사(안 남았으면 true, 남았으면 false)
-    private boolean checkExpiredToken(String token){
-        try{
+    // access token 유효기간이 남았는지 검사(안 남았으면 true, 남았으면 false)
+    private boolean checkExpiredToken(String token) {
+        try {
             jwtUtil.validateToken(token);
-        }catch (CustomJWTException ex){
+        } catch (CustomJWTException ex) {
             System.out.println("checkExpiredToken ==> " + ex.getMessage());
-            if (ex.getMessage().equals("Expired")){
+            if ("Expired".equals(ex.getMessage())) {
                 return true;
             }
+            throw ex;
         }
         return false;
     }

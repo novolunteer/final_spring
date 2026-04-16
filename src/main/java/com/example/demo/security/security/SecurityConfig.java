@@ -8,9 +8,11 @@ import com.example.demo.security.jwtutil.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,7 +43,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
         httpSecurity.sessionManagement(sessionConfig -> {
-            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS); //세션 생성하지 않기
+            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
         });
 
         //csrf 토큰 사용하지 않기
@@ -67,7 +69,9 @@ public class SecurityConfig {
                 ex.accessDeniedHandler(customAccessDeniedHandler));
 
         httpSecurity.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh").permitAll()
+                auth.requestMatchers("/login","/join","/upload/**", "/jwt/token/refresh",
+                                "/join/**", "/social/**", "/test/upload", "/chatbot/inquiry/**",
+                                "/ws", "/ws/**").permitAll()
                         .anyRequest().authenticated()
         );
 

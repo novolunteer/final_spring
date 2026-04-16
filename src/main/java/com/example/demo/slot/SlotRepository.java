@@ -5,6 +5,7 @@ import com.example.demo.department.Department;
 import com.example.demo.staff.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +20,12 @@ public interface SlotRepository extends JpaRepository<Slot,Integer> {
                                           Staff staff);
 
     List<Slot> findAllByStartTimeBetweenAndDepartment(LocalDateTime startTimeAfter, LocalDateTime startTimeBefore, Department department);
+
+    List<Slot> findByDepartmentAndStartTimeGreaterThanEqualAndStartTimeLessThan(Department department,
+                                                                                LocalDateTime start,
+                                                                                LocalDateTime end);
+    List<Slot> findByDepartmentAndStaffAndStartTimeGreaterThanEqualAndStartTimeLessThan(Department department,
+                                                                                        Staff staff,
+                                                                                        LocalDateTime start,
+                                                                                        LocalDateTime end);
 }

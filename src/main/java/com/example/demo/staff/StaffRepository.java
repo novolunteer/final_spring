@@ -24,6 +24,8 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
     """)
     Optional<List<Staff>> findDoctorsByDepartment(Department dept);
 
+    Optional<Staff> findByDepartmentAndName(Department department, String name);
+
     List<Staff> findAllByDepartment(Department Department);
 
     Staff findByStaffId(Integer staffId);

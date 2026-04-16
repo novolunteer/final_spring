@@ -19,17 +19,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class JWTCheckFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
-    private final CustomUserDetailsService customUserDetailsService;
 
     public JWTCheckFilter(JWTUtil jwtUtil, CustomUserDetailsService customUserDetailsService){
         this.jwtUtil=jwtUtil;
-        this.customUserDetailsService=customUserDetailsService;
     }
 
     //필터가 동작되지 않을 경로 설정
@@ -38,9 +37,12 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path=request.getRequestURI();
-        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/logout") ||
-                path.startsWith("/join") || path.startsWith("/jwt/token/refresh") || path.startsWith("/ws")
-            || path.startsWith("/upload")){
+        System.out.println("JWT shouldNotFilter path = " + path);
+
+        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/ws") ||
+                path.startsWith("/join") || path.startsWith("/jwt/token/refresh")
+            || path.startsWith("/upload") || path.startsWith("/social") || path.startsWith("/test/upload") || path.startsWith("/logout")
+                || path.startsWith("/chatbot/inquiry")){
             return true;
         }
 
@@ -59,34 +61,24 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             //토큰 값
             String accessToken=authorizationStr.substring(7);
 
-            System.out.println("REQUEST URI = " + request.getRequestURI());
-            System.out.println("AUTH HEADER = " + request.getHeader("Authorization"));
-
             //유효한 토큰인지 검사
             Claims claims=jwtUtil.validateToken(accessToken);
 
             //사용자 정보 꺼내와서 UserDetails 객체에 저장
-            Integer userId = (Integer) claims.get("userId");
-            String email = (String) claims.get("email");
-            String status = (String) claims.get("status");
-            Object deptObj = claims.get("departmentId");
+            String email=claims.getSubject();
+            Integer userId=claims.get("userId", Integer.class);
+            String status=claims.get("status", String.class);
 
-            Integer departmentId = deptObj != null
-                    ? Integer.valueOf(deptObj.toString())
-                    : null;
+            List<String> roles=claims.get("roles", List.class);
+            Collection<GrantedAuthority> authorities=new ArrayList<>();
+            for (String role:roles){
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            }
 
-            List<String> roles = (List<String>) claims.get("roles");
+            Integer departmentId=claims.get("departmentId", Integer.class);
 
-            List<GrantedAuthority> authorities = roles.stream()
-                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                    .collect(Collectors.toList());
-
-            CustomUserDetails details = new CustomUserDetails(
-                    userId, email, status, departmentId, authorities
-            );
-
-            System.out.println("ROLES FROM JWT = " + roles);
-            System.out.println("AUTHORITIES = " + authorities);
+            CustomUserDetails details=
+                    new CustomUserDetails(email, userId, status, authorities, departmentId);
 
             //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
             UsernamePasswordAuthenticationToken authenticationToken=
@@ -96,7 +88,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                             details.getAuthorities()
                     );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
         } catch (CustomJWTException e) {
             sendTokenError(response);
             return;

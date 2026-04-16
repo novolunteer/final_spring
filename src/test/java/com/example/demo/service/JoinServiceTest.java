@@ -29,13 +29,13 @@ public class JoinServiceTest {
         roles.add(1);
 
         StaffUserResponse response=StaffUserResponse.builder()
-                .email("anna@gmail.com")
+                .email("song@gmail.com")
                 .password(passwordEncoder.encode("1234"))
                 .status("Y")
                 .roles(roles)
                 .departmentId(16)
-                .name("Anna")
-                .phone("010-8546-1234")
+                .name("song")
+                .phone("010-5501-1234")
                 .address("서울특별시 서초구 서초동")
                 .build();
 

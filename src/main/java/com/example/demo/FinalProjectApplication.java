@@ -6,11 +6,7 @@ import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDa
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 
-@SpringBootApplication(exclude = {
-        ElasticsearchDataAutoConfiguration.class,
-        ElasticsearchRestClientAutoConfiguration.class,
-        ElasticsearchRepositoriesAutoConfiguration.class
-})
+@SpringBootApplication
 public class FinalProjectApplication {
 
     public static void main(String[] args) {

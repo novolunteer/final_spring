@@ -59,7 +59,7 @@ public class SseController {
 //                    emitter.send(SseEmitter.event()
 //                            .name("TOKEN_REFRESH")
 //                            .data(response));
-                    emitter.send(SseEmitter.event().name("error").data("TOKEN_EXPIRED"));
+                    emitter.send(SseEmitter.event().name("error").data("TOKEN_REFRESH"));
                     emitter.complete();
                     return emitter;
                 } else {

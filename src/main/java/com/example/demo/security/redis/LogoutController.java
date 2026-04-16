@@ -26,7 +26,6 @@ public class LogoutController {
         Claims claims = jwtUtil.validateToken(token);
         Integer userId = (Integer) claims.get("userId");
 
-        // Redis에서 refresh token 삭제
         redisService.delete(userId);
 
         return ResponseEntity.ok("logout success");

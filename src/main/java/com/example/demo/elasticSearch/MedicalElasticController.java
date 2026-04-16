@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Profile("elasticsearch")
+
 @RestController
 @RequiredArgsConstructor
 public class MedicalElasticController {

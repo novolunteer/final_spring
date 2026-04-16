@@ -1,21 +1,20 @@
-package com.example.demo.auth.dto;
+package com.example.demo.join.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class PatientUserResponse {
+@Builder
+public class PatientUserRequest {
     private Integer patientId;
     private Integer userId;
-    private Integer role;
+    private Integer roleId;
     private String rrn;
     private String name;
     private String phone;
@@ -28,13 +27,4 @@ public class PatientUserResponse {
     private String password;
     private LocalDateTime createdAt;
     private String status;
-
-    public Map<String, Object> getClaims(){
-        Map<String, Object> data=new HashMap<>();
-        data.put("patientId",patientId);
-        data.put("rrn",rrn);
-        data.put("name",name);
-        data.put("email",email);
-        return data;
-    }
 }

@@ -1,11 +1,12 @@
 package com.example.demo.security.security;
 
+import com.example.demo.socialAccount.SocialAccount;
+import com.example.demo.socialAccount.SocialAccountException;
+import com.example.demo.socialAccount.SocialAccountRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
-import com.example.demo.user.UserDto;
 import com.example.demo.user.UserRepository;
-import com.example.demo.userRole.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,6 +20,7 @@ import java.util.List;
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -30,6 +32,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (staff != null && staff.getDepartment() != null){
             departmentId=staff.getDepartment().getDepartmentId();
         }
+
+        List<SocialAccount> accounts=socialAccountRepository.findByUser(user);
+        if (accounts != null && accounts.size() > 0){
+            List<String> providers=accounts.stream().map(a -> a.getProvider().name()).toList();
+            throw new SocialAccountException(providers);
+        }
+
         return new CustomUserDetails(user, departmentId);
     }
 }

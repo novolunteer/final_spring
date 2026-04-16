@@ -10,32 +10,36 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.*;
 
 public class CustomUserDetails implements UserDetails {
-    private Integer userId;
-    private String email;
-    private String password;
-    private String status;
+    private User user;
     private Integer departmentId;
-    private List<GrantedAuthority> authorities;
+    private Integer userId;
+    private String password;
+    private String email;
+    private String status;
+    private Collection<? extends GrantedAuthority> authorities;
+
 
     public CustomUserDetails(User user, Integer departmentId){
-        this.userId = user.getUserId();
-        this.email = user.getEmail();
-        this.password = user.getPassword();
-        this.status = user.getStatus();
-        this.departmentId = departmentId;
-
-        this.authorities = user.getUserRoles().stream()
-                .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r.getRole().getRoleName()))
+        this.user=user;
+        this.departmentId=departmentId;
+        this.userId=user.getUserId();
+        this.password=user.getPassword();
+        this.email=user.getEmail();
+        this.status=user.getStatus();
+        this.authorities=user.getUserRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRole().getRoleName()))
                 .toList();
     }
-    public CustomUserDetails(Integer userId, String email,
-                             String status, Integer departmentId,
-                             List<GrantedAuthority> authorities){
-        this.userId = userId;
-        this.email = email;
-        this.status = status;
-        this.departmentId = departmentId;
-        this.authorities = authorities;
+
+    public CustomUserDetails(String email, Integer userId, String status,
+                                Collection<? extends GrantedAuthority> authorities, Integer departmentId){
+        this.user=null;
+        this.userId=userId;
+        this.password=null;
+        this.email=email;
+        this.status=status;
+        this.authorities=authorities;
+        this.departmentId=departmentId;
     }
 
     public Integer getDepartmentId(){
@@ -71,7 +75,7 @@ public class CustomUserDetails implements UserDetails {
         dataMap.put("status", status);
         dataMap.put("roles", authorities.stream()
                 .map(GrantedAuthority::getAuthority)
-                .map(r -> r.replace("ROLE_", ""))
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
                 .toList());
         if (departmentId != null){
             dataMap.put("departmentId", departmentId);

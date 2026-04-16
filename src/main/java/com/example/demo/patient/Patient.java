@@ -16,9 +16,10 @@ public class Patient {
     private Integer patientId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId", unique = true)
     private User user;
 
+    @Column(nullable = false, unique = true)
     private String rrn;
     private String name;
     private String phone;

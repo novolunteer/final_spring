@@ -20,8 +20,5 @@ public class ChatAttachmentDto {
     private String contentType;
     private String fileExtension;
     private Long fileSize;
-    private String thumbnailUrl;
-    private boolean image;
-    private boolean download;
     private LocalDateTime createdAt;
 }

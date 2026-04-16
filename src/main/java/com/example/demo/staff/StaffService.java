@@ -3,9 +3,7 @@ package com.example.demo.staff;
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentDto;
 import com.example.demo.department.DepartmentRepository;
-import com.example.demo.staff.dto.StaffRegisterDto;
-import com.example.demo.staff.dto.StaffResponseDto;
-import com.example.demo.staff.dto.StaffUpdateDto;
+import com.example.demo.staff.dto.*;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +58,62 @@ public class StaffService {
         Staff savedStaff = staffRepository.save(staff);
 
         return savedStaff.getStaffId();
+    }
+
+    //직원엑셀 일괄등록
+    public StaffBulkUploadResponseDto bulkUpload(List<StaffBulkUploadRequestDto> requestList){
+        List<Staff> successList = new ArrayList<>();
+        List<StaffBulkUploadResponseDto.FailDetail> failList=new ArrayList<>();
+
+        for(int i =0; i<requestList.size(); i++){
+            StaffBulkUploadRequestDto dto=requestList.get(i);
+            int rowNum = i +1;
+
+            try{
+                //UserId로 User조회
+                User user = userRepository.findById(dto.getUserId())
+                        .orElseThrow(()-> new RuntimeException("존재하지않는 user입니다"));
+
+                //부서명으로 department조회
+                Department department = departmentRepository.findByDepartmentName(dto.getDept_name())
+                        .orElseThrow(()-> new RuntimeException("존재하지 않는 부서명입니다"));
+
+                //담당자 userId로 staff조회 없으면 null
+                Staff manager = null;
+                if (dto.getManagerId() != null) {
+                    manager = staffRepository.findById(dto.getManagerId())
+                            .orElseThrow(() -> new RuntimeException("존재하지 않는 담당자입니다"));
+                }
+                Staff staff = Staff.builder()
+                        .user(user)
+                        .department(department)
+                        .manager(manager)
+                        .position(dto.getPosition())
+                        .name(dto.getName())
+                        .phone(dto.getPhone())
+                        .address(dto.getAddress())
+                        .isActive(dto.getIsActive())
+                        .build();
+                successList.add(staff);
+            }catch (Exception e){
+                failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
+                        .row(rowNum)
+                        .userId(dto.getUserId() !=null ? dto.getUserId().toString():"-")
+                                .name(dto.getName())
+                                .reason(e.getMessage())
+                                .build()
+                        );
+            }
+        }
+        //정상행만 일괄저장
+        if(!successList.isEmpty()){
+            staffRepository.saveAll(successList);
+        }
+        return StaffBulkUploadResponseDto.builder()
+                .successCount(successList.size())
+                .failCount(failList.size())
+                .failDetails(failList)
+                .build();
     }
 
     //전체조회 (페이징 + 키워드 검색)

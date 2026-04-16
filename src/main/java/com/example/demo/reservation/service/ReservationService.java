@@ -127,6 +127,7 @@ public class ReservationService {
         receptionService.receptionInsert(reservation);
 
         Integer userId=staff.getUser().getUserId();
+        System.out.println("SSE 전송할 userId ===> " + userId);
 
 //        Patient patient=patientRepository.findById(reservationDto.getPatientId())
 //                .orElseThrow(() -> new RuntimeException("Not exist"));

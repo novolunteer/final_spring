@@ -31,8 +31,8 @@ public class SseController {
     @GetMapping(value = "/api/sse/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Integer userId,
                                 @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        SseEmitter emitter = new SseEmitter(60 * 1000L);
+        System.out.println("SSE 구독 진입");
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
 
         String accessToken = null;
 
@@ -55,10 +55,6 @@ public class SseController {
                 System.out.println("==========>"+claims);
             } catch (CustomJWTException e) {
                 if ("Expired".equals(e.getMessage())) {
-//                    Map<String, Object> response = sseService.getToken(accessToken, refreshToken);
-//                    emitter.send(SseEmitter.event()
-//                            .name("TOKEN_REFRESH")
-//                            .data(response));
                     emitter.send(SseEmitter.event().name("error").data("TOKEN_REFRESH"));
                     emitter.complete();
                     return emitter;
@@ -68,15 +64,10 @@ public class SseController {
             }
 
             Integer claimUserId = Integer.valueOf(claims.get("userId").toString());
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("user Not exist"));
-            Staff staff = staffRepository.findByUser(user)
-                    .orElseThrow(() -> new RuntimeException("staff Not exist"));
 
             System.out.println("로그인한 의사===========>"+userId);
 
-
-            if (!staff.getUser().getUserId().equals(claimUserId)) {
+            if (!userId.equals(claimUserId)) {
                 emitter.send(SseEmitter.event().name("error").data("FORBIDDEN"));
                 emitter.complete();
                 return emitter;

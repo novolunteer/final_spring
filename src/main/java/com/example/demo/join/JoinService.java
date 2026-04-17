@@ -7,6 +7,8 @@ import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
 import com.example.demo.socialAccount.SocialAccount;
 import com.example.demo.socialAccount.SocialAccountRepository;
+import com.example.demo.staff.Staff;
+import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import com.example.demo.userRole.UserRole;
@@ -26,6 +28,7 @@ public class JoinService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final SocialAccountRepository socialAccountRepository;
+    private final StaffRepository staffRepository;
 
     public String join(PatientUserRequest request){
         String rrn= request.getRrn();
@@ -117,6 +120,8 @@ public class JoinService {
         if (!rrn.matches("\\d+")){
             throw new RuntimeException("주민등록번호는 숫자로만 입력하세요.");
         }
+
+
 
         boolean exists=patientRepository.existsByRrn(rrn);
         if (exists){

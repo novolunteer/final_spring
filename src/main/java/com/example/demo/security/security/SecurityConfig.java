@@ -28,7 +28,6 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JWTUtil jwtUtil;
-    private final CustomUserDetailsService customUserDetailsService;
     private final ApiLoginSuccessHandler apiLoginSuccessHandler;
     private final ApiLoginFailureHandler apiLoginFailureHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -59,7 +58,7 @@ public class SecurityConfig {
         httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         httpSecurity.addFilterBefore(
-                new JWTCheckFilter(jwtUtil,customUserDetailsService),
+                new JWTCheckFilter(jwtUtil),
                 UsernamePasswordAuthenticationFilter.class
         );
 

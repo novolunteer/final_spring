@@ -4,6 +4,8 @@ import com.example.demo.security.jwtutil.JWTUtil;
 import com.example.demo.socialAccount.dto.*;
 import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +71,14 @@ public class SocialAccountController {
         session.setAttribute("status", userDto.getStatus());
         session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);
-        session.setAttribute("refreshToken", refreshToken);
+
+        Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 2);
+
+        response.addCookie(refreshCookie);
 
         response.sendRedirect(reactUri + "/login?mode=kakaoLogin");
     }
@@ -90,7 +99,8 @@ public class SocialAccountController {
 
     @PostMapping("/social/login/kakao/complete")
     public ResponseEntity<SocialLoginResponse> kakaoLogin(@RequestBody KakaoLoginRequest request,
-                                                          HttpSession session){
+                                                          HttpSession session,
+                                                          HttpServletResponse httpServletResponse){
         try{
             Map<String,Object> userInfo=socialAccountService.registerKakaoAccount(request);
             User user= (User) userInfo.get("user");
@@ -111,12 +121,19 @@ public class SocialAccountController {
                     .email(user.getEmail())
                     .name(userInfo.get("name").toString())
                     .accessToken(accessToken)
-                    .refreshToken(refreshToken)
                     .roles(roles)
                     .status(user.getStatus())
                     .departmentId(null).build();
 
             session.invalidate();
+
+            Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(60 * 60 * 2);
+
+            httpServletResponse.addCookie(refreshCookie);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -190,7 +207,14 @@ public class SocialAccountController {
         session.setAttribute("status", user.getStatus());
         session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);
-        session.setAttribute("refreshToken", refreshToken);
+
+        Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 2);
+
+        response.addCookie(refreshCookie);
 
         //여기서 로그인 어떻게 처리할지 고민해야 함
         response.sendRedirect(reactUri + "/login?mode=naverLogin");
@@ -200,8 +224,8 @@ public class SocialAccountController {
     public ResponseEntity<NaverLoginResponse> getNaverUserInfo(HttpSession session){
         try{
             String phone=null;
-            if (session.getAttribute("mobile") != null){
-                String mobile=(String) session.getAttribute("mobile");
+            if (session.getAttribute("socialMobile") != null){
+                String mobile=(String) session.getAttribute("socialMobile");
                 phone=mobile.replace("-","");
             }
 
@@ -219,7 +243,7 @@ public class SocialAccountController {
 
     @PostMapping("/social/login/naver/complete")
     public ResponseEntity<SocialLoginResponse> naverLogin(@RequestBody NaverLoginRequest request,
-                                                          HttpSession session){
+                                                          HttpSession session, HttpServletResponse httpServletResponse){
         try{
             Map<String,Object> userInfo=socialAccountService.registerNaverAccount(request);
 
@@ -241,12 +265,19 @@ public class SocialAccountController {
                     .email(user.getEmail())
                     .name(userInfo.get("name").toString())
                     .accessToken(accessToken)
-                    .refreshToken(refreshToken)
                     .roles(roles)
                     .status(user.getStatus())
                     .departmentId(null).build();
 
             session.invalidate();
+
+            Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(60 * 60 * 2);
+
+            httpServletResponse.addCookie(refreshCookie);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -264,8 +295,7 @@ public class SocialAccountController {
                     .name((String) session.getAttribute("name"))
                     .status((String) session.getAttribute("status"))
                     .roles((List<String>) session.getAttribute("roles"))
-                    .accessToken((String) session.getAttribute("accessToken"))
-                    .refreshToken((String) session.getAttribute("refreshToken")).build();
+                    .accessToken((String) session.getAttribute("accessToken")).build();
 
             session.invalidate();
             return ResponseEntity.ok(response);

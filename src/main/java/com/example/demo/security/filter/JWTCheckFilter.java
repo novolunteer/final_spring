@@ -27,7 +27,7 @@ import java.util.Map;
 public class JWTCheckFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
 
-    public JWTCheckFilter(JWTUtil jwtUtil, CustomUserDetailsService customUserDetailsService){
+    public JWTCheckFilter(JWTUtil jwtUtil){
         this.jwtUtil=jwtUtil;
     }
 

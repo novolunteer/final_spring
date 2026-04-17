@@ -5,6 +5,7 @@ import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.user.UserDto;
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,14 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken=jwtUtil.generateToken(claims,5);
         String refreshToken= jwtUtil.generateToken(claims,60*2);
         claims.put("accessToken",accessToken);
-        claims.put("refreshToken",refreshToken);
+
+        Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(60 * 60 * 2);
+
+        response.addCookie(refreshCookie);
 
         Gson gson=new Gson();
         String jsonStr=gson.toJson(claims);

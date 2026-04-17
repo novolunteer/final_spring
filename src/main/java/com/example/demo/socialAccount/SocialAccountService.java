@@ -5,6 +5,8 @@ import com.example.demo.patient.PatientRepository;
 import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
 import com.example.demo.socialAccount.dto.*;
+import com.example.demo.staff.Staff;
+import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
 import com.example.demo.user.UserRepository;
@@ -46,7 +48,7 @@ public class SocialAccountService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
 
-    public User registerKakaoAccount(KakaoLoginRequest request){
+    public Map<String, Object> registerKakaoAccount(KakaoLoginRequest request){
         String provider=request.getProvider();
         if (provider == null || provider.trim().isEmpty() || !"KAKAO".equals(provider)){
             throw new RuntimeException("PROVIDER_IS_INCORRECT");
@@ -93,7 +95,7 @@ public class SocialAccountService {
                     .user(savedPatient.getUser())
                     .provider(SocialAccountProvider.KAKAO)
                     .providerId(providerId).build());
-            return account.getUser();
+            return Map.of("name", patient.getName(), "user", account.getUser());
         } else {
             if (patient.getUser() == null){
                 //유저 계정 생성 후 소셜 로그인
@@ -116,14 +118,14 @@ public class SocialAccountService {
                         .user(user)
                         .provider(SocialAccountProvider.KAKAO)
                         .providerId(providerId).build());
-                return account.getUser();
+                return Map.of("name", patient.getName(), "user", account.getUser());
             } else {
                 //소셜 로그인 등록
                 SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
                         .user(patient.getUser())
                         .provider(SocialAccountProvider.KAKAO)
                         .providerId(providerId).build());
-                return account.getUser();
+                return Map.of("name", patient.getName(), "user", account.getUser());
             }
         }
     }
@@ -196,7 +198,7 @@ public class SocialAccountService {
         return body;
     }
 
-    public User registerNaverAccount(NaverLoginRequest request){
+    public Map<String, Object> registerNaverAccount(NaverLoginRequest request){
         String provider=request.getProvider();
         if (provider == null || provider.trim().isEmpty() || !"NAVER".equals(provider)){
             throw new RuntimeException("PROVIDER_IS_INCORRECT");
@@ -245,7 +247,8 @@ public class SocialAccountService {
                     .user(savedPatient.getUser())
                     .provider(SocialAccountProvider.NAVER)
                     .providerId(providerId).build());
-            return account.getUser();
+
+            return Map.of("name", patient.getName(), "user", account.getUser());
         } else {
             if (patient.getUser() == null){
                 //유저 계정 생성 후 소셜 로그인
@@ -268,22 +271,23 @@ public class SocialAccountService {
                         .user(user)
                         .provider(SocialAccountProvider.NAVER)
                         .providerId(providerId).build());
-                return account.getUser();
+                return Map.of("name", patient.getName(), "user", account.getUser());
             } else {
                 //소셜 로그인 등록
                 SocialAccount account=socialAccountRepository.save(SocialAccount.builder()
                         .user(patient.getUser())
                         .provider(SocialAccountProvider.NAVER)
                         .providerId(providerId).build());
-                return account.getUser();
+                return Map.of("name", patient.getName(), "user", account.getUser());
             }
         }
     }
 
-    public UserDto verifyUser(SocialAccountProvider provider, String providerId){
+    public Map<String, Object> verifyUser(SocialAccountProvider provider, String providerId){
         SocialAccount account=socialAccountRepository.findByProviderAndProviderId(provider, providerId);
         if (account != null){
-            return new UserDto(account.getUser());
+            Patient patient=patientRepository.findByUser(account.getUser());
+            return Map.of("name", patient.getName(), "user", patient.getUser());
         } else {
             return null;
         }

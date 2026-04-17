@@ -15,9 +15,10 @@ public class CustomUserDetails implements UserDetails {
     private String email;
     private String status;
     private Collection<? extends GrantedAuthority> authorities;
+    private String name;
 
 
-    public CustomUserDetails(User user, Integer departmentId){
+    public CustomUserDetails(User user, Integer departmentId, String name){
         this.user=user;
         this.departmentId=departmentId;
         this.userId=user.getUserId();
@@ -27,10 +28,11 @@ public class CustomUserDetails implements UserDetails {
         this.authorities=user.getUserRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRole().getRoleName()))
                 .toList();
+        this.name=name;
     }
 
     public CustomUserDetails(String email, Integer userId, String status,
-                                Collection<? extends GrantedAuthority> authorities, Integer departmentId){
+                                Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name){
         this.user=null;
         this.userId=userId;
         this.password=null;
@@ -38,6 +40,7 @@ public class CustomUserDetails implements UserDetails {
         this.status=status;
         this.authorities=authorities;
         this.departmentId=departmentId;
+        this.name=name;
     }
 
     public Integer getDepartmentId(){
@@ -50,6 +53,10 @@ public class CustomUserDetails implements UserDetails {
 
     public String getStatus(){
         return status;
+    }
+
+    public String getName() {
+        return name;
     }
 
     //사용자 권한을 Collection으로 반환
@@ -78,6 +85,7 @@ public class CustomUserDetails implements UserDetails {
         if (departmentId != null){
             dataMap.put("departmentId", departmentId);
         }
+        dataMap.put("name", name);
         return dataMap;
     }
 }

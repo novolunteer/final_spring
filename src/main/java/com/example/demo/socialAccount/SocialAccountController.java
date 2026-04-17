@@ -42,7 +42,9 @@ public class SocialAccountController {
                               HttpServletResponse response) throws IOException{
         Map<String,Object> result=socialAccountService.kakaoLogin(code);
         String providerId= result.get("providerId").toString();
-        UserDto userDto=socialAccountService.verifyUser(SocialAccountProvider.KAKAO, providerId);
+        Map<String, Object> userInfo=socialAccountService.verifyUser(SocialAccountProvider.KAKAO, providerId);
+
+        UserDto userDto= (UserDto) userInfo.get("user");
         if (userDto == null){
             session.setAttribute("provider", "KAKAO");
             session.setAttribute("providerId", providerId);
@@ -56,6 +58,7 @@ public class SocialAccountController {
         claims.put("userId", userDto.getUserId());
         claims.put("roles", userDto.getRoles());
         claims.put("status", userDto.getStatus());
+        claims.put("name", userInfo.get("name"));
 
         String accessToken=jwtUtil.generateToken(claims, 5);
         String refreshToken=jwtUtil.generateToken(claims, 60*2);
@@ -64,6 +67,7 @@ public class SocialAccountController {
         session.setAttribute("userId", userDto.getUserId());
         session.setAttribute("roles", userDto.getRoles());
         session.setAttribute("status", userDto.getStatus());
+        session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);
         session.setAttribute("refreshToken", refreshToken);
 
@@ -88,7 +92,8 @@ public class SocialAccountController {
     public ResponseEntity<SocialLoginResponse> kakaoLogin(@RequestBody KakaoLoginRequest request,
                                                           HttpSession session){
         try{
-            User user=socialAccountService.registerKakaoAccount(request);
+            Map<String,Object> userInfo=socialAccountService.registerKakaoAccount(request);
+            User user= (User) userInfo.get("user");
             List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
             Map<String, Object> claims=new HashMap<>();
@@ -96,6 +101,7 @@ public class SocialAccountController {
             claims.put("userId", user.getUserId());
             claims.put("roles", roles);
             claims.put("status", user.getStatus().toString());
+            claims.put("name", userInfo.get("name"));
 
             String accessToken=jwtUtil.generateToken(claims, 5);
             String refreshToken=jwtUtil.generateToken(claims, 60*2);
@@ -103,6 +109,7 @@ public class SocialAccountController {
             SocialLoginResponse response=SocialLoginResponse.builder()
                     .userId(user.getUserId())
                     .email(user.getEmail())
+                    .name(userInfo.get("name").toString())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .roles(roles)
@@ -148,7 +155,9 @@ public class SocialAccountController {
 
         String providerId=userInfoResponse.getResponse().getId();
 
-        UserDto user=socialAccountService.verifyUser(SocialAccountProvider.NAVER, providerId);
+        Map<String, Object> userInfo=socialAccountService.verifyUser(SocialAccountProvider.NAVER, providerId);
+
+        UserDto user= (UserDto) userInfo.get("user");
         if (user == null){
             session.setAttribute("socialProvider", "NAVER");
             session.setAttribute("socialProviderId", providerId);
@@ -170,6 +179,7 @@ public class SocialAccountController {
         claims.put("userId", user.getUserId());
         claims.put("roles", user.getRoles());
         claims.put("status", user.getStatus());
+        claims.put("name", userInfo.get("name"));
 
         String accessToken=jwtUtil.generateToken(claims, 5);
         String refreshToken=jwtUtil.generateToken(claims, 60*2);
@@ -178,6 +188,7 @@ public class SocialAccountController {
         session.setAttribute("userId", user.getUserId());
         session.setAttribute("roles", user.getRoles());
         session.setAttribute("status", user.getStatus());
+        session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);
         session.setAttribute("refreshToken", refreshToken);
 
@@ -210,7 +221,9 @@ public class SocialAccountController {
     public ResponseEntity<SocialLoginResponse> naverLogin(@RequestBody NaverLoginRequest request,
                                                           HttpSession session){
         try{
-            User user=socialAccountService.registerNaverAccount(request);
+            Map<String,Object> userInfo=socialAccountService.registerNaverAccount(request);
+
+            User user= (User) userInfo.get("user");
             List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
             Map<String, Object> claims=new HashMap<>();
@@ -218,6 +231,7 @@ public class SocialAccountController {
             claims.put("userId", user.getUserId());
             claims.put("roles", roles);
             claims.put("status", user.getStatus().toString());
+            claims.put("name", userInfo.get("name"));
 
             String accessToken=jwtUtil.generateToken(claims, 5);
             String refreshToken=jwtUtil.generateToken(claims, 60*2);
@@ -225,6 +239,7 @@ public class SocialAccountController {
             SocialLoginResponse response=SocialLoginResponse.builder()
                     .userId(user.getUserId())
                     .email(user.getEmail())
+                    .name(userInfo.get("name").toString())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .roles(roles)
@@ -246,6 +261,7 @@ public class SocialAccountController {
             SocialLoginResponse response=SocialLoginResponse.builder()
                     .userId((Integer) session.getAttribute("userId"))
                     .email((String) session.getAttribute("email"))
+                    .name((String) session.getAttribute("name"))
                     .status((String) session.getAttribute("status"))
                     .roles((List<String>) session.getAttribute("roles"))
                     .accessToken((String) session.getAttribute("accessToken"))

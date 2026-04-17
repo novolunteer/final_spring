@@ -2,6 +2,8 @@ package com.example.demo.security.controller;
 
 import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -17,10 +19,24 @@ import java.util.Map;
 public class ApiRefreshController {
     private final JWTUtil jwtUtil;
 
+    public String getRefreshTokenFromCookie(HttpServletRequest request){
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie: request.getCookies()){
+            if ("refreshToken".equals(cookie.getName())){
+                return cookie.getValue();
+            }
+        }
+
+        return null;
+    }
+
     //토큰 유효기간 검사/재발급
     @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
-                                             @RequestParam("refreshToken") String refreshToken){
+                                             HttpServletRequest request){
+        String refreshToken=getRefreshTokenFromCookie(request);
+
         if (refreshToken == null){
             throw new CustomJWTException("NULL_REFRESH");
         }
@@ -38,7 +54,7 @@ public class ApiRefreshController {
         String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
         String newRefreshToken=refreshToken;
         if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken= jwtUtil.generateToken(claims, 60*2);
+            newRefreshToken=jwtUtil.generateToken(claims, 60*2);
         }
 
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken));

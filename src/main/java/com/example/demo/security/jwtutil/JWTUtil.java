@@ -42,6 +42,7 @@ public class JWTUtil {
                     .parseClaimsJws(token)
                     .getPayload();
         }catch (MalformedJwtException malformedJwtException){
+            System.out.println("=============>"+token);
             throw new CustomJWTException("Malformed");
         }catch (ExpiredJwtException expiredJwtException){
             throw new CustomJWTException("Expired");
@@ -54,5 +55,18 @@ public class JWTUtil {
         }
 
         return claim;
+    }
+
+    public Claims getClaimsIgnoreExpiration(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
     }
 }

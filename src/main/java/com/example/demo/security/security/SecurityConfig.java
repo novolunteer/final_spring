@@ -43,7 +43,6 @@ public class SecurityConfig {
             sessionConfig.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
         });
 
-        //csrf 토큰 사용하지 않기
         httpSecurity.csrf(csrf -> csrf.disable());
 
         httpSecurity.formLogin(form -> form
@@ -67,7 +66,7 @@ public class SecurityConfig {
 
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh",
-                                "/join/**", "/social/**", "/test/upload", "/chatbot/inquiry/**").permitAll()
+                                "/join/**", "/social/**", "/chatbot/inquiry/**").permitAll()
                         .anyRequest().authenticated()
         );
 
@@ -79,10 +78,19 @@ public class SecurityConfig {
         CorsConfiguration configuration=new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization","Cache-Control","Content-Type"));
-        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD"));
+        configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","HEAD", "PATCH", "OPTIONS"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source=new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
+//        // 2️⃣ SSE 전용 (/api/sse/**) → 특정 origin만 허용, 쿠키 사용
+//        CorsConfiguration sseConfig = new CorsConfiguration();
+//        sseConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173"));
+//        sseConfig.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+//        sseConfig.setAllowedMethods(Arrays.asList("GET"));
+//        sseConfig.setAllowCredentials(true); // 쿠키 전송 허용
+//        source.registerCorsConfiguration("/api/sse/**", sseConfig);
+
         return source;
     }
 }

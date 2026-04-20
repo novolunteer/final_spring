@@ -4,5 +4,6 @@ public enum ReceptionStatus {
     PENDING,
     RECEIVED,
     CONSULTING,
-    COMPLETED
+    COMPLETED,
+    CANCELED
 }

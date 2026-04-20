@@ -1,14 +1,18 @@
 package com.example.demo.security.security;
 
+import com.example.demo.staff.Staff;
 import com.example.demo.user.User;
+import com.example.demo.userRole.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CustomUserDetails implements UserDetails {
-    private User user;
     private Integer departmentId;
     private Integer userId;
     private String password;
@@ -19,7 +23,6 @@ public class CustomUserDetails implements UserDetails {
 
 
     public CustomUserDetails(User user, Integer departmentId, String name){
-        this.user=user;
         this.departmentId=departmentId;
         this.userId=user.getUserId();
         this.password=user.getPassword();
@@ -33,7 +36,6 @@ public class CustomUserDetails implements UserDetails {
 
     public CustomUserDetails(String email, Integer userId, String status,
                                 Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name){
-        this.user=null;
         this.userId=userId;
         this.password=null;
         this.email=email;
@@ -85,7 +87,6 @@ public class CustomUserDetails implements UserDetails {
         if (departmentId != null){
             dataMap.put("departmentId", departmentId);
         }
-        dataMap.put("name", name);
         return dataMap;
     }
 }

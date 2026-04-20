@@ -5,6 +5,7 @@ import com.example.demo.staff.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +38,8 @@ public interface StaffScheduleRepository extends JpaRepository<StaffSchedule, In
     List<StaffSchedule> findByStaffAndStatusAndStaffScheduleType_ScheduleTypeIdAndWorkDateBetween(Staff staff, String status,
                                                                                                   Integer typeId, LocalDate start,
                                                                                                   LocalDate end);
+
+    StaffSchedule findByStaffAndWorkDate(Staff staff, LocalDate workDate);
+
+    List<StaffSchedule> findAllByStaffInAndWorkDateBetween(Collection<Staff> staff, LocalDate workDateAfter, LocalDate workDateBefore);
 }

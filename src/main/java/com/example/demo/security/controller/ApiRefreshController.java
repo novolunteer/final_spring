@@ -4,11 +4,12 @@ import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import com.example.demo.security.redis.RedisService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
@@ -18,6 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiRefreshController {
     private final JWTUtil jwtUtil;
+    private final RedisService redisService;
 
     public String getRefreshTokenFromCookie(HttpServletRequest request){
         if (request.getCookies() == null) return null;
@@ -34,7 +36,7 @@ public class ApiRefreshController {
     //토큰 유효기간 검사/재발급
     @RequestMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
-                                             HttpServletRequest request){
+                                             HttpServletRequest request, HttpServletResponse response){
         String refreshToken=getRefreshTokenFromCookie(request);
 
         if (refreshToken == null){
@@ -47,17 +49,40 @@ public class ApiRefreshController {
 
         String accessToken=authorization.substring(7);
         if (!checkExpiredToken(accessToken)){ //유효기간 아직 남음
-            return ResponseEntity.ok(Map.of("accessToken", accessToken, "refreshToken", refreshToken));
+            return ResponseEntity.ok(Map.of("accessToken", accessToken));
         }
 
         Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
-        String newAccessToken=jwtUtil.generateToken(claims, 1); //테스트 하려고 1분 설정
-        String newRefreshToken=refreshToken;
-        if (checkTime((Long)claims.get("exp"))){
-            newRefreshToken=jwtUtil.generateToken(claims, 60*2);
+        Integer userId = (Integer) claims.get("userId");
+
+        // 🔥 2. Redis 검증
+        String savedToken = redisService.get(userId);
+        System.out.println("saved====>"+savedToken);
+        System.out.println("refresh==>"+refreshToken);
+
+        if (savedToken != null && !savedToken.equals(refreshToken)) {
+            System.out.println("두번째 if==>"+savedToken);
+            throw new CustomJWTException("INVALID_REFRESH");
         }
 
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken));
+        String newAccessToken=jwtUtil.generateToken(claims, 1);
+
+        if (checkTime((Long)claims.get("exp"))){
+            String newRefreshToken=jwtUtil.generateToken(claims, 120);
+            System.out.println("redis=========>"+newRefreshToken);
+
+            Cookie refreshCookie=new Cookie("refreshToken", newRefreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(60 * 60 * 2);
+
+            response.addCookie(refreshCookie);
+
+            redisService.save(userId, newRefreshToken, 120);
+        }
+
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
     //리프레쉬 토큰 유효기간이 1시간 미만으로 남았는지 검사

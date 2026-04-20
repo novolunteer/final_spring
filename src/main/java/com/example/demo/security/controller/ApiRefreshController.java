@@ -6,7 +6,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.example.demo.security.redis.RedisService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,54 +37,64 @@ public class ApiRefreshController {
     @PostMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              HttpServletRequest request, HttpServletResponse response){
-        String refreshToken=getRefreshTokenFromCookie(request);
+        try {
+            // 1. refresh token 쿠키에서 가져오기
+            String refreshToken = getRefreshTokenFromCookie(request);
 
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new CustomJWTException("NULL_REFRESH");
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return ResponseEntity.status(401).body(Map.of("error", "NULL_REFRESH"));
+            }
+
+            // 2. access token 추출
+            String accessToken = null;
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                accessToken = authorization.substring(7);
+            }
+
+            // 3. access token이 아직 유효하면 그대로 반환
+            if (accessToken != null && !checkExpiredToken(accessToken)) {
+                return ResponseEntity.ok(Map.of("accessToken", accessToken));
+            }
+
+            // 4. refresh token 검증 (여기서 Expired 나올 수 있음)
+            Map<String, Object> claims = jwtUtil.validateToken(refreshToken);
+            Integer userId = (Integer) claims.get("userId");
+
+            // 5. Redis 검증
+            String savedToken = redisService.get(userId);
+            System.out.println("saved====>" + savedToken);
+            System.out.println("refresh==>" + refreshToken);
+
+            if (savedToken == null || !savedToken.equals(refreshToken)) {
+                throw new CustomJWTException("INVALID_REFRESH");
+            }
+
+            // 6. 새 access token 발급 (5분)
+            String newAccessToken = jwtUtil.generateToken(claims, 5);
+
+            // 7. refresh token 만료 임박 시 재발급
+            if (checkTime((Long) claims.get("exp"))) {
+                String newRefreshToken = jwtUtil.generateToken(claims, 120); // 2시간
+
+                System.out.println("redis=========>" + newRefreshToken);
+
+                Cookie refreshCookie = new Cookie("refreshToken", newRefreshToken);
+                refreshCookie.setHttpOnly(true);
+                refreshCookie.setSecure(false);
+                refreshCookie.setPath("/");
+                refreshCookie.setMaxAge(60 * 60 * 2); // 2시간
+
+                response.addCookie(refreshCookie);
+
+                redisService.save(userId, newRefreshToken, 120);
+            }
+
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+
+        } catch (CustomJWTException e) {
+            System.out.println("Refresh error ==> " + e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
-
-        String accessToken=authorization.substring(7);
-
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            accessToken = authorization.substring(7);
-        }
-
-        // accessToken이 있고 아직 안 만료됐으면 그대로 반환
-        if (accessToken != null && !checkExpiredToken(accessToken)) {
-            return ResponseEntity.ok(Map.of("accessToken", accessToken));
-        }
-
-        Map<String, Object> claims=jwtUtil.validateToken(refreshToken);
-        Integer userId = (Integer) claims.get("userId");
-
-        // 🔥 2. Redis 검증
-        String savedToken = redisService.get(userId);
-        System.out.println("saved====>"+savedToken);
-        System.out.println("refresh==>"+refreshToken);
-
-        if (savedToken != null && !savedToken.equals(refreshToken)) {
-            System.out.println("두번째 if==>"+savedToken);
-            throw new CustomJWTException("INVALID_REFRESH");
-        }
-
-        String newAccessToken=jwtUtil.generateToken(claims, 1);
-
-        if (checkTime((Long)claims.get("exp"))){
-            String newRefreshToken=jwtUtil.generateToken(claims, 120);
-            System.out.println("redis=========>"+newRefreshToken);
-
-            Cookie refreshCookie=new Cookie("refreshToken", newRefreshToken);
-            refreshCookie.setHttpOnly(true);
-            refreshCookie.setSecure(false);
-            refreshCookie.setPath("/");
-            refreshCookie.setMaxAge(60 * 60 * 2);
-
-            response.addCookie(refreshCookie);
-
-            redisService.save(userId, newRefreshToken, 120);
-        }
-
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
     //리프레쉬 토큰 유효기간이 1시간 미만으로 남았는지 검사

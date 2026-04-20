@@ -4,10 +4,18 @@ import com.example.demo.schedule.staff.dto.BulkRegisterResultDto;
 import com.example.demo.schedule.staff.dto.BulkStaffScheduleDto;
 import com.example.demo.schedule.staff.dto.StaffScheduleDto;
 import com.example.demo.schedule.staff.service.StaffScheduleService;
+import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -16,14 +24,28 @@ import java.util.List;
 public class StaffScheduleController {
     private final StaffScheduleService staffScheduleService;
 
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE')")
+    @GetMapping("/my")
+    public Page<StaffScheduleDto> getMySchedule(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @PageableDefault(size = 30, sort = "workDate", direction = Sort.Direction.ASC) Pageable pageable) {
+        return staffScheduleService.getMySchedule(userDetails.getUserId(), startDate, endDate, pageable);
+    }
+
     @PostMapping("/register")
     public Integer register(@RequestBody StaffScheduleDto dto){
         return staffScheduleService.register(dto);
     }
 
     @GetMapping("/list")
-    public List<StaffScheduleDto> selectAll(){
-        return staffScheduleService.selectAll();
+    public Page<StaffScheduleDto> selectAll(
+            @RequestParam(required = false) Integer staffId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @PageableDefault(size = 10, sort = "workDate", direction = Sort.Direction.DESC) Pageable pageable){
+        return staffScheduleService.selectAll(staffId, startDate, endDate, pageable);
     }
 
     @GetMapping("/{scheduleId}")

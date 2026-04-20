@@ -50,13 +50,18 @@ public class SlotService {
 
         for (LocalDate d = first; !d.isAfter(last); d = d.plusDays(1)) {
             StaffSchedule schedule = scheduleRepository.findByStaffAndWorkDate(doctor, d);
-            if (schedule != null && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+            // 스케줄이 있고 OFF(typeId==3)이면 예약 불가, 스케줄 없으면 가예약 가능으로 진행
+            if (schedule != null
+                    && schedule.getStaffScheduleType() != null
+                    && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+                String typeName = schedule.getStaffScheduleType().getTypeName();
                 result.add(SlotDayResponse.builder()
                         .date(d.toString())
                         .totalCapacity(0)
                         .available(false)
+                        .scheduleType(typeName)
                         .build());
-                continue; // 👉 이 날은 끝 (슬롯 계산 안 함)
+                continue;
             }
 
             List<Slot> daySlots = grouped.getOrDefault(d, new ArrayList<>());
@@ -129,11 +134,17 @@ public class SlotService {
         List<StaffSchedule> schedules =
                 scheduleRepository.findAllByStaffInAndWorkDateBetween(doctors, firstDay, lastDay);
 
-        // 🔥 6. 스케줄 Map (날짜_의사 → typeId)
+        // 🔥 6. 스케줄 Map (날짜_의사 → typeId), null-safe
         Map<String, Integer> scheduleMap = new HashMap<>();
+        Map<String, String> scheduleTypeNameMap = new HashMap<>();
         for (StaffSchedule s : schedules) {
             String key = s.getWorkDate() + "_" + s.getStaff().getStaffId();
-            scheduleMap.put(key, s.getStaffScheduleType().getScheduleTypeId());
+            if (s.getStaffScheduleType() != null) {
+                scheduleMap.put(key, s.getStaffScheduleType().getScheduleTypeId());
+                scheduleTypeNameMap.put(key, s.getStaffScheduleType().getTypeName());
+            } else {
+                scheduleMap.put(key, null);
+            }
         }
 
         // 7. 결과 생성
@@ -148,6 +159,7 @@ public class SlotService {
                 String scheduleKey = d + "_" + doc.getStaffId();
                 Integer typeId = scheduleMap.get(scheduleKey);
 
+                // 스케줄이 있고 OFF(typeId==3)이면 이 의사는 해당 날 제외, 스케줄 없으면 가예약 가능
                 if (typeId != null && typeId == 3) {
                     continue;
                 }
@@ -167,10 +179,23 @@ public class SlotService {
                 }
             }
 
+            // 모든 의사가 OFF인 날 → scheduleType 표시
+            final LocalDate currentDate = d;
+            String offTypeName = null;
+            boolean allOff = !doctors.isEmpty() && doctors.stream().allMatch(doc -> {
+                Integer t = scheduleMap.get(currentDate + "_" + doc.getStaffId());
+                return t != null && t == 3;
+            });
+            if (allOff) {
+                offTypeName = scheduleTypeNameMap.getOrDefault(
+                        currentDate + "_" + doctors.get(0).getStaffId(), "OFF");
+            }
+
             result.add(SlotDayResponse.builder()
                     .date(d.toString())
                     .totalCapacity(totalCapacity)
                     .available(totalCapacity > 0)
+                    .scheduleType(offTypeName)
                     .build());
         }
 
@@ -245,10 +270,17 @@ public class SlotService {
         List<SlotResponse> result = new ArrayList<>();
         LocalDate date = daily.toLocalDate();
 
-        LocalDateTime start = date.atTime(9, 0);  // 2026-04-02T09:00:00
-        LocalDateTime end = date.atTime(17, 0);   // 2026-04-02T18:00:00
+        Staff doctor = staffRepository.findByStaffId(doctorId);
 
-        Staff doctor=staffRepository.findByStaffId(doctorId);
+        StaffSchedule schedule = scheduleRepository.findByStaffAndWorkDate(doctor, date);
+        if (schedule != null
+                && schedule.getStaffScheduleType() != null
+                && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+            return result; // OFF면 빈 배열 반환
+        }
+
+        LocalDateTime start = date.atTime(9, 0);
+        LocalDateTime end = date.atTime(17, 0);
 
         List<Slot> slots = slotRepository.findAllByStartTimeBetweenAndStaff(start, end, doctor);
 

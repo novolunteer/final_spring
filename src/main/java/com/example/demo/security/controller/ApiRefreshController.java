@@ -4,12 +4,13 @@ import com.example.demo.security.jwtutil.CustomJWTException;
 import com.example.demo.security.jwtutil.JWTUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import com.example.demo.security.redis.RedisService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
@@ -34,21 +35,23 @@ public class ApiRefreshController {
     }
 
     //토큰 유효기간 검사/재발급
-    @RequestMapping("/jwt/token/refresh")
+    @PostMapping("/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              HttpServletRequest request, HttpServletResponse response){
         String refreshToken=getRefreshTokenFromCookie(request);
 
-        if (refreshToken == null){
+        if (refreshToken == null || refreshToken.isBlank()) {
             throw new CustomJWTException("NULL_REFRESH");
         }
 
-        if (authorization == null || authorization.length() < 7){
-            throw new CustomJWTException("INVALID_REFRESH");
+        String accessToken=authorization.substring(7);
+
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            accessToken = authorization.substring(7);
         }
 
-        String accessToken=authorization.substring(7);
-        if (!checkExpiredToken(accessToken)){ //유효기간 아직 남음
+        // accessToken이 있고 아직 안 만료됐으면 그대로 반환
+        if (accessToken != null && !checkExpiredToken(accessToken)) {
             return ResponseEntity.ok(Map.of("accessToken", accessToken));
         }
 
@@ -106,6 +109,7 @@ public class ApiRefreshController {
             if (ex.getMessage().equals("Expired")){
                 return true;
             }
+            throw ex;
         }
         return false;
     }

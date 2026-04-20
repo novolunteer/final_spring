@@ -46,13 +46,17 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     Reception findByReservation(Reservation reservation);
 
     @Query("""
-    SELECT r FROM Reception r
-    JOIN r.reservation v
-    JOIN v.staff s
-    WHERE r.receptionTime BETWEEN :start AND :end
-    AND s.staffId = :doctorId
-    AND r.status = :status
-    """)
+        SELECT r FROM Reception r
+        JOIN r.reservation v
+        JOIN v.staff s
+        WHERE r.receptionTime BETWEEN :start AND :end
+        AND s.staffId = :doctorId
+        AND (
+            (:status IS NOT NULL AND r.status = :status)
+            OR
+            (:status IS NULL AND r.status <> 'PENDING')
+        )
+        """)
     Page<Reception> findTodayReceptionWaiting(@Param("start") LocalDateTime start,
                                                @Param("end") LocalDateTime end,
                                                ReceptionStatus status,

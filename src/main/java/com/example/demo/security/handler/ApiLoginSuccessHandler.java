@@ -1,6 +1,7 @@
 package com.example.demo.security.handler;
 
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.security.redis.RedisService;
 import com.example.demo.security.security.CustomUserDetails;
 import com.example.demo.user.UserDto;
 import com.google.gson.Gson;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JWTUtil jwtUtil;
+    private final RedisService redisService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -30,8 +32,8 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
 
         Map<String,Object> claims=details.getClaims();
 
-        String accessToken=jwtUtil.generateToken(claims,5);
-        String refreshToken= jwtUtil.generateToken(claims,60*2);
+        String accessToken=jwtUtil.generateToken(claims,1);
+        String refreshToken= jwtUtil.generateToken(claims,120);
         claims.put("accessToken",accessToken);
 
         Cookie refreshCookie=new Cookie("refreshToken", refreshToken);
@@ -41,6 +43,8 @@ public class ApiLoginSuccessHandler implements AuthenticationSuccessHandler {
         refreshCookie.setMaxAge(60 * 60 * 2);
 
         response.addCookie(refreshCookie);
+
+        redisService.save(details.getUserId(), refreshToken, 120);
 
         Gson gson=new Gson();
         String jsonStr=gson.toJson(claims);

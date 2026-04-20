@@ -13,8 +13,8 @@ import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -115,15 +115,18 @@ public class ChatbotService {
         if (date.equals(LocalDate.now())){
             schedulePublished=true;
         } else {
-            schedulePublished=schedules != null && !schedules.isEmpty();
+            schedulePublished=isSunday(date) || (schedules != null && !schedules.isEmpty());
         }
 
+        int hourCount=getDailyHourCount(date);
         int totalCount;
 
-        if (schedules == null || schedules.isEmpty()){
-            totalCount =3 * 8 * doctors.size();
+        if (hourCount == 0) {
+            totalCount = 0;
+        } else if (schedules == null || schedules.isEmpty()) {
+            totalCount = 3 * hourCount * doctors.size();
         } else {
-            totalCount=3 * 8 * schedules.size();
+            totalCount = 3 * hourCount * schedules.size();
         }
 
         List<Slot> slots=
@@ -157,26 +160,33 @@ public class ChatbotService {
 
         List<StaffSchedule> safeSchedules=schedules == null ? Collections.emptyList() : schedules;
 
-        Set<LocalDate> confirmedDates=safeSchedules.stream()
-                .map(StaffSchedule::getWorkDate)
-                .collect(Collectors.toSet());
+        Map<LocalDate, Long> confirmedScheduleCountByDate=safeSchedules.stream()
+                .collect(Collectors.groupingBy(
+                        StaffSchedule :: getWorkDate,
+                        Collectors.counting()
+                ));
 
         boolean schedulePublished=true;
+        int totalCount=0;
 
         for (int i=0; i<days; i++){
             LocalDate currentDate=startDate.plusDays(i);
 
-            if (!confirmedDates.contains(currentDate)){
-                schedulePublished=false;
-                break;
-            }
-        }
+            int hourCount=getDailyHourCount(currentDate);
 
-        int totalCount;
-        if (safeSchedules.isEmpty()){
-            totalCount=(int) ((3 * 8 * doctors.size()) * days);
-        } else {
-            totalCount=3 * 8 * safeSchedules.size();
+            if (!isSunday(currentDate) && !confirmedScheduleCountByDate.containsKey(currentDate)){
+                schedulePublished=false;
+            }
+
+            if (hourCount == 0) continue;
+
+            long confirmedDoctorCount=confirmedScheduleCountByDate.getOrDefault(currentDate, 0L);
+
+            if (confirmedDoctorCount == 0){
+                totalCount += 3 * hourCount * doctors.size();
+            } else {
+                totalCount += (int) (3 * hourCount * confirmedDoctorCount);
+            }
         }
 
         List<Slot> slots=
@@ -248,19 +258,28 @@ public class ChatbotService {
         Staff doctor = staffRepository.findByDepartmentAndName(department, doctorName)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 의사입니다."));
 
-        List<String> times = List.of("09", "10", "11", "12", "14", "15", "16", "17");
-
         if (hasDate) {
-            return getSingleDateDoctorSchedule(request, departmentName, department, doctorName, doctor, times);
+            return getSingleDateDoctorSchedule(request, departmentName, department, doctorName, doctor);
         }
 
-        return getRangeDoctorSchedule(request, departmentName, department, doctorName, doctor, times);
+        return getRangeDoctorSchedule(request, departmentName, department, doctorName, doctor);
     }
 
     private ChatbotDoctorScheduleResponse getSingleDateDoctorSchedule(DoctorScheduleInquiryRequest request,
                                                                       String departmentName, Department department,
-                                                                      String doctorName, Staff doctor, List<String> times){
+                                                                      String doctorName, Staff doctor){
         LocalDate date=LocalDate.parse(request.getDate());
+
+        if (isSunday(date)){
+            return ChatbotDoctorScheduleResponse.builder()
+                    .department(departmentName)
+                    .doctorName(doctorName)
+                    .date(request.getDate())
+                    .available(false)
+                    .schedules(Collections.emptyList())
+                    .schedulePublished(true)
+                    .build();
+        }
 
         boolean hasConfirmedDaySchedule=isConfirmedDaySchedule(doctor, date);
 
@@ -277,7 +296,7 @@ public class ChatbotService {
         }
 
         List<ChatbotDoctorScheduleDto> schedules=
-                buildAvailableSchedulesForDate(department, doctor, date, times);
+                buildAvailableSchedulesForDate(department, doctor, date);
 
         return ChatbotDoctorScheduleResponse.builder()
                 .department(departmentName)
@@ -291,7 +310,7 @@ public class ChatbotService {
 
     private ChatbotDoctorScheduleResponse getRangeDoctorSchedule(DoctorScheduleInquiryRequest request,
                                                                  String departmentName, Department department,
-                                                                 String doctorName, Staff doctor, List<String> times){
+                                                                 String doctorName, Staff doctor){
         LocalDate startDate=LocalDate.parse(request.getStartDate());
         LocalDate endDate=LocalDate.parse(request.getEndDate());
 
@@ -314,12 +333,12 @@ public class ChatbotService {
         for (int i=0; i<days; i++){
             LocalDate currentDate=startDate.plusDays(i);
 
-            if (!confirmedDates.contains(currentDate)){
+            if (!isSunday(currentDate) && !confirmedDates.contains(currentDate)){
                 schedulePublished=false;
             }
 
             List<ChatbotDoctorScheduleDto> daySchedules=
-                    buildAvailableSchedulesForDate(department, doctor, currentDate, times);
+                    buildAvailableSchedulesForDate(department, doctor, currentDate);
 
             resultSchedules.addAll(daySchedules);
         }
@@ -345,7 +364,13 @@ public class ChatbotService {
     }
 
     private List<ChatbotDoctorScheduleDto> buildAvailableSchedulesForDate(Department department, Staff doctor,
-                                                                          LocalDate date, List<String> times){
+                                                                          LocalDate date){
+        List<String> times=getAvailableTimesByDate(date);
+
+        if (times.isEmpty()){
+            return Collections.emptyList();
+        }
+
         LocalDateTime start=date.atStartOfDay();
         LocalDateTime end=date.plusDays(1).atStartOfDay();
 
@@ -376,5 +401,33 @@ public class ChatbotService {
         }
 
         return result;
+    }
+
+    private boolean isSunday(LocalDate date){
+        return date.getDayOfWeek() == DayOfWeek.SUNDAY;
+    }
+
+    private boolean isSaturday(LocalDate date){
+        return date.getDayOfWeek() == DayOfWeek.SATURDAY;
+    }
+
+    private List<String> getAvailableTimesByDate(LocalDate date){
+        if (isSunday(date)){
+            return Collections.emptyList();
+        }
+
+        if (isSaturday(date)){
+            return List.of("09","10","11","12");
+        }
+
+        return List.of("09","10","11","12","14","15","16","17");
+    }
+
+    private int getDailyHourCount(LocalDate date){
+        if (isSunday(date)) return 0;
+
+        if (isSaturday(date)) return 4;
+
+        return 8;
     }
 }

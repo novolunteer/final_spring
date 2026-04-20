@@ -17,6 +17,7 @@ import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,9 @@ public class MedicalRecordService {
     private final StaffRepository staffRepository;
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
-    private final MedicalRecordSearchRepository medicalRecordSearchRepository;
+
+    @Autowired(required = false)
+    private MedicalRecordSearchRepository medicalRecordSearchRepository;
 
     public Page<ReceptionResponse> waitingList(Integer userId,
                                                ReceptionStatus status,
@@ -104,7 +107,9 @@ public class MedicalRecordService {
         doc.setContent(medicalRecord.getContent());
         doc.setTitle(medicalRecord.getTitle());
 
-        medicalRecordSearchRepository.save(doc);
+        if (medicalRecordSearchRepository != null) {
+            medicalRecordSearchRepository.save(doc);
+        }
 
         return medicalRecord.getRecordId();
     }

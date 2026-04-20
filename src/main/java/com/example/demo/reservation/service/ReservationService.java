@@ -1,12 +1,13 @@
-package com.example.demo.reservation;
+package com.example.demo.reservation.service;
 
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
 import com.example.demo.patient.Patient;
 import com.example.demo.patient.PatientRepository;
-import com.example.demo.reception.Reception;
-import com.example.demo.reception.ReceptionRepository;
 import com.example.demo.reception.ReceptionService;
+import com.example.demo.reservation.Reservation;
+import com.example.demo.reservation.ReservationRepository;
+import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
 import com.example.demo.reservation.dto.ReservationSSEResponse;
@@ -28,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +46,7 @@ public class ReservationService {
     private final DepartmentRepository departmentRepository;
     private final SlotRepository slotRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AvailabilityService availabilityService;
 
     public Integer reservationReceived(ReservationDto reservationDto,
                                        CustomUserDetails customUserDetails){
@@ -96,6 +100,23 @@ public class ReservationService {
                     slotRepository.save(newSlot);
                     return newSlot;
                 });
+
+        LocalDate workDate = reservationDto.getReservationDate().toLocalDate();
+        LocalTime requestStart = reservationDto.getReservationDate().toLocalTime();
+        LocalTime requestEnd = requestStart.plusHours(1);
+
+//        if(!availabilityService.isStaffAvailable(
+//                staff.getStaffId(),
+//                workDate,
+//                requestStart,
+//                requestEnd
+//        )){
+//            throw new IllegalStateException("해당 의사의 근무시간이 아닙니다");
+//        }
+//        if(slot.getCurrentPatient() >= slot.getMaxPatient()){
+//            throw new IllegalStateException("해당 슬롯은 마감되었습니다");
+//        }
+
         slot.setCurrentPatient(slot.getCurrentPatient()+1);
 
         reservation.setStaff(staff);
@@ -106,6 +127,7 @@ public class ReservationService {
         receptionService.receptionInsert(reservation);
 
         Integer userId=staff.getUser().getUserId();
+        System.out.println("SSE 전송할 userId ===> " + userId);
 
 //        Patient patient=patientRepository.findById(reservationDto.getPatientId())
 //                .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -115,6 +137,8 @@ public class ReservationService {
                 .patientId(reservationDto.getPatientId())
                 .patientName("Peter")
                 .build();
+
+        System.out.println("이벤트 리스너 바로 직전");
         eventPublisher.publishEvent(
                 new ReservationConfirmedEvent(
                         userId,
@@ -145,6 +169,9 @@ public class ReservationService {
                     slotRepository.save(newSlot);
                     return newSlot;
                 });
+        if (slot.getCurrentPatient() >= slot.getMaxPatient()){
+            throw new IllegalStateException("해당 슬롯은 마감되었습니다");
+        }
         slot.setCurrentPatient(slot.getCurrentPatient()+1);
 
         reservation.setSlot(slot);

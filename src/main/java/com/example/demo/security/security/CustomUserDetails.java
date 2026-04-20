@@ -1,16 +1,11 @@
 package com.example.demo.security.security;
 
-import com.example.demo.staff.Staff;
 import com.example.demo.user.User;
-import com.example.demo.userRole.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CustomUserDetails implements UserDetails {
     private Integer departmentId;

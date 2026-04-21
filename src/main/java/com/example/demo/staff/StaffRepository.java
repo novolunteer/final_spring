@@ -27,16 +27,16 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
     @Query("""
         select s
         from Staff s
-        join s.user.userRoles ur
-        join ur.user u
+        join s.user u
+        join u.userRoles ur
         join ur.role r
-        where s.department =: department
+        where s.department = :department
             and r.roleName = 'DOCTOR'
             and u.status = 'Y'
             and s.isActive = 'Y'
         order by s.staffId asc 
     """)
-    List<Staff> findDoctorByDepartment(Department department);
+    List<Staff> findDoctorByDepartment(@Param("department") Department department);
 
     Optional<Staff> findByDepartmentAndName(Department department, String name);
 

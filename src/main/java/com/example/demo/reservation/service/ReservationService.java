@@ -49,11 +49,7 @@ public class ReservationService {
     private final AvailabilityService availabilityService;
 
     public Integer reservationReceived(ReservationDto reservationDto,
-                                       CustomUserDetails customUserDetails){
-
-        //Integer userId=customUserDetails.getUserId();
-        Integer userId=5;
-
+                                       Integer userId){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
         Patient patient = patientRepository.findByUser(user);

@@ -7,6 +7,8 @@ import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +23,11 @@ public class ReservationController {
 
     @PostMapping("/api/reservation")
     public Map<String,Object> reservationInsert(@RequestBody ReservationDto reservationDto,
-                                                @AuthenticationPrincipal CustomUserDetails customUserDetails){
+                                                @AuthenticationPrincipal CustomUserDetails details){
+        Integer userId=details.getUserId();
+
         Map<String,Object> map=new HashMap<>();
-        Integer reservationId=reservationService.reservationReceived(reservationDto, customUserDetails);
+        Integer reservationId=reservationService.reservationReceived(reservationDto, userId);
         map.put("reservationId",reservationId);
         return map;
     }

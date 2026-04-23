@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>공지사항</title>
+</head>
+
+<body>
+
+<h1 style="font-size: 40px;">📢 공지사항</h1>
+
+<h2 style="font-size: 30px;">⭐ 중요 공지</h2>
+
+<div th:if="${#lists.isEmpty(pinned)}">
+  중요 공지가 없습니다.
+</div>
+
+<!-- ⭐ 중요공지 -->
+<div th:each="n : ${pinned}" style="background-color:#ffffcc; padding: 15px; margin-bottom: 10px; font-size: 15px;">
+  <p>
+    <strong>[공지]</strong>
+
+    <!-- 🔥 수정 1: 제목 클릭 가능하게 -->
+    <a th:href="@{/notifications/{id}(id=${n.notificationId})}"
+       th:text="${n.title}"></a>
+
+    <span th:text="${n.createdAt != null ? #temporals.format(n.createdAt,'yyyy-MM-dd') : ''}"></span>
+
+    </a>
+  </p>
+
+  <p th:text="${n.content}"></p>
+  <hr>
+</div>
+
+
+<h2 style="font-size: 30px;">📋 최신 목록 (일반)</h2>
+
+<table border="1" style="width: 100%; border-collapse: collapse; font-size: 20px; text-align: center">
+  <thead>
+  <tr>
+    <th>번호</th>
+    <th>제목</th>
+    <th>내용</th>
+     <th>작성자</th>
+    <th>조회수</th>
+    <th>작성일</th>
+    <th>비고</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  <tr th:each="n : ${list.content}" th:if="${n.important == false}">
+    <td th:text="${n.notificationId}">1</td>
+
+    <!-- 🔥 수정 2: 여기 중요 (상세보기 링크) -->
+    <td>
+      <a th:href="@{/notifications/{id}(id=${n.notificationId})}"
+         th:text="${n.title}">제목</a>
+    </td>
+
+    <td th:text="${n.content}">내용입니다</td>
+    <td th:text="${n.writer}">작성자입니다</td>
+    <td th:text="${n.viewCount}">0</td>
+
+    <td th:text="${n.createdAt != null ? #temporals.format(n.createdAt, 'yyyy-MM-dd') : '-'}">
+      2026-03-26
+    </td>
+
+    <td></td>
+
+      </a>
+    </td>
+  </tr>
+  </tbody>
+</table>
+
+<p th:if="${list.totalElements == 0}">
+  등록된 일반 공지가 없습니다.
+</p>
+
+<!-- 🔥 페이징 -->
+<div th:if="${list.totalPages > 1}">
+
+  <!-- 현재 페이지 -->
+  <span th:text="${list.number + 1}">1</span> /
+  <span th:text="${list.totalPages}">1</span>
+
+  <!-- 이전 -->
+  <a th:if="${!list.first}"
+     th:href="@{/notifications/list(page=${list.number - 1}, size=${list.size})}"
+    style= "font-size: 20px; text-decoration: none;">[이전]</a>
+
+
+  <!-- 페이지 번호 -->
+  <span th:each="pageNum : ${#numbers.sequence(0, list.totalPages - 1)}">
+
+    <a th:if="${pageNum != list.number}"
+       th:href="@{/notifications/list(page=${pageNum}, size=${list.size})}"
+       th:text="${pageNum + 1}">
+    </a>
+
+    <span th:if="${pageNum == list.number}"
+          th:text="${pageNum + 1}">
+    </span>
+
+  </span>
+
+  <!-- 다음 -->
+  <a th:if="${!list.last}"
+     th:href="@{/notifications/list(page=${list.number + 1}, size=${list.size})}"
+    style="font-size: 20px; text-decoration: none;">[다음]</a>
+
+</div>
+
+<br>
+
+<a href="/notifications/form" style="font-size: 24px; font-weight: bold;">✏️ 글쓰기</a>
+
+</body>
+</html>

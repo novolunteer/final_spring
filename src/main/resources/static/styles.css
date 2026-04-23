@@ -1,0 +1,37 @@
+/* 접근성 목적: 화면 요소를 크게 표시 */
+
+body {
+  font-size: 2em;
+  line-height: 1.2;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.5em;
+  font-size: 1em;
+  text-align: left;
+}
+
+form input[type="text"],
+form textarea,
+form button {
+  font-size: 1em;
+}
+
+form input[type="text"] {
+  padding: 0.4em;
+}
+
+form textarea {
+  padding: 0.4em;
+}
+
+form button {
+  padding: 0.4em 0.8em;
+}
+

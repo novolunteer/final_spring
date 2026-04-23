@@ -32,9 +32,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         Staff staff=staffRepository.findByUser(user).orElse(null);
 
         Integer departmentId=null;
-        String name=null;
-        if (staff != null && staff.getDepartment() != null){
-            departmentId=staff.getDepartment().getDepartmentId();
+        String name;
+        if (staff != null){
+            if (staff.getDepartment() != null){
+                departmentId=staff.getDepartment().getDepartmentId();
+            }
             name=staff.getName();
         } else {
             Patient patient=patientRepository.findByUser(user);

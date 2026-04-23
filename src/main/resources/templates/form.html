@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>공지 등록/수정</title>
+</head>
+<body style="padding: 10px;">
+<form th:action="${n.notificationId == null ? '/notifications/save' : '/notifications/update'}"
+      th:object="${n}" method="post">
+    <input type="hidden" th:field="*{notificationId}">
+    제목: <input type="text" th:field="*{title}"><br><br>
+    내용: <textarea th:field="*{content}"></textarea><br><br>
+    작성자: <input type="text" th:field="*{writer}"><br><br>
+    중요공지: <input type="checkbox" th:field="*{important}">
+
+    <button type="submit">저장하기</button>
+</form>
+</body>
+</html>

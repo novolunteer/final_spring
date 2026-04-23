@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>📢 공지사항 상세 내용</h1>
+<p>번호: <span th:text="${n.notificationId}"></span></p>
+<p>제목: <span th:text="${n.title}"></span></p>
+<p>내용:</p>
+<p th:text="${n.content}"></p>
+<span>작성자:<span th:text="${n.writer}"></span></span></p>
+<p>조회수: <span th:text="${n.viewCount}"></span></p>
+<p>작성일:
+    <span th:text="${n.createdAt != null ? #temporals.format(n.createdAt, 'yyyy-MM-dd HH:mm'):'일자미상'}"></span>
+</p>
+
+<hr>
+<a th:href="@{/notifications/edit/{id}(id=${n.notificationId})}">수정하기</a>
+<a th:href="@{/notifications/delete/{id}(id=${n.notificationId})}"
+   onclick="return confirm('정말 삭제하시겠습니까?')">삭제하기</a><br><br>
+<a th:href="@{/notifications}">목록으로</a>
+</body>
+</html>

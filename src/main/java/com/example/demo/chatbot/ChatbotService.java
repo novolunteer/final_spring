@@ -41,7 +41,7 @@ public class ChatbotService {
 
     public ChatbotDepartmentDto getDepartmentInfo(String departmentName){
         Department department=departmentRepository.findByDepartmentName(departmentName)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 진료과명입니다."));
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 진료과명입니다!"));
 
         return ChatbotDepartmentDto.builder().department(department.getDepartmentName())
                 .location(department.getLocation()).build();

@@ -73,6 +73,7 @@ public class CustomUserDetails implements UserDetails {
     public Map<String,Object> getClaims(){ //JWT 관련
         Map<String,Object> dataMap=new HashMap<>();
         dataMap.put("userId", userId);
+        dataMap.put("name", name);
         dataMap.put("email", email);
         dataMap.put("status", status);
         dataMap.put("roles", authorities.stream()

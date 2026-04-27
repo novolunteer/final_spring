@@ -44,6 +44,10 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             return true;
         }
 
+        if (request.getMethod().equals("GET") && path.startsWith("/api/notifications")) {
+            return true;
+        }
+
         return false;
     }
 

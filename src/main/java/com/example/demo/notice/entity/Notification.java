@@ -1,4 +1,4 @@
-package com.example.demo.entity;
+package com.example.demo.notice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,14 +16,15 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long notificationId;
-    private Long userId = 1L;
-    private String writer = "관리자";
+    private Integer userId;
+    private String writer;
     private String title;
     private String content;
+    @Builder.Default
     private int viewCount = 0;
-    private boolean important;  //  주요공지
+    private boolean important;
 
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
-    }
+}

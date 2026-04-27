@@ -1,7 +1,7 @@
-package com.example.demo.service;
+package com.example.demo.notice.service;
 
-import com.example.demo.entity.Notification;
-import com.example.demo.repository.NotificationRepository;
+import com.example.demo.notice.entity.Notification;
+import com.example.demo.notice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +40,7 @@ public class NotificationService {
         Notification find = repository.findById(id).orElseThrow();
         find.setTitle(n.getTitle());
         find.setContent(n.getContent());
+        find.setImportant(n.isImportant());
    }
-    }
+}
 

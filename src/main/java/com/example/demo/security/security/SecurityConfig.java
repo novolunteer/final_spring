@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
         );
 
+        httpSecurity.logout(logout -> logout.disable());
+
         return httpSecurity.build();
     }
 

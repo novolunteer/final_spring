@@ -13,6 +13,7 @@ import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class StaffService {
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
     private final UserRoleRepository userRoleRepository;
 
     private static final Map<String, List<String>> POSITION_ROLE_MAP = Map.ofEntries(
@@ -58,13 +60,17 @@ public class StaffService {
         }
     }
 
-    //직원등록
+    //직원등록 (User 동시 생성)
     public Integer register(StaffRegisterDto dto){
-        User user=null;
-        if(dto.getUserId() !=null){
-            user = userRepository.findById(dto.getUserId())
-                    .orElseThrow(()-> new RuntimeException("해당 유저가 없습니다"));
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("이미 사용 중인 이메일입니다.");
         }
+
+        User user = userRepository.save(User.builder()
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .status("Y")
+                .build());
 
         Department department=null;
         if(dto.getDepartmentId() !=null){
@@ -91,7 +97,7 @@ public class StaffService {
 
         Staff savedStaff = staffRepository.save(staff);
 
-        if (user != null && dto.getPosition() != null) {
+        if (dto.getPosition() != null) {
             saveUserRoles(user, dto.getPosition());
         }
 
@@ -108,20 +114,27 @@ public class StaffService {
             int rowNum = i +1;
 
             try{
-                //UserId로 User조회
-                User user = userRepository.findById(dto.getUserId())
-                        .orElseThrow(()-> new RuntimeException("존재하지않는 user입니다"));
+                if (userRepository.existsByEmail(dto.getEmail())) {
+                    throw new RuntimeException("이미 사용 중인 이메일입니다: " + dto.getEmail());
+                }
 
-                //부서명으로 department조회
-                Department department = departmentRepository.findByDepartmentName(dto.getDept_name())
-                        .orElseThrow(()-> new RuntimeException("존재하지 않는 부서명입니다"));
+                // User 저장 전에 부서/담당자 먼저 검증
+                Department department = departmentRepository.findByDepartmentName(dto.getDeptName())
+                        .orElseThrow(() -> new RuntimeException("존재하지 않는 부서명입니다"));
 
-                //담당자 userId로 staff조회 없으면 null
                 Staff manager = null;
                 if (dto.getManagerId() != null) {
                     manager = staffRepository.findById(dto.getManagerId())
                             .orElseThrow(() -> new RuntimeException("존재하지 않는 담당자입니다"));
                 }
+
+                // 검증 통과 후 User 저장
+                User user = userRepository.save(User.builder()
+                        .email(dto.getEmail())
+                        .password(passwordEncoder.encode(dto.getPassword()))
+                        .status("Y")
+                        .build());
+
                 Staff staff = Staff.builder()
                         .user(user)
                         .department(department)
@@ -139,11 +152,11 @@ public class StaffService {
             }catch (Exception e){
                 failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
                         .row(rowNum)
-                        .userId(dto.getUserId() !=null ? dto.getUserId().toString():"-")
-                                .name(dto.getName())
-                                .reason(e.getMessage())
-                                .build()
-                        );
+                        .userId(dto.getEmail() != null ? dto.getEmail() : "-")
+                        .name(dto.getName())
+                        .reason(e.getMessage())
+                        .build()
+                );
             }
         }
         //정상행만 일괄저장

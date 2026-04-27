@@ -8,6 +8,7 @@ import com.example.demo.security.jwtutil.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -68,6 +69,7 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh",
                                 "/join/**", "/social/**", "/chatbot/inquiry/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/notifications", "/api/notifications/**").permitAll()
                         .anyRequest().authenticated()
         );
 

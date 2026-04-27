@@ -8,9 +8,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class StaffBulkUploadRequestDto {
-    private Integer userId;
+    private String email;
+    private String password;
     private String name;
-    private String dept_name;
+    private String deptName;
     private String position;
     private String phone;
     private String address;

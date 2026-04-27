@@ -174,7 +174,7 @@ public class SocialAccountController {
 
         Map<String, Object> userInfo=socialAccountService.verifyUser(SocialAccountProvider.NAVER, providerId);
 
-        UserDto user= (UserDto) userInfo.get("user");
+        User user= (User) userInfo.get("user");
         if (user == null){
             session.setAttribute("socialProvider", "NAVER");
             session.setAttribute("socialProviderId", providerId);
@@ -191,10 +191,12 @@ public class SocialAccountController {
             return;
         }
 
+        List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
+
         Map<String, Object> claims=new HashMap<>();
         claims.put("email", user.getEmail());
         claims.put("userId", user.getUserId());
-        claims.put("roles", user.getRoles());
+        claims.put("roles", roles);
         claims.put("status", user.getStatus());
         claims.put("name", userInfo.get("name"));
 
@@ -203,7 +205,7 @@ public class SocialAccountController {
 
         session.setAttribute("email", user.getEmail());
         session.setAttribute("userId", user.getUserId());
-        session.setAttribute("roles", user.getRoles());
+        session.setAttribute("roles", roles);
         session.setAttribute("status", user.getStatus());
         session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);

@@ -28,4 +28,6 @@ public interface SlotRepository extends JpaRepository<Slot,Integer> {
                                                                                         Staff staff,
                                                                                         LocalDateTime start,
                                                                                         LocalDateTime end);
+
+    List<Slot> findAllByStartTimeBetween(LocalDateTime startTimeAfter, LocalDateTime startTimeBefore);
 }

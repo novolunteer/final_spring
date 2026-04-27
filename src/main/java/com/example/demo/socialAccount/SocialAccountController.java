@@ -45,15 +45,15 @@ public class SocialAccountController {
         Map<String,Object> result=socialAccountService.kakaoLogin(code);
         String providerId= result.get("providerId").toString();
         Map<String, Object> userInfo=socialAccountService.verifyUser(SocialAccountProvider.KAKAO, providerId);
-
-        UserDto userDto= (UserDto) userInfo.get("user");
-        if (userDto == null){
+        if (userInfo == null){
             session.setAttribute("provider", "KAKAO");
             session.setAttribute("providerId", providerId);
 
             response.sendRedirect(kakaoLoginUri);
             return;
         }
+
+        UserDto userDto= (UserDto) userInfo.get("user");
 
         Map<String, Object> claims=new HashMap<>();
         claims.put("email", userDto.getEmail());
@@ -173,9 +173,7 @@ public class SocialAccountController {
         String providerId=userInfoResponse.getResponse().getId();
 
         Map<String, Object> userInfo=socialAccountService.verifyUser(SocialAccountProvider.NAVER, providerId);
-
-        User user= (User) userInfo.get("user");
-        if (user == null){
+        if (userInfo == null){
             session.setAttribute("socialProvider", "NAVER");
             session.setAttribute("socialProviderId", providerId);
             session.setAttribute("socialName", userInfoResponse.getResponse().getName());
@@ -190,6 +188,8 @@ public class SocialAccountController {
             response.sendRedirect(naverLoginUri);
             return;
         }
+
+        User user= (User) userInfo.get("user");
 
         List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 

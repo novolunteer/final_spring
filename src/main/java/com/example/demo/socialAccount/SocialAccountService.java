@@ -95,7 +95,7 @@ public class SocialAccountService {
                     .user(savedPatient.getUser())
                     .provider(SocialAccountProvider.KAKAO)
                     .providerId(providerId).build());
-            return Map.of("name", patient.getName(), "user", account.getUser());
+            return Map.of("name", savedPatient.getName(), "user", account.getUser());
         } else {
             if (patient.getUser() == null){
                 //유저 계정 생성 후 소셜 로그인

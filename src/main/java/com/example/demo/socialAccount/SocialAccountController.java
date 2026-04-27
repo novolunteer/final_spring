@@ -53,22 +53,23 @@ public class SocialAccountController {
             return;
         }
 
-        UserDto userDto= (UserDto) userInfo.get("user");
+        User user= (User) userInfo.get("user");
+        List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
         Map<String, Object> claims=new HashMap<>();
-        claims.put("email", userDto.getEmail());
-        claims.put("userId", userDto.getUserId());
-        claims.put("roles", userDto.getRoles());
-        claims.put("status", userDto.getStatus());
+        claims.put("email", user.getEmail());
+        claims.put("userId", user.getUserId());
+        claims.put("roles", roles);
+        claims.put("status", user.getStatus());
         claims.put("name", userInfo.get("name"));
 
         String accessToken=jwtUtil.generateToken(claims, 5);
         String refreshToken=jwtUtil.generateToken(claims, 60*2);
 
-        session.setAttribute("email", userDto.getEmail());
-        session.setAttribute("userId", userDto.getUserId());
-        session.setAttribute("roles", userDto.getRoles());
-        session.setAttribute("status", userDto.getStatus());
+        session.setAttribute("email", user.getEmail());
+        session.setAttribute("userId", user.getUserId());
+        session.setAttribute("roles", roles);
+        session.setAttribute("status", user.getStatus());
         session.setAttribute("name", userInfo.get("name"));
         session.setAttribute("accessToken", accessToken);
 

@@ -165,6 +165,10 @@ public class ReservationService {
                     slotRepository.save(newSlot);
                     return newSlot;
                 });
+
+        // 기존 슬롯의 maxPatient가 현재 의사 수와 다를 수 있으므로 갱신
+        slot.setMaxPatient(maxPatient);
+
         if (slot.getCurrentPatient() >= slot.getMaxPatient()){
             throw new IllegalStateException("해당 슬롯은 마감되었습니다");
         }

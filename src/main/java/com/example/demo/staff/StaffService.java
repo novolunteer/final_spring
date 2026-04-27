@@ -72,19 +72,19 @@ public class StaffService {
                 .status("Y")
                 .build());
 
-        Department department = null;
-        if (dto.getDepartmentId() != null) {
-            department = departmentRepository.findById(dto.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("해당 부서가 없습니다"));
+        Department department=null;
+        if(dto.getDepartmentId() !=null){
+            department=departmentRepository.findById(dto.getDepartmentId())
+                    .orElseThrow(()->new RuntimeException("해당 부서가 없습니다"));
         }
 
         Staff manager = null;
-        if (dto.getManagerId() != null) {
+        if(dto.getManagerId() !=null){
             manager = staffRepository.findById(dto.getManagerId())
-                    .orElseThrow(() -> new RuntimeException("해당 담당자가 없습니다"));
+                    .orElseThrow(()-> new RuntimeException("해당 담당자가 없습니다"));
         }
 
-        Staff staff = Staff.builder()
+        Staff staff= Staff.builder()
                 .user(user)
                 .department(department)
                 .manager(manager)
@@ -92,7 +92,7 @@ public class StaffService {
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
-                .isActive(dto.getIsActive() != null ? dto.getIsActive() : "Y")
+                .isActive(dto.getIsActive() !=null ? dto.getIsActive() : "Y")
                 .build();
 
         Staff savedStaff = staffRepository.save(staff);
@@ -149,7 +149,7 @@ public class StaffService {
                 if (dto.getPosition() != null) {
                     saveUserRoles(user, dto.getPosition());
                 }
-            } catch (Exception e) {
+            }catch (Exception e){
                 failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
                         .row(rowNum)
                         .userId(dto.getEmail() != null ? dto.getEmail() : "-")

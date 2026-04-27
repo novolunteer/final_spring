@@ -49,6 +49,7 @@ public class SlotService {
         LocalDate last = monthly.toLocalDate().withDayOfMonth(monthly.toLocalDate().lengthOfMonth());
 
         for (LocalDate d = first; !d.isAfter(last); d = d.plusDays(1)) {
+            if (d.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) continue;
             StaffSchedule schedule = scheduleRepository.findByStaffAndWorkDate(doctor, d);
             // 스케줄이 있고 OFF(typeId==3)이면 예약 불가, 스케줄 없으면 가예약 가능으로 진행
             if (schedule != null
@@ -71,6 +72,7 @@ public class SlotService {
 
             for (int hour = 9; hour <= 17; hour++) {
                 if(hour==13) continue;
+                if (d.getDayOfWeek() == java.time.DayOfWeek.SATURDAY && hour >= 13) continue;
 
                 final int h = hour;
 
@@ -151,7 +153,7 @@ public class SlotService {
         List<SlotDayResponse> result = new ArrayList<>();
 
         for (LocalDate d = firstDay; !d.isAfter(lastDay); d = d.plusDays(1)) {
-
+            if (d.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) continue;
             int totalCapacity = 0;
 
             for (Staff doc : doctors) {
@@ -167,12 +169,13 @@ public class SlotService {
                 // 시간별 슬롯 계산
                 for (int hour = 9; hour <= 17; hour++) {
                     if (hour == 13) continue;
+                    if (d.getDayOfWeek() == java.time.DayOfWeek.SATURDAY && hour >= 13) continue;
 
                     String key = d + "_" + doc.getStaffId() + "_" + hour;
                     Integer remain = slotMap.get(key);
 
                     if (remain == null) {
-                        totalCapacity += 3; // 슬롯 없으면 기본값
+                        totalCapacity += 3;
                     } else {
                         totalCapacity += remain;
                     }
@@ -214,20 +217,19 @@ public class SlotService {
         LocalDateTime end = monthly.withDayOfMonth(monthly.toLocalDate().lengthOfMonth())
                 .withHour(23).withMinute(59).withSecond(59);
 
-        // 3. 슬롯 한 번에 조회 (🔥 중요)
+        // 3. 슬롯 한 번에 조회
         List<Slot> allSlots = slotRepository.findAllByStartTimeBetweenAndDepartment(start, end,
                 departmentRepository.findByDepartmentId(departmentId));
 
-        // 4. (날짜 + 의사 + 시간) 기준으로 미리 Map 만들어두기
+        // 4. slotMap: 날짜_시간 → remain
         Map<String, Integer> slotMap = new HashMap<>();
+        Map<String, Boolean> hasSlotDateMap = new HashMap<>();
 
         for (Slot s : allSlots) {
-            String key = s.getStartTime().toLocalDate() + "_" +
-                    s.getStartTime().getHour();
-
+            String key = s.getStartTime().toLocalDate() + "_" + s.getStartTime().getHour();
             int remain = s.getMaxPatient() - s.getCurrentPatient();
-
             slotMap.merge(key, remain, Integer::sum);
+            hasSlotDateMap.put(s.getStartTime().toLocalDate().toString(), true);
         }
 
         // 5. 결과 생성
@@ -237,22 +239,24 @@ public class SlotService {
         LocalDate lastDay = end.toLocalDate();
 
         for (LocalDate d = firstDay; !d.isAfter(lastDay); d = d.plusDays(1)) {
-
+            if (d.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) continue;
             int totalCapacity = 0;
+            boolean hasSlotToday = hasSlotDateMap.getOrDefault(d.toString(), false);
 
             for (int hour = 9; hour <= 17; hour++) {
                 if (hour == 13) continue;
+                if (d.getDayOfWeek() == java.time.DayOfWeek.SATURDAY && hour >= 13) continue;
 
                 String key = d + "_" + hour;
-
                 Integer remain = slotMap.get(key);
 
-                if (remain == null) {
-                    // 🔥 슬롯 없으면 → 의사 수 * 3
-                    totalCapacity += doctors.size() * 3;
+                System.out.println("KEY: " + key + " / exist: " + slotMap.containsKey(key));
+
+                if (slotMap.containsKey(key)) {
+                    totalCapacity += slotMap.get(key);
                 } else {
-                    // 🔥 슬롯 있으면 → (max - current) 합
-                    totalCapacity += remain;
+                    // 🔥 진짜 슬롯 없는 경우만 기본값
+                    totalCapacity += doctors.size() * 3;
                 }
             }
 
@@ -269,6 +273,11 @@ public class SlotService {
                                         Integer doctorId){
         List<SlotResponse> result = new ArrayList<>();
         LocalDate date = daily.toLocalDate();
+
+        // 일요일 차단
+        if (date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            return result;
+        }
 
         Staff doctor = staffRepository.findByStaffId(doctorId);
 
@@ -289,6 +298,9 @@ public class SlotService {
 
         for (int hour = 9; hour <= 17; hour++) {
             if(hour==13) continue;
+            // 토요일 오후 차단
+            if (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY && hour >= 13) continue;
+
             List<Slot> hourSlots = slotMap.getOrDefault(hour, new ArrayList<>());
 
             int availableCount;
@@ -327,9 +339,15 @@ public class SlotService {
         List<SlotResponse> result = new ArrayList<>();
         LocalDate date = daily.toLocalDate();
 
+        if (date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            return result;
+        }
+
         // 2. 하루 9시~17시
         for (int hour = 9; hour <= 17; hour++) {
             if(hour == 13) continue; // 점심시간 제외
+            // 토요일 오후 차단
+            if (date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY && hour >= 13) continue;
 
             LocalDateTime slotTime = date.atTime(hour, 0);
 
@@ -337,24 +355,20 @@ public class SlotService {
             int totalCapacity = 0;
             Integer sampleSlotId = null;
 
-            for (Staff doc : doctors) {
-                List<Slot> slots = slotRepository.findAllByStartTimeBetweenAndStaff(
-                        slotTime,
-                        slotTime.plusHours(1).minusSeconds(1),
-                        doc
-                );
 
-                if (!slots.isEmpty() && sampleSlotId == null) {
-                    sampleSlotId = slots.get(0).getSlotId(); // 임의로 slotId 하나 가져오기
-                }
+            // 의사 루프 제거 → 해당 시간대 슬롯 한 번에 조회
+            List<Slot> slots = slotRepository.findAllByStartTimeBetween(
+                    slotTime,
+                    slotTime.plusHours(1).minusSeconds(1)
+            );
 
-                int capacity = slots.stream()
+            if (slots.isEmpty()) {
+                totalCapacity = doctors.size() * 3; // 슬롯 없으면 의사 수 * 3
+            } else {
+                totalCapacity = slots.stream()
                         .mapToInt(s -> s.getMaxPatient() - s.getCurrentPatient())
                         .sum();
-
-                // 슬롯 없으면 기본 3명
-                if (capacity == 0) capacity = 3;
-                totalCapacity += capacity;
+                sampleSlotId = slots.get(0).getSlotId();
             }
 
             // 4. SlotResponse 생성

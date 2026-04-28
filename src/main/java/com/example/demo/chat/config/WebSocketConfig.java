@@ -29,7 +29,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue");
+        registry.enableStompBrokerRelay("/topic", "/queue")
+                .setRelayHost(System.getenv("RABBITMQ_HOST"))
+                .setRelayPort(61613)
+                .setClientLogin(System.getenv("RABBITMQ_USER"))
+                .setClientPasscode(System.getenv("RABBITMQ_PASS"))
+                .setSystemLogin(System.getenv("RABBITMQ_USER"))
+                .setSystemPasscode(System.getenv("RABBITMQ_PASS"));
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
     }

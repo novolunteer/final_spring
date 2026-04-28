@@ -26,7 +26,8 @@ public class BillingController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
         if (roles == null || roles.isEmpty()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -47,7 +48,8 @@ public class BillingController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
         if (roles == null || roles.isEmpty()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

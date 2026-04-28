@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -17,13 +18,9 @@ import java.util.UUID;
 @Transactional
 public class BillingService {
     private final BillingRepository billingRepository;
-    private final DepartmentRepository departmentRepository;
 
-    public void insertTotalAmount(BillingDto dto, Integer departmentId){
-        Department billingDept=departmentRepository.findByDepartmentName("원무과")
-                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
-
-        if (!billingDept.getDepartmentId().equals(departmentId)){
+    public void insertTotalAmount(BillingDto dto, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
             throw new RuntimeException("접근 권한이 없습니다.");
         }
 
@@ -37,11 +34,8 @@ public class BillingService {
         billing.setTotalAmount(dto.getTotalAmount());
     }
 
-    public Page<BillingDto> getBillingList(String keyword, Pageable pageable, Integer departmentId){
-        Department billingDept=departmentRepository.findByDepartmentName("원무과")
-                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
-
-        if (!billingDept.getDepartmentId().equals(departmentId)){
+    public Page<BillingDto> getBillingList(String keyword, Pageable pageable, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
             throw new RuntimeException("접근 권한이 없습니다.");
         }
 

@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class PaymentController {
@@ -25,13 +27,13 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Integer departmentId=details.getDepartmentId();
-        if (departmentId == null){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try{
-            Page<PaymentDto> payments=paymentService.getPaymentList(keyword, pageable, departmentId);
+            Page<PaymentDto> payments=paymentService.getPaymentList(keyword, pageable, roles);
             return ResponseEntity.ok(payments);
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,13 +48,13 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Integer departmentId=details.getDepartmentId();
-        if (departmentId == null){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try{
-            PaymentPrepareDto prepare=paymentService.preparePayment(dto.getBillingId(), dto.getAmount(), departmentId);
+            PaymentPrepareDto prepare=paymentService.preparePayment(dto.getBillingId(), dto.getAmount(), roles);
             return ResponseEntity.ok(prepare);
         } catch (Exception e) {
             e.printStackTrace();
@@ -67,13 +69,13 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Integer departmentId=details.getDepartmentId();
-        if (departmentId == null){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try{
-            paymentService.confirmPayment(dto, departmentId);
+            paymentService.confirmPayment(dto, roles);
             return ResponseEntity.ok("success");
         } catch (Exception e) {
             e.printStackTrace();

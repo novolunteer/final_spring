@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,13 +26,13 @@ public class BillingController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Integer departmentId=details.getDepartmentId();
-        if (departmentId == null){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try{
-            Page<BillingDto> billings=billingService.getBillingList(keyword, pageable, departmentId);
+            Page<BillingDto> billings=billingService.getBillingList(keyword, pageable, roles);
             return ResponseEntity.ok(billings);
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,13 +47,13 @@ public class BillingController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Integer departmentId=details.getDepartmentId();
-        if (departmentId == null){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString()).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try{
-            billingService.insertTotalAmount(dto, departmentId);
+            billingService.insertTotalAmount(dto, roles);
             return ResponseEntity.ok("success");
         } catch (Exception e) {
             e.printStackTrace();

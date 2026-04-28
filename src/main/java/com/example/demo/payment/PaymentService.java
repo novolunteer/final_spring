@@ -27,17 +27,13 @@ import java.util.*;
 @Transactional
 public class PaymentService {
     private final BillingRepository billingRepository;
-    private final DepartmentRepository departmentRepository;
     private final PaymentRepository paymentRepository;
 
     @Value("${tosspayments.secret-key}")
     private String secretKey;
 
-    public Page<PaymentDto> getPaymentList(String keyword, Pageable pageable, Integer departmentId){
-        Department billingDept=departmentRepository.findByDepartmentName("원무과")
-                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
-
-        if (!billingDept.getDepartmentId().equals(departmentId)){
+    public Page<PaymentDto> getPaymentList(String keyword, Pageable pageable, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
             throw new RuntimeException("접근 권한이 없습니다.");
         }
 
@@ -65,11 +61,8 @@ public class PaymentService {
                 .paymentDatetime(p.getPaymentDatetime()).build());
     }
 
-    public void confirmPayment(PaymentConfirmDto dto, Integer departmentId){
-        Department billingDept=departmentRepository.findByDepartmentName("원무과")
-                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
-
-        if (!billingDept.getDepartmentId().equals(departmentId)){
+    public void confirmPayment(PaymentConfirmDto dto, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
             throw new RuntimeException("접근 권한이 없습니다.");
         }
 
@@ -186,11 +179,8 @@ public class PaymentService {
         return response.getBody();
     }
 
-    public PaymentPrepareDto preparePayment(Integer billingId, Integer amount, Integer departmentId){
-        Department billingDept=departmentRepository.findByDepartmentName("원무과")
-                .orElseThrow(()->new RuntimeException("존재하지 않는 부서입니다."));
-
-        if (!billingDept.getDepartmentId().equals(departmentId)){
+    public PaymentPrepareDto preparePayment(Integer billingId, Integer amount, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
             throw new RuntimeException("접근 권한이 없습니다.");
         }
 

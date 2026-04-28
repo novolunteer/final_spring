@@ -45,13 +45,13 @@ public class ChatWebSocketController {
         ChatMessageDto saveMessage=messageService.sendChatMessage(request, userId);
 
         //채팅방 안 메시지 실시간 전송
-        messagingTemplate.convertAndSend("/topic/chat/room/" + request.getRoomId(), saveMessage);
+        messagingTemplate.convertAndSend("/topic/chat.room." + request.getRoomId(), saveMessage);
 
         List<Integer> targetUserIds=saveMessage.getParticipantIds();
         for (Integer id : targetUserIds){
             messagingTemplate.convertAndSendToUser(
                     id.toString(),
-                    "/queue/chat/list",
+                    "/queue/chat.list",
                     Map.of("type", "ROOM_LIST_REFRESH")
             );
         }

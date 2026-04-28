@@ -64,7 +64,7 @@ public class ChatMessageController {
             List<Integer> targetUserIds=message.getParticipantIds();
             for (Integer id:targetUserIds){
                 messagingTemplate.convertAndSendToUser(id.toString(),
-                        "/queue/chat/room/" + message.getRoomId() + "/message/update", Map.of("result",message));
+                        "/queue/chat.room." + message.getRoomId() + ".message.update", Map.of("result",message));
             }
 
             return ResponseEntity.ok(Map.of("result", message));
@@ -95,7 +95,7 @@ public class ChatMessageController {
             List<Integer> targetUserId=message.getParticipantIds();
             for (Integer id:targetUserId){
                 messagingTemplate.convertAndSendToUser(id.toString(),
-                        "/queue/chat/room/" + message.getRoomId() + "/message/update", Map.of("result",message));
+                        "/queue/chat.room." + message.getRoomId() + ".message.update", Map.of("result",message));
             }
 
             return ResponseEntity.ok(Map.of("result", message));

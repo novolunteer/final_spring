@@ -79,7 +79,7 @@ public class ChatRoomService {
             ChatMessageDto dto=ChatMessageDto.builder().roomId(roomId).messageId(systemMessage.getMessageId())
                     .content(systemMessage.getContent()).messageType(systemMessage.getMessageType().name())
                     .createdAt(systemMessage.getCreatedAt()).build();
-            messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, dto);
+            messagingTemplate.convertAndSend("/topic/chat.room." + roomId, dto);
         }
 
         if (!result.isEmpty()) {
@@ -87,7 +87,7 @@ public class ChatRoomService {
             for (ChatRoomParticipant p : finalParticipants) {
                 messagingTemplate.convertAndSendToUser(
                         p.getUser().getUserId().toString(),
-                        "/queue/chat/list",
+                        "/queue/chat.list",
                         Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
                 );
             }
@@ -132,7 +132,7 @@ public class ChatRoomService {
             roomRepository.flush();
 
             messagingTemplate.convertAndSendToUser(
-                    userId.toString(), "/queue/chat/list", Map.of("type","ROOM_LIST_REFRESH")
+                    userId.toString(), "/queue/chat.list", Map.of("type","ROOM_LIST_REFRESH")
             );
 
             return LeaveChatRoomResponse.builder().left(true).roomDelete(true).build();
@@ -146,7 +146,7 @@ public class ChatRoomService {
         ChatMessageDto dto=ChatMessageDto.builder().roomId(roomId).messageId(systemMessage.getMessageId())
                 .content(systemMessage.getContent()).messageType(systemMessage.getMessageType().name())
                 .createdAt(systemMessage.getCreatedAt()).build();
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, dto);
+        messagingTemplate.convertAndSend("/topic/chat.room." + roomId, dto);
 
         participantRepository.delete(participant);
 
@@ -161,7 +161,7 @@ public class ChatRoomService {
         for (Integer targetUserId : targetUserIds) {
             messagingTemplate.convertAndSendToUser(
                     targetUserId.toString(),
-                    "/queue/chat/list",
+                    "/queue/chat.list",
                     Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
             );
         }
@@ -325,7 +325,7 @@ public class ChatRoomService {
         }
 
         for (Integer id:targetUserIds){
-            messagingTemplate.convertAndSendToUser(id.toString(), "/queue/chat/list",
+            messagingTemplate.convertAndSendToUser(id.toString(), "/queue/chat.list",
                     Map.of("type", "ROOM_LIST_REFRESH"));
         }
 
@@ -363,7 +363,7 @@ public class ChatRoomService {
                     .roomId(roomId).userId(userId).lastReadMessageId(lastMessageId).build();
 
             messagingTemplate.convertAndSend(
-                    "/topic/chat/room/" + roomId + "/read", readStatus
+                    "/topic/chat.room." + roomId + ".read", readStatus
             );
         }
     }

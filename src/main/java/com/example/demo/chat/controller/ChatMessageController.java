@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import java.security.Principal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +24,30 @@ import java.util.Set;
 public class ChatMessageController {
     private final ChatMessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
+
+    @MessageMapping("/chat/send/user")
+    public void sendUserMessageViaWebSocket(
+            SendMessageRequest dto,   // @RequestBody 없이
+            Principal principal) {
+        if (principal == null) return;
+    
+        Integer userId = Integer.parseInt(principal.getName());
+    
+        try {
+            ChatMessageDto message = messageService.sendChatMessage(dto, userId);
+    
+            List<Integer> targetUserIds = message.getParticipantIds();
+            for (Integer id : targetUserIds) {
+                messagingTemplate.convertAndSendToUser(
+                    id.toString(),
+                    "/queue/chat.room." + message.getRoomId() + ".message.update",
+                    Map.of("result", message)
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     @PostMapping("/api/chat/send/user")
     public ResponseEntity<Map<String,Object>> sendUserMessage(@RequestBody SendMessageRequest dto,

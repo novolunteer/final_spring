@@ -26,16 +26,20 @@ public class ChatMessageController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat/send/user")
-    public void sendUserMessageViaWebSocket(
-            SendMessageRequest dto,   // @RequestBody 없이
-            Principal principal) {
+    public void sendUserMessageViaWebSocket(SendMessageRequest dto, Principal principal) {
         if (principal == null) return;
-    
         Integer userId = Integer.parseInt(principal.getName());
     
         try {
             ChatMessageDto message = messageService.sendChatMessage(dto, userId);
     
+            // 1. 채팅방 전체에 새 메시지 브로드캐스트 (프론트 /topic 구독)
+            messagingTemplate.convertAndSend(
+                "/topic/chat.room." + message.getRoomId(),
+                message
+            );
+    
+            // 2. 수정/삭제 업데이트용 (기존 유지)
             List<Integer> targetUserIds = message.getParticipantIds();
             for (Integer id : targetUserIds) {
                 messagingTemplate.convertAndSendToUser(

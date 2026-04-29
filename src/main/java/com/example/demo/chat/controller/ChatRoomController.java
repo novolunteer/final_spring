@@ -19,7 +19,7 @@ public class ChatRoomController {
     private final ChatRoomService roomService;
     private final ChatMessageService messageService;
 
-    @GetMapping("/chat/room/list")
+    @GetMapping("/api/chat/room/list")
     public ResponseEntity<Map<String,Object>> chatRoomList(@AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","사용자 정보가 존재하지 않습니다."));
@@ -39,7 +39,7 @@ public class ChatRoomController {
         }
     }
 
-    @GetMapping("/chat/room/{roomId}")
+    @GetMapping("/api/chat/room/{roomId}")
     public ResponseEntity<Map<String,Object>> chatRoomDetail(@PathVariable Integer roomId,
                                                              @RequestParam(name = "cursor", required = false) Integer cursor,
                                                              @AuthenticationPrincipal CustomUserDetails details){
@@ -68,7 +68,7 @@ public class ChatRoomController {
         }
     }
 
-    @PostMapping("/chat/read/{roomId}")
+    @PostMapping("/api/chat/read/{roomId}")
     public ResponseEntity<Map<String,Object>> markAsRead(@PathVariable Integer roomId,
                                                          @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -90,7 +90,7 @@ public class ChatRoomController {
         }
     }
 
-    @PostMapping("/chat/room")
+    @PostMapping("/api/chat/room")
     public ResponseEntity<Map<String, Object>> createChatRoom(@RequestBody CreateChatRoomRequest request,
                                             @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -112,7 +112,7 @@ public class ChatRoomController {
         }
     }
 
-    @GetMapping("/chat/staff/list")
+    @GetMapping("/api/chat/staff/list")
     public ResponseEntity<Map<String,Object>> getStaffList(@AuthenticationPrincipal CustomUserDetails details,
                                           @RequestParam(name = "keyword", required = false) String keyword){
         if (details == null){
@@ -134,7 +134,7 @@ public class ChatRoomController {
         }
     }
 
-    @GetMapping("/chat/room/{roomId}/invite/staff")
+    @GetMapping("/api/chat/room/{roomId}/invite/staff")
     public ResponseEntity<Map<String, Object>> getStaffListForInvite(@PathVariable Integer roomId,
                                                    @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -156,7 +156,7 @@ public class ChatRoomController {
         }
     }
 
-    @PostMapping("/chat/room/{roomId}/invite")
+    @PostMapping("/api/chat/room/{roomId}/invite")
     public ResponseEntity<Map<String,Object>> inviteStaff(@PathVariable Integer roomId,
                                          @RequestBody List<Integer> staffIds,
                                          @AuthenticationPrincipal CustomUserDetails details){
@@ -179,7 +179,7 @@ public class ChatRoomController {
         }
     }
 
-    @DeleteMapping("/chat/room/{roomId}/leave")
+    @DeleteMapping("/api/chat/room/{roomId}/leave")
     public ResponseEntity<Map<String,Object>> leaveChatRoom(@PathVariable Integer roomId,
                                            @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){

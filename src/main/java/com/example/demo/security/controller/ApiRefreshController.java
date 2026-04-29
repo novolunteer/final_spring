@@ -34,7 +34,7 @@ public class ApiRefreshController {
     }
 
     //토큰 유효기간 검사/재발급
-    @PostMapping("/jwt/token/refresh")
+    @PostMapping("/api/jwt/token/refresh")
     public ResponseEntity<?> getRefreshToken(@RequestHeader("Authorization") String authorization,
                                              HttpServletRequest request, HttpServletResponse response){
         try {

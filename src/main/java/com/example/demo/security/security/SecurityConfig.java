@@ -48,7 +48,7 @@ public class SecurityConfig {
         httpSecurity.csrf(csrf -> csrf.disable());
 
         httpSecurity.formLogin(form -> form
-                .loginProcessingUrl("/login")
+                .loginProcessingUrl("/api/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
                 .successHandler(apiLoginSuccessHandler)
@@ -67,8 +67,8 @@ public class SecurityConfig {
                 ex.accessDeniedHandler(customAccessDeniedHandler));
 
         httpSecurity.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/login","/join", "/ws", "/ws/**", "/upload/**", "/jwt/token/refresh",
-                                "/join/**", "/social/**", "/chatbot/inquiry/**").permitAll()
+                auth.requestMatchers("/api/login","/api/join", "/api/ws", "/api/ws/**", "/upload/**", "/api/jwt/token/refresh",
+                                "/api/join/**", "/api/social/**", "/api/chatbot/inquiry/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications", "/api/notifications/**").permitAll()
                         .anyRequest().authenticated()
         );

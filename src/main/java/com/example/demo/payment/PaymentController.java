@@ -20,7 +20,7 @@ import java.util.List;
 public class PaymentController {
     private final PaymentService paymentService;
 
-    @GetMapping("/payment")
+    @GetMapping("/api/payment")
     public ResponseEntity<Page<PaymentDto>> getPaymentList(@RequestParam(name = "keyword", required = false) String keyword,
                                                            @AuthenticationPrincipal CustomUserDetails details,
                                                            Pageable pageable){
@@ -43,7 +43,7 @@ public class PaymentController {
         }
     }
 
-    @PostMapping("/payment/prepare")
+    @PostMapping("/api/payment/prepare")
     public ResponseEntity<PaymentPrepareDto> preparePayment(@RequestBody PaymentPrepareDto dto,
                                                             @AuthenticationPrincipal CustomUserDetails details){
         if (details == null) {
@@ -65,7 +65,7 @@ public class PaymentController {
         }
     }
 
-    @PostMapping("/payment/confirm")
+    @PostMapping("/api/payment/confirm")
     public ResponseEntity<String> confirmPayment(@RequestBody PaymentConfirmDto dto,
                                                  @AuthenticationPrincipal CustomUserDetails details){
         if (details == null) {
@@ -87,7 +87,7 @@ public class PaymentController {
         }
     }
 
-    @PostMapping("/payment/cash")
+    @PostMapping("/api/payment/cash")
     public ResponseEntity<String> cashPayment(@RequestBody CashPaymentDto dto,
                                               @AuthenticationPrincipal CustomUserDetails details){
         if (details == null) {

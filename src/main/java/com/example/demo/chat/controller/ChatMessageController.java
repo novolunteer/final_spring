@@ -23,7 +23,7 @@ public class ChatMessageController {
     private final ChatMessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @PostMapping("/chat/send/user")
+    @PostMapping("/api/chat/send/user")
     public ResponseEntity<Map<String,Object>> sendUserMessage(@RequestBody SendMessageRequest dto,
                                              @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -45,7 +45,7 @@ public class ChatMessageController {
         }
     }
 
-    @DeleteMapping("/chat/delete/message/{messageId}")
+    @DeleteMapping("/api/chat/delete/message/{messageId}")
     public ResponseEntity<Map<String, Object>> deleteMessage(@PathVariable Integer messageId,
                                                              @AuthenticationPrincipal CustomUserDetails details){
         if (details == null){
@@ -75,7 +75,7 @@ public class ChatMessageController {
         }
     }
 
-    @PutMapping("/chat/edit/message/{messageId}")
+    @PutMapping("/api/chat/edit/message/{messageId}")
     public ResponseEntity<Map<String,Object>> editMessage(@PathVariable Integer messageId,
                                                           @RequestBody UpdateMessageRequest request,
                                                           @AuthenticationPrincipal CustomUserDetails details){

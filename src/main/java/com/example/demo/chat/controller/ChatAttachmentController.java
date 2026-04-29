@@ -21,13 +21,13 @@ import java.util.Map;
 public class ChatAttachmentController {
     private final ChatAttachmentService attachmentService;
 
-    @PostMapping("/chat/upload/attachment")
+    @PostMapping("/api/chat/upload/attachment")
     public ResponseEntity<Map<String, Object>> testUpload(@RequestParam("files") List<MultipartFile> files){
         List<UploadAttachmentResponse> responses=attachmentService.uploadFiles(files);
         return ResponseEntity.ok(Map.of("result", responses));
     }
 
-    @GetMapping("/chat/room/{roomId}/attachment")
+    @GetMapping("/api/chat/room/{roomId}/attachment")
     public ResponseEntity<Map<String,Object>> openAttachmentArchive(@PathVariable Integer roomId,
                                                                     @RequestParam(name = "cursor", required = false) Integer cursor,
                                                                     @AuthenticationPrincipal CustomUserDetails details){

@@ -18,7 +18,7 @@ import java.util.Map;
 public class BillingController {
     private final BillingService billingService;
 
-    @GetMapping("/billing")
+    @GetMapping("/api/billing")
     public ResponseEntity<Page<BillingDto>> getBillingList(@RequestParam(name = "keyword", required = false) String keyword,
                                                               @AuthenticationPrincipal CustomUserDetails details,
                                                               Pageable pageable){
@@ -41,7 +41,7 @@ public class BillingController {
         }
     }
 
-    @PostMapping("/billing/total/amount")
+    @PostMapping("/api/billing/total/amount")
     public ResponseEntity<String> insertTotalAmount(@RequestBody BillingDto dto,
                                                     @AuthenticationPrincipal CustomUserDetails details){
         if (details == null) {

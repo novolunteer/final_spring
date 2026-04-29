@@ -24,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class SocialAccountController {
     @Value("${naver.client-id}")
     private String naverClientId;

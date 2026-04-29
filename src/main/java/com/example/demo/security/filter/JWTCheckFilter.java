@@ -37,10 +37,10 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path=request.getRequestURI();
-        if (path.startsWith("/none") || path.startsWith("/login") || path.startsWith("/logout") ||
-                path.startsWith("/join") || path.startsWith("/jwt/token/refresh") || path.startsWith("/ws")
-            || path.startsWith("/upload") || path.startsWith("/social") || path.startsWith("/test/upload")
-                || path.startsWith("/chatbot/inquiry")){
+        if (path.startsWith("/api/none") || path.startsWith("/api/login") || path.startsWith("/api/logout") ||
+                path.startsWith("/api/join") || path.startsWith("/api/jwt/token/refresh") || path.startsWith("/api/ws")
+            || path.startsWith("/api/upload") || path.startsWith("/api/social")
+                || path.startsWith("/api/chatbot/inquiry")){
             return true;
         }
 

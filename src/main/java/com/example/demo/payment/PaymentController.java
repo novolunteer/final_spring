@@ -1,5 +1,6 @@
 package com.example.demo.payment;
 
+import com.example.demo.payment.dto.CashPaymentDto;
 import com.example.demo.payment.dto.PaymentConfirmDto;
 import com.example.demo.payment.dto.PaymentDto;
 import com.example.demo.payment.dto.PaymentPrepareDto;
@@ -79,6 +80,28 @@ public class PaymentController {
 
         try{
             paymentService.confirmPayment(dto, roles);
+            return ResponseEntity.ok("success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/payment/cash")
+    public ResponseEntity<String> cashPayment(@RequestBody CashPaymentDto dto,
+                                              @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try{
+            paymentService.cashPayment(dto, roles);
             return ResponseEntity.ok("success");
         } catch (Exception e) {
             e.printStackTrace();

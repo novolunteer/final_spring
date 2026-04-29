@@ -6,6 +6,7 @@ import com.example.demo.billing.BillingStatus;
 import com.example.demo.billing.dto.BillingDto;
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
+import com.example.demo.payment.dto.CashPaymentDto;
 import com.example.demo.payment.dto.PaymentConfirmDto;
 import com.example.demo.payment.dto.PaymentDto;
 import com.example.demo.payment.dto.PaymentPrepareDto;
@@ -59,6 +60,62 @@ public class PaymentService {
                 .amount(p.getAmount())
                 .method(p.getMethod().name())
                 .paymentDatetime(p.getPaymentDatetime()).build());
+    }
+
+    public void cashPayment(CashPaymentDto dto, List<String> roles){
+        if (roles == null || roles.isEmpty() || !roles.contains("ADMIN")){
+            throw new RuntimeException("접근 권한이 없습니다.");
+        }
+
+        if (dto.getAmount() == null || dto.getAmount() <= 0) {
+            throw new RuntimeException("결제 금액이 올바르지 않습니다.");
+        }
+
+        if (dto.getBillingId() == null){
+            throw new RuntimeException("청구서 번호가 존재하지 않습니다.");
+        }
+
+        Billing billing=billingRepository.findByBillingId(dto.getBillingId())
+                .orElseThrow(()->new RuntimeException("청구서가 존재하지 않습니다."));
+
+        if (billing.getStatus() != BillingStatus.PENDING && billing.getStatus() != BillingStatus.PARTIAL){
+            throw new RuntimeException("결제 가능한 청구서가 아닙니다.");
+        }
+
+        int paidAmount=0;
+        List<Payment> payments=paymentRepository.findByBilling(billing);
+        for (Payment p:payments){
+            paidAmount += p.getAmount();
+        }
+
+        int remainingAmount = billing.getTotalAmount() - paidAmount;
+
+        if (remainingAmount <= 0) {
+            throw new RuntimeException("이미 전액 결제된 청구서입니다.");
+        }
+
+        if (dto.getAmount() > remainingAmount) {
+            throw new RuntimeException("남은 금액보다 많이 결제할 수 없습니다.");
+        }
+
+        Payment payment=Payment.builder()
+                .billing(billing)
+                .amount(dto.getAmount())
+                .method(PaymentMethod.CASH)
+                .paymentDatetime(LocalDateTime.now())
+                .build();
+
+        paymentRepository.save(payment);
+
+        int newPaidAmount=paidAmount + dto.getAmount();
+
+        if (newPaidAmount < billing.getTotalAmount()){
+            billing.setStatus(BillingStatus.PARTIAL);
+        } else if (newPaidAmount == billing.getTotalAmount()) {
+            billing.setStatus(BillingStatus.PAID);
+        } else {
+            throw new RuntimeException("결제 누적 금액이 청구 금액을 초과했습니다.");
+        }
     }
 
     public void confirmPayment(PaymentConfirmDto dto, List<String> roles){

@@ -39,7 +39,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         String path=request.getRequestURI();
         if (path.startsWith("/api/none") || path.startsWith("/api/login") || path.startsWith("/api/logout") ||
                 path.startsWith("/api/join") || path.startsWith("/api/jwt/token/refresh") || path.startsWith("/api/ws")
-            || path.startsWith("/api/upload") || path.startsWith("/api/social")
+                || path.startsWith("/api/upload") || path.startsWith("/api/social")
                 || path.startsWith("/chatbot/inquiry")){
             return true;
         }
@@ -79,10 +79,9 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             Integer departmentId=claims.get("departmentId", Integer.class);
             String name=claims.get("name", String.class);
-            String departmentName=claims.get("departmentName", String.class);
 
             CustomUserDetails details=
-                    new CustomUserDetails(email, userId, status, authorities, departmentId, name, departmentName);
+                    new CustomUserDetails(email, userId, status, authorities, departmentId, name);
 
             //인증된 사용자 정보를 스프링 시큐리티 컨텍스트에 등록
             UsernamePasswordAuthenticationToken authenticationToken=

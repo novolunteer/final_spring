@@ -58,20 +58,13 @@ public class DepartmentService {
 
     //전체조회
     public List<DepartmentDto> selectAll(){
-        //진료과
-        List<DepartmentDto> result=departmentRepository.findAll().stream().map(this::entityToDto).toList();
+        List<Department> result=departmentRepository.findAll();
 
-        List<String> roles=roleRepository.findAll().stream().map(r -> r.getRoleName()).toList();
-
-        if (roles.contains("NURSE")){
-            result.add(DepartmentDto.builder().departmentName("간호부").status("Y").build());
-        }
-        if (roles.contains("ADMINISTRATION")){
-            result.add(DepartmentDto.builder().departmentName("원무과").status("Y").build());
-        }
-
-        return result;
+        return result.stream()
+                .map(this::entityToDto)
+                .toList();
     }
+
     private DepartmentDto entityToDto(Department entity){
         return DepartmentDto.builder()
                 .departmentId(entity.getDepartmentId())

@@ -32,11 +32,23 @@ public class CustomUserDetailsService implements UserDetailsService {
         Staff staff=staffRepository.findByUser(user).orElse(null);
 
         Integer departmentId=null;
+        String departmentName=null;
         String name;
         if (staff != null){
             if (staff.getDepartment() != null){
                 departmentId=staff.getDepartment().getDepartmentId();
+                departmentName=staff.getDepartment().getDepartmentName();
+            } else {
+                List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
+                if (roles.contains("ADMINISTRATION")){
+                    departmentName="원무과";
+                } else if (roles.contains("NURSE")){
+                    departmentName="간호부";
+                } else {
+                    departmentName=null;
+                }
             }
+
             name=staff.getName();
         } else {
             Patient patient=patientRepository.findByUser(user);
@@ -49,6 +61,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new SocialAccountException(providers);
         }
 
-        return new CustomUserDetails(user, departmentId, name);
+        return new CustomUserDetails(user, departmentId, name, departmentName);
     }
 }

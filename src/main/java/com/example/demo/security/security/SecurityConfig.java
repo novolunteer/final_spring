@@ -68,7 +68,7 @@ public class SecurityConfig {
 
         httpSecurity.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/api/login","/api/join", "/api/ws", "/api/ws/**", "/upload/**", "/api/jwt/token/refresh",
-                                "/api/join/**", "/api/social/**", "/api/chatbot/inquiry/**").permitAll()
+                                "/api/join/**", "/api/social/**", "/chatbot/inquiry/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications", "/api/notifications/**").permitAll()
                         .anyRequest().authenticated()
         );

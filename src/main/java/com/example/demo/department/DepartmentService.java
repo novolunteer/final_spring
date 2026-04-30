@@ -1,5 +1,6 @@
 package com.example.demo.department;
 
+import com.example.demo.role.RoleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @Transactional
 public class DepartmentService {
     private final DepartmentRepository departmentRepository;
+    private final RoleRepository roleRepository;
 
     public Map<String, Object> getDepartment() {
         List<DepartmentDto> list = departmentRepository.findAll()
@@ -56,11 +58,19 @@ public class DepartmentService {
 
     //전체조회
     public List<DepartmentDto> selectAll(){
-        List<Department> result=departmentRepository.findAll();
+        //진료과
+        List<DepartmentDto> result=departmentRepository.findAll().stream().map(this::entityToDto).toList();
 
-        return result.stream()
-                .map(this::entityToDto)
-                .toList();
+        List<String> roles=roleRepository.findAll().stream().map(r -> r.getRoleName()).toList();
+
+        if (roles.contains("NURSE")){
+            result.add(DepartmentDto.builder().departmentName("간호부").status("Y").build());
+        }
+        if (roles.contains("ADMINISTRATION")){
+            result.add(DepartmentDto.builder().departmentName("원무과").status("Y").build());
+        }
+
+        return result;
     }
     private DepartmentDto entityToDto(Department entity){
         return DepartmentDto.builder()

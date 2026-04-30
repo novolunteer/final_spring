@@ -9,6 +9,7 @@ import java.util.*;
 
 public class CustomUserDetails implements UserDetails {
     private Integer departmentId;
+    private String departmentName;
     private Integer userId;
     private String password;
     private String email;
@@ -17,7 +18,7 @@ public class CustomUserDetails implements UserDetails {
     private String name;
 
 
-    public CustomUserDetails(User user, Integer departmentId, String name){
+    public CustomUserDetails(User user, Integer departmentId, String name, String departmentName){
         this.departmentId=departmentId;
         this.userId=user.getUserId();
         this.password=user.getPassword();
@@ -27,10 +28,11 @@ public class CustomUserDetails implements UserDetails {
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRole().getRoleName()))
                 .toList();
         this.name=name;
+        this.departmentName=departmentName;
     }
 
     public CustomUserDetails(String email, Integer userId, String status,
-                                Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name){
+                                Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name, String departmentName){
         this.userId=userId;
         this.password=null;
         this.email=email;
@@ -38,6 +40,7 @@ public class CustomUserDetails implements UserDetails {
         this.authorities=authorities;
         this.departmentId=departmentId;
         this.name=name;
+        this.departmentName=departmentName;
     }
 
     public Integer getDepartmentId(){
@@ -83,6 +86,7 @@ public class CustomUserDetails implements UserDetails {
         if (departmentId != null){
             dataMap.put("departmentId", departmentId);
         }
+        dataMap.put("departmentName", departmentName);
         return dataMap;
     }
 }

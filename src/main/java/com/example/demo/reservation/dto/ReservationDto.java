@@ -4,7 +4,6 @@ import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationStatus;
-import com.example.demo.slot.Slot;
 import com.example.demo.staff.Staff;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -7,7 +7,6 @@ import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
 import com.example.demo.socialAccount.SocialAccount;
 import com.example.demo.socialAccount.SocialAccountRepository;
-import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;

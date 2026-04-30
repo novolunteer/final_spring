@@ -6,7 +6,7 @@ import com.example.demo.medicalRecord.dto.MedicalRecordDto;
 import com.example.demo.medicalRecord.dto.MedicalRecordRequest;
 import com.example.demo.medicalRecord.dto.MedicalRecordResponse;
 import com.example.demo.patient.Patient;
-import com.example.demo.patient.PatientDto;
+import com.example.demo.patient.dto.PatientDto;
 import com.example.demo.patient.PatientRepository;
 import com.example.demo.reception.ReceptionRepository;
 import com.example.demo.reception.ReceptionStatus;

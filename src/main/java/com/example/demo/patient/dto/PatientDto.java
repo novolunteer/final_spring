@@ -1,7 +1,6 @@
-package com.example.demo.patient;
+package com.example.demo.patient.dto;
 
-import com.example.demo.user.User;
-import jakarta.persistence.*;
+import com.example.demo.patient.Patient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

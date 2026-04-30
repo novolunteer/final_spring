@@ -1,16 +1,14 @@
 package com.example.demo.reception;
 
-import com.example.demo.reception.dto.ReceptionResponse;
+import com.example.demo.patient.Patient;
 import com.example.demo.reservation.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     @Query("""
@@ -62,4 +60,12 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
                                                ReceptionStatus status,
                                                Integer doctorId,
                                                Pageable pageable);
+
+    @Query("""
+        select r
+        from Reception r
+        where r.reservation.patient = :patient
+        and r.status = :status
+    """)
+    Page<Reception> findMyReceptionRecords(Patient patient, ReceptionStatus status, Pageable pageable);
 }

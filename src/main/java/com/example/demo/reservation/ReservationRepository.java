@@ -1,8 +1,7 @@
 package com.example.demo.reservation;
 
 import com.example.demo.department.Department;
-import com.example.demo.reception.Reception;
-import jakarta.persistence.criteria.CriteriaBuilder;
+import com.example.demo.patient.Patient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,5 +30,16 @@ public interface ReservationRepository extends JpaRepository<Reservation,Integer
                                                                          Department department,
                                                                          String name,
                                                                          Pageable pageable);
+
+    @Query("""
+        select distinct r
+        from Reservation r
+        where r.patient = :patient
+        and (
+                :status is null or 
+                    r.status = :status
+            )
+    """)
+    Page<Reservation> findMyReservations(Patient patient, ReservationStatus status, Pageable pageable);
 
 }

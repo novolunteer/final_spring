@@ -4,7 +4,6 @@ import com.example.demo.department.Department;
 import com.example.demo.patient.Patient;
 import com.example.demo.slot.Slot;
 import com.example.demo.staff.Staff;
-import com.example.demo.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

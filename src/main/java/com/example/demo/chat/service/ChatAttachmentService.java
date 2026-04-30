@@ -60,7 +60,7 @@ public class ChatAttachmentService {
                 .orElseThrow(()->new RuntimeException("채팅방이 존재하지 않습니다."));
 
         ChatRoomParticipant participant=participantRepository.findByRoomAndUser(room, user)
-                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다."));
+                .orElseThrow(()->new RuntimeException("채팅방 참가자가 아닙니다!"));
 
         LocalDateTime joinedAt=participant.getJoinedAt();
 

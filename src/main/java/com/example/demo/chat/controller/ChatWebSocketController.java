@@ -25,7 +25,7 @@ public class ChatWebSocketController {
     private final ChatMessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/api/chat/send/user")
+    @MessageMapping("/chat/send/user")
     public void sendUserMessage(@Payload SendMessageRequest request,
                                 Principal principal){
         System.out.println("CONTROLLER PRINCIPAL ==> " + principal);

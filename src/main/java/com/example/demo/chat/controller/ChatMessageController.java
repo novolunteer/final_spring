@@ -25,55 +25,55 @@ public class ChatMessageController {
     private final ChatMessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/chat/send/user")
-    public void sendUserMessageViaWebSocket(SendMessageRequest dto, Principal principal) {
-        if (principal == null) return;
-        Integer userId = Integer.parseInt(principal.getName());
-    
-        try {
-            ChatMessageDto message = messageService.sendChatMessage(dto, userId);
-    
-            // 1. 채팅방 전체에 새 메시지 브로드캐스트 (프론트 /topic 구독)
-            messagingTemplate.convertAndSend(
-                "/topic/chat.room." + message.getRoomId(),
-                message
-            );
-    
-            // 2. 수정/삭제 업데이트용 (기존 유지)
-            List<Integer> targetUserIds = message.getParticipantIds();
-            for (Integer id : targetUserIds) {
-                messagingTemplate.convertAndSendToUser(
-                    id.toString(),
-                    "/queue/chat.room." + message.getRoomId() + ".message.update",
-                    Map.of("result", message)
-                );
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @PostMapping("/api/chat/send/user")
-    public ResponseEntity<Map<String,Object>> sendUserMessage(@RequestBody SendMessageRequest dto,
-                                             @AuthenticationPrincipal CustomUserDetails details){
-        if (details == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","로그인 후 이용하세요."));
-        }
-
-        Integer userId=details.getUserId();
-        if (userId == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "사용자 정보를 찾을 수 없습니다."));
-        }
-
-        try{
-            ChatMessageDto message=messageService.sendChatMessage(dto, userId);
-            return ResponseEntity.ok(Map.of("result", message));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","서버 오류!"));
-        }
-    }
+//    @MessageMapping("/chat/send/user")
+//    public void sendUserMessageViaWebSocket(SendMessageRequest dto, Principal principal) {
+//        if (principal == null) return;
+//        Integer userId = Integer.parseInt(principal.getName());
+//
+//        try {
+//            ChatMessageDto message = messageService.sendChatMessage(dto, userId);
+//
+//            // 1. 채팅방 전체에 새 메시지 브로드캐스트 (프론트 /topic 구독)
+//            messagingTemplate.convertAndSend(
+//                "/topic/chat.room." + message.getRoomId(),
+//                message
+//            );
+//
+//            // 2. 수정/삭제 업데이트용 (기존 유지)
+//            List<Integer> targetUserIds = message.getParticipantIds();
+//            for (Integer id : targetUserIds) {
+//                messagingTemplate.convertAndSendToUser(
+//                    id.toString(),
+//                    "/queue/chat.room." + message.getRoomId() + ".message.update",
+//                    Map.of("result", message)
+//                );
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    @PostMapping("/api/chat/send/user")
+//    public ResponseEntity<Map<String,Object>> sendUserMessage(@RequestBody SendMessageRequest dto,
+//                                             @AuthenticationPrincipal CustomUserDetails details){
+//        if (details == null){
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error","로그인 후 이용하세요."));
+//        }
+//
+//        Integer userId=details.getUserId();
+//        if (userId == null){
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                    .body(Map.of("error", "사용자 정보를 찾을 수 없습니다."));
+//        }
+//
+//        try{
+//            ChatMessageDto message=messageService.sendChatMessage(dto, userId);
+//            return ResponseEntity.ok(Map.of("result", message));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error","서버 오류!"));
+//        }
+//    }
 
     @DeleteMapping("/api/chat/delete/message/{messageId}")
     public ResponseEntity<Map<String, Object>> deleteMessage(@PathVariable Integer messageId,

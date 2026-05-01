@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     @Query("""
@@ -68,4 +69,6 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
         and r.status = :status
     """)
     Page<Reception> findMyReceptionRecords(Patient patient, ReceptionStatus status, Pageable pageable);
+
+    Optional<Reception> findByReceptionId(Integer receptionId);
 }

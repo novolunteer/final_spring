@@ -43,14 +43,14 @@ public interface ReservationRepository extends JpaRepository<Reservation,Integer
     Page<Reservation> findMyReservations(Patient patient, ReservationStatus status, Pageable pageable);
 
     @Query("""
-    SELECT r FROM Reservation r
-    JOIN r.slot s
-    WHERE s.staff.user.userId = :userId
-    AND r.status = :status
-    AND s.startTime BETWEEN :start AND :end
-""")
+        SELECT r FROM Reservation r
+        JOIN r.slot s
+        WHERE s.staff.staffId = :staffId
+        AND r.status = :status
+        AND s.startTime BETWEEN :start AND :end
+    """)
     List<Reservation> findConfirmedByDoctorAndDate(
-            @Param("userId") Integer userId,
+            @Param("staffId") Integer staffId,
             @Param("status") ReservationStatus status,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

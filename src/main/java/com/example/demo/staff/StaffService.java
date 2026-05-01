@@ -158,7 +158,11 @@ public class StaffService {
         String roleName = null;
         if (staff.getUser() != null) {
             roleName = userRoleRepository.findByUser(staff.getUser())
-                    .stream().findFirst()
+                    .stream()
+                    .filter(ur->ur.getRole().getParentRole() != null)
+                    .findFirst()
+                    .or(()-> userRoleRepository.findByUser(staff.getUser())
+                            .stream().findFirst())
                     .map(ur -> ur.getRole().getRoleName())
                     .orElse(null);
         }

@@ -1,6 +1,5 @@
 package com.example.demo.reception.dto;
 
-import com.example.demo.patient.Patient;
 import com.example.demo.reception.Reception;
 import com.example.demo.reception.ReceptionStatus;
 import com.example.demo.reservation.Reservation;

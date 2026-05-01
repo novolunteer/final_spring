@@ -30,7 +30,7 @@ public class CustomUserDetails implements UserDetails {
     }
 
     public CustomUserDetails(String email, Integer userId, String status,
-                                Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name){
+                             Collection<? extends GrantedAuthority> authorities, Integer departmentId, String name){
         this.userId=userId;
         this.password=null;
         this.email=email;

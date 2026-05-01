@@ -1,5 +1,6 @@
 package com.example.demo.department;
 
+import com.example.demo.role.RoleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @Transactional
 public class DepartmentService {
     private final DepartmentRepository departmentRepository;
+    private final RoleRepository roleRepository;
 
     public Map<String, Object> getDepartment() {
         List<DepartmentDto> list = departmentRepository.findAll()
@@ -55,6 +57,7 @@ public class DepartmentService {
                 .map(this::entityToDto)
                 .toList();
     }
+
     private DepartmentDto entityToDto(Department entity){
         return DepartmentDto.builder()
                 .departmentId(entity.getDepartmentId())

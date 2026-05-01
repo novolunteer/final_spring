@@ -1,6 +1,5 @@
 package com.example.demo.reception;
 
-import com.example.demo.patient.Patient;
 import com.example.demo.reservation.Reservation;
 import jakarta.persistence.*;
 import lombok.*;

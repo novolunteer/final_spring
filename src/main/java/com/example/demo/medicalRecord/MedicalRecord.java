@@ -33,6 +33,8 @@ public class MedicalRecord {
     @Enumerated(EnumType.STRING)
     private MedicalRecordStatus medicalRecordStatus;
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     private Boolean isSensitive;

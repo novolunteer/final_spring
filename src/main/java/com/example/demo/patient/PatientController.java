@@ -44,7 +44,8 @@ public class PatientController {
     }
 
     @GetMapping("/reception")
-    public ResponseEntity<Page<MyReceptionResponse>> getMyReceptions(@AuthenticationPrincipal CustomUserDetails details, Pageable pageable){
+    public ResponseEntity<Page<MyReceptionResponse>> getMyReceptions(@AuthenticationPrincipal CustomUserDetails details, Pageable pageable,
+                                                                     @RequestParam(name = "sort") String sort){
         if (details == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -55,7 +56,7 @@ public class PatientController {
         }
 
         try{
-            Page<MyReceptionResponse> responses=patientService.getMyReceptions(userId, pageable);
+            Page<MyReceptionResponse> responses=patientService.getMyReceptions(userId, pageable, sort);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             e.printStackTrace();

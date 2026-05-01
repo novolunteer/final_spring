@@ -5,6 +5,7 @@ import com.example.demo.payment.PaymentRepository;
 import com.example.demo.reception.Reception;
 import com.example.demo.reception.ReceptionRepository;
 import com.example.demo.reception.ReceptionStatus;
+import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationRepository;
 import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.socialAccount.SocialAccount;
@@ -29,6 +30,23 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
+
+    public void cancelReservation(Integer userId, Integer reservationId){
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
+
+        Patient patient=patientRepository.findByUser_UserId(user.getUserId())
+                .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
+
+        Reservation reservation=reservationRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new RuntimeException("예약이 존재하지 않습니다."));
+
+        if (!patient.getPatientId().equals(reservation.getPatient().getPatientId())){
+            throw new RuntimeException("환자 정보가 일치하지 않아 예약을 취소할 수 없습니다.");
+        }
+
+
+    }
 
     public MyInfoResponse getMyInformation(Integer userId){
         User user=userRepository.findByUserId(userId)
@@ -113,15 +131,22 @@ public class PatientService {
                 .build());
     }
 
-    public Page<MyReceptionResponse> getMyReceptions(Integer userId, Pageable pageable){
+    public Page<MyReceptionResponse> getMyReceptions(Integer userId, Pageable pageable, String sort){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
 
         Patient patient=patientRepository.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
 
-        return receptionRepository.findMyReceptionRecords(patient, ReceptionStatus.COMPLETED, pageable)
-                .map(r -> MyReceptionResponse.builder()
+        Page<Reception> receptions;
+
+        if ("DESC".equals(sort)){
+            receptions=receptionRepository.findMyReceptionRecordsDesc(patient, ReceptionStatus.COMPLETED, pageable);
+        } else {
+            receptions=receptionRepository.findMyReceptionRecordsAsc(patient, ReceptionStatus.COMPLETED, pageable);
+        }
+
+        return receptions.map(r -> MyReceptionResponse.builder()
                         .receptionId(r.getReceptionId())
                         .doctorId(r.getReservation().getStaff().getStaffId())
                         .doctorName(r.getReservation().getStaff().getName())

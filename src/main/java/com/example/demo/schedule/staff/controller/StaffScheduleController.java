@@ -2,7 +2,9 @@ package com.example.demo.schedule.staff.controller;
 
 import com.example.demo.schedule.staff.dto.BulkRegisterResultDto;
 import com.example.demo.schedule.staff.dto.BulkStaffScheduleDto;
+import com.example.demo.schedule.staff.dto.StaffScheduleDetailDto;
 import com.example.demo.schedule.staff.dto.StaffScheduleDto;
+import com.example.demo.schedule.staff.repository.StaffScheduleRepository;
 import com.example.demo.schedule.staff.service.StaffScheduleService;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,13 @@ public class StaffScheduleController {
             @RequestParam(required = false) LocalDate endDate,
             @PageableDefault(size = 30, sort = "workDate", direction = Sort.Direction.ASC) Pageable pageable) {
         return staffScheduleService.getMySchedule(userDetails.getUserId(), startDate, endDate, pageable);
+    }
+
+    @GetMapping("/my/detail")
+    public StaffScheduleDetailDto getMyScheduleDetail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) LocalDate today){
+        return staffScheduleService.getMyDetail(userDetails.getUserId(), today);
     }
 
     @PostMapping("/register")

@@ -1,5 +1,6 @@
 package com.example.demo.surgery.dto;
 
+import com.example.demo.surgery.Surgery;
 import com.example.demo.surgery.SurgeryStatus;
 import lombok.*;
 
@@ -17,4 +18,16 @@ public class SurgeryDto {
     private Integer durationHours;
     private String description;
     private SurgeryStatus status;
+
+    public SurgeryDto(Surgery surgery) {
+        surgeryId = surgery.getSurgeryId();
+        doctorId = surgery.getDoctor().getStaffId();
+        patientId = surgery.getPatient().getPatientId();
+        startTime = surgery.getStartTime();
+        description = surgery.getDescription();
+        status = surgery.getStatus();
+        durationHours = (surgery.getEndTime() != null && surgery.getStartTime() != null)
+                ? (int) java.time.Duration.between(surgery.getStartTime(), surgery.getEndTime()).toHours()
+                : null;
+    }
 }

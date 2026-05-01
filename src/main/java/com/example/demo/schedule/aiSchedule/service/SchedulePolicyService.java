@@ -2,6 +2,8 @@ package com.example.demo.schedule.aiSchedule.service;
 
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentRepository;
+import com.example.demo.role.Role;
+import com.example.demo.role.RoleRepository;
 import com.example.demo.schedule.aiSchedule.dto.DepartmentSchedulePolicyDto;
 import com.example.demo.schedule.aiSchedule.entity.DepartmentSchedulePolicy;
 import com.example.demo.schedule.aiSchedule.entity.DepartmentSchedulePolicyShift;
@@ -24,35 +26,38 @@ public class SchedulePolicyService {
     private final DepartmentSchedulePolicyRepository departmentSchedulePolicyRepository;
     private final DepartmentSchedulePolicyShiftRepository departmentSchedulePolicyShiftRepository;
     private final DepartmentRepository departmentRepository;
+    private final RoleRepository roleRepository;
     private final StaffScheduleTypeRepository staffScheduleTypeRepository;
 
-    // 전체 부서정책 조회
+    // 전체 정책 조회
     public List<DepartmentSchedulePolicyDto> getAllPolicies() {
         return departmentSchedulePolicyRepository.findAll().stream()
                 .map(this::toDto)
                 .toList();
     }
 
-    // 부서정책 조회
-    public DepartmentSchedulePolicyDto getPolicyByDepartment(Integer departmentId) {
+    // 단건 조회
+    public DepartmentSchedulePolicyDto getPolicyById(Integer policyId) {
         DepartmentSchedulePolicy policy = departmentSchedulePolicyRepository
-                .findByDepartmentDepartmentId(departmentId)
-                .orElseThrow(() -> new RuntimeException("해당 부서의 스케줄 정책이 없습니다"));
-
+                .findById(policyId)
+                .orElseThrow(() -> new RuntimeException("해당 스케줄 정책이 없습니다"));
         return toDto(policy);
     }
 
-    // 부서정책 등록
+    // 정책 등록
     public DepartmentSchedulePolicyDto createPolicy(DepartmentSchedulePolicyDto dto) {
-        if (departmentSchedulePolicyRepository.findByDepartmentDepartmentId(dto.getDepartmentId()).isPresent()) {
-            throw new RuntimeException("이미 해당 부서의 스케줄 정책이 존재합니다");
-        }
+        Role role = roleRepository.findById(dto.getRoleId())
+                .orElseThrow(() -> new RuntimeException("해당 role이 없습니다"));
 
-        Department department = departmentRepository.findById(dto.getDepartmentId())
-                .orElseThrow(() -> new RuntimeException("해당 부서가 없습니다"));
+        Department department = null;
+        if (dto.getDepartmentId() != null) {
+            department = departmentRepository.findById(dto.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("해당 부서가 없습니다"));
+        }
 
         DepartmentSchedulePolicy policy = DepartmentSchedulePolicy.builder()
                 .department(department)
+                .role(role)
                 .maxConsecutiveNight(dto.getMaxConsecutiveNight())
                 .blockNightToDay(dto.getBlockNightToDay())
                 .blockNightToEvening(dto.getBlockNightToEvening())
@@ -66,30 +71,40 @@ public class SchedulePolicyService {
         return toDto(policy);
     }
 
-    // 부서정책 수정
-    public DepartmentSchedulePolicyDto updatePolicy(Integer departmentId, DepartmentSchedulePolicyDto dto) {
+    // 정책 수정
+    public DepartmentSchedulePolicyDto updatePolicy(Integer policyId, DepartmentSchedulePolicyDto dto) {
         DepartmentSchedulePolicy policy = departmentSchedulePolicyRepository
-                .findByDepartmentDepartmentId(departmentId)
-                .orElseThrow(() -> new RuntimeException("해당 부서의 스케줄 정책이 없습니다"));
+                .findById(policyId)
+                .orElseThrow(() -> new RuntimeException("해당 스케줄 정책이 없습니다"));
+
+        if (dto.getRoleId() != null) {
+            Role role = roleRepository.findById(dto.getRoleId())
+                    .orElseThrow(() -> new RuntimeException("해당 role이 없습니다"));
+            policy.setRole(role);
+        }
+
+        if (dto.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(dto.getDepartmentId())
+                    .orElseThrow(() -> new RuntimeException("해당 부서가 없습니다"));
+            policy.setDepartment(department);
+        }
 
         policy.setMaxConsecutiveNight(dto.getMaxConsecutiveNight());
         policy.setBlockNightToDay(dto.getBlockNightToDay());
         policy.setBlockNightToEvening(dto.getBlockNightToEvening());
         policy.setMaxWorkDaysPerWeek(dto.getMaxWorkDaysPerWeek());
 
-        // 기존 shift 삭제 후 재등록
         departmentSchedulePolicyShiftRepository.deleteByPolicyPolicyId(policy.getPolicyId());
         saveShifts(policy, dto.getShiftTypes(), dto.getMinStaffMap());
 
         return toDto(policy);
     }
 
-    // 부서정책 비활성화
-    public void deactivatePolicy(Integer departmentId) {
+    // 정책 비활성화
+    public void deactivatePolicy(Integer policyId) {
         DepartmentSchedulePolicy policy = departmentSchedulePolicyRepository
-                .findByDepartmentDepartmentId(departmentId)
-                .orElseThrow(() -> new RuntimeException("해당 부서의 스케줄 정책이 없습니다"));
-
+                .findById(policyId)
+                .orElseThrow(() -> new RuntimeException("해당 스케줄 정책이 없습니다"));
         policy.setIsActive(false);
     }
 
@@ -132,9 +147,11 @@ public class SchedulePolicyService {
                 ));
 
         return DepartmentSchedulePolicyDto.builder()
-                .departmentId(policy.getDepartment().getDepartmentId())
-                .departmentName(policy.getDepartment().getDepartmentName())
-                .jobType(policy.getDepartment().getDepartmentCategory())
+                .policyId(policy.getPolicyId())
+                .departmentId(policy.getDepartment() != null ? policy.getDepartment().getDepartmentId() : null)
+                .departmentName(policy.getDepartment() != null ? policy.getDepartment().getDepartmentName() : null)
+                .roleId(policy.getRole().getRoleId())
+                .jobType(policy.getRole().getRoleName())
                 .shiftTypes(shiftTypes)
                 .minStaffMap(minStaffMap)
                 .maxConsecutiveNight(policy.getMaxConsecutiveNight())

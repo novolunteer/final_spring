@@ -22,4 +22,5 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Integer> {
             )
     """)
     List<UserRole> findTopRoleByUsers(@Param("users") List<User> users);
+    boolean existsByUser_UserIdAndRole_RoleName(Integer userId, String roleName);
 }

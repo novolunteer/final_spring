@@ -12,9 +12,9 @@ public class StaffBulkUploadRequestDto {
     private String password;
     private String name;
     private String deptName;
-    private String position;
     private String phone;
     private String address;
     private Integer managerId;
     private String isActive;
+    private Integer roleId;
 }

@@ -17,6 +17,4 @@ public class Department {
     private String departmentName;
     private String location;
     private String status;
-    @Column(name = "department_category")
-    private String departmentCategory;
 }

@@ -83,7 +83,7 @@ public class StaffScheduleService {
                 .build();
     }
     private void validateDoctorDayRestriction(Staff staff, LocalDate workDate, StaffScheduleType type){
-        if (!"DOCTOR".equalsIgnoreCase(staff.getPosition())) return;
+        // if (!"DOCTOR".equalsIgnoreCase(staff.getPosition())) return;
 
         DayOfWeek day=workDate.getDayOfWeek();
 

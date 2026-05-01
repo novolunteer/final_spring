@@ -73,7 +73,6 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
         where (:keyword is null
             or lower(s.name) like lower(concat('%', :keyword, '%'))
             or lower(d.departmentName) like lower(concat('%', :keyword, '%'))
-            or lower(s.position) like lower(concat('%', :keyword, '%'))
         )
     """)
     Page<Staff> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);

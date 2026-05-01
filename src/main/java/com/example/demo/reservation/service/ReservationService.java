@@ -77,7 +77,6 @@ public class ReservationService {
 
         Department department=departmentRepository.findByDepartmentId(staff.getDepartment().getDepartmentId());
 
-        System.out.println("department==================>"+department);
         Slot slot=slotRepository.findByStartTimeAndStaff(reservationDto.getReservationDate(),staff)
                 .orElseGet(() -> {
                     Slot newSlot=Slot.builder()
@@ -87,7 +86,6 @@ public class ReservationService {
                             .staff(staff)
                             .department(department)
                             .build();
-                    System.out.println("newSlot==================>"+newSlot);
                     slotRepository.save(newSlot);
                     return newSlot;
                 });
@@ -95,18 +93,6 @@ public class ReservationService {
         LocalDate workDate = reservationDto.getReservationDate().toLocalDate();
         LocalTime requestStart = reservationDto.getReservationDate().toLocalTime();
         LocalTime requestEnd = requestStart.plusHours(1);
-
-//        if(!availabilityService.isStaffAvailable(
-//                staff.getStaffId(),
-//                workDate,
-//                requestStart,
-//                requestEnd
-//        )){
-//            throw new IllegalStateException("해당 의사의 근무시간이 아닙니다");
-//        }
-//        if(slot.getCurrentPatient() >= slot.getMaxPatient()){
-//            throw new IllegalStateException("해당 슬롯은 마감되었습니다");
-//        }
 
         slot.setCurrentPatient(slot.getCurrentPatient()+1);
 
@@ -118,18 +104,16 @@ public class ReservationService {
         receptionService.receptionInsert(reservation);
 
         Integer userId=staff.getUser().getUserId();
-        System.out.println("SSE 전송할 userId ===> " + userId);
 
-        // Patient patient=patientRepository.findById(reservationDto.getPatientId())
-        //         .orElseThrow(() -> new RuntimeException("Not exist"));
+         Patient patient=patientRepository.findById(reservationDto.getPatientId())
+                 .orElseThrow(() -> new RuntimeException("Not exist"));
         ReservationSSEResponse reservationSSEResponse= ReservationSSEResponse.builder()
                 .reservationId(reservationDto.getReservationId())
                 .reservationDate(reservationDto.getReservationDate())
                 .patientId(reservationDto.getPatientId())
-                .patientName("Bell")
+                .patientName(patient.getName())
                 .build();
 
-        System.out.println("이벤트 리스너 바로 직전");
         eventPublisher.publishEvent(
                 new ReservationConfirmedEvent(
                         userId,

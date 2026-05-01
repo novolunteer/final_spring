@@ -129,7 +129,7 @@ public class PatientService {
                         .departmentName(r.getReservation().getDepartment().getDepartmentName())
                         .status(r.getStatus().name())
                         .symptom(r.getReservation().getSymptom())
-                        .receptionDate(r.getReceptionTime().toLocalDate())
+                        .treatedAt(r.getReservation().getSlot().getStartTime())
                         .build());
     }
 
@@ -146,6 +146,8 @@ public class PatientService {
         if (!patient.getPatientId().equals(reception.getReservation().getPatient().getPatientId())){
             throw new RuntimeException("환자 정보가 일치하지 않아 결제 내역에 접근할 수 없습니다.");
         }
+
+
 
         return paymentRepository.findByBilling_Reception(reception, pageable)
                 .map(p -> MyPaymentResponse.builder()

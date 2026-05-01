@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.domain.Page;
-
-import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,5 +18,5 @@ public class MyReceptionResponse {
     private Integer departmentId;
     private String departmentName;
     private String symptom;
-    private LocalDate receptionDate;
+    private LocalDateTime treatedAt;
 }

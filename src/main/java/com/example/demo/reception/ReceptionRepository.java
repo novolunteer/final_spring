@@ -20,6 +20,7 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     JOIN v.patient p
     WHERE s.startTime BETWEEN :start AND :end
     AND (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+    ORDER BY v.reservationDate ASC
     """)
     Page<Reception> findTodayReception(
             @Param("start") LocalDateTime start,
@@ -36,6 +37,7 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     WHERE s.startTime BETWEEN :start AND :end
     AND r.status = :status
     AND (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+    ORDER BY v.reservationDate ASC
     """)
     Page<Reception> findTodayReception(@Param("start") LocalDateTime start,
                                        @Param("end") LocalDateTime end,
@@ -56,6 +58,7 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
             OR
             (:status IS NULL AND r.status <> 'PENDING')
         )
+        ORDER BY v.reservationDate ASC
         """)
     Page<Reception> findTodayReceptionWaiting(@Param("start") LocalDateTime start,
                                                @Param("end") LocalDateTime end,

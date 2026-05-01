@@ -24,5 +24,9 @@ public class MyInfoResponse {
     private Float height;
     private Float weight;
 
+    private boolean isLocal;
+    private boolean hasSocial;
+    private boolean onlySocial;
+
     private List<MySocialAccount> socialAccounts;
 }

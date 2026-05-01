@@ -54,6 +54,7 @@ public class PatientService {
 
         if (accounts == null || accounts.isEmpty() || accounts.size() == 0){ //소셜 로그인 정보 없음
             response.setEmail(user.getEmail());
+            response.setLocal(true);
         } else {
             if (user.getEmail().startsWith("SOCIAL_")){ //소셜 로그인으로 회원가입
                 List<MySocialAccount> socialAccounts=accounts.stream().map(s -> MySocialAccount.builder()
@@ -63,6 +64,7 @@ public class PatientService {
                         .build()).toList();
 
                 response.setSocialAccounts(socialAccounts);
+                response.setOnlySocial(true);
             } else { //일반 회원가입 후 소셜 로그인 연결(소셜 로그인으로만 로그인 가능)
                 List<MySocialAccount> socialAccounts=accounts.stream().map(s -> MySocialAccount.builder()
                         .socialAccountId(s.getSocialAccountId())
@@ -72,6 +74,7 @@ public class PatientService {
 
                 response.setSocialAccounts(socialAccounts);
                 response.setEmail(user.getEmail());
+                response.setHasSocial(true);
             }
         }
 
@@ -126,7 +129,7 @@ public class PatientService {
                         .departmentName(r.getReservation().getDepartment().getDepartmentName())
                         .status(r.getStatus().name())
                         .symptom(r.getReservation().getSymptom())
-                        .receptionDate(r.getReceptionTime().toLocalDate())
+                        .treatedAt(r.getReservation().getSlot().getStartTime())
                         .build());
     }
 
@@ -143,6 +146,8 @@ public class PatientService {
         if (!patient.getPatientId().equals(reception.getReservation().getPatient().getPatientId())){
             throw new RuntimeException("환자 정보가 일치하지 않아 결제 내역에 접근할 수 없습니다.");
         }
+
+
 
         return paymentRepository.findByBilling_Reception(reception, pageable)
                 .map(p -> MyPaymentResponse.builder()

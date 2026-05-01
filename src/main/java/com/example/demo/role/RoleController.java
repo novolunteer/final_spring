@@ -17,8 +17,11 @@ public class RoleController {
 
     @GetMapping("/list")
     public ResponseEntity<List<RoleDto>> getRoleList() {
+        List<String> excludedRoles = List.of("PATIENT", "DOCTOR", "ADMINISTRATION");
+
         return ResponseEntity.ok(
             roleRepository.findAll().stream()
+                .filter(role -> !excludedRoles.contains(role.getRoleName()))
                 .map(role -> RoleDto.builder()
                         .roleId(role.getRoleId())
                         .roleName(role.getRoleName())

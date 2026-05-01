@@ -158,10 +158,18 @@ public class StaffService {
         String roleName = null;
         if (staff.getUser() != null) {
             roleName = userRoleRepository.findByUser(staff.getUser())
-                    .stream().findFirst()
+                    .stream()
+                    .filter(ur->ur.getRole().getParentRole() != null)
+                    .findFirst()
+                    .or(()-> userRoleRepository.findByUser(staff.getUser())
+                            .stream().findFirst())
                     .map(ur -> ur.getRole().getRoleName())
                     .orElse(null);
         }
+
+        String departmentName = staff.getDepartment() != null
+                ? staff.getDepartment().getDepartmentName()
+                : resolveDepartmentName(roleName);
 
         return StaffResponseDto.builder()
                 .staffId(staff.getStaffId())
@@ -172,11 +180,20 @@ public class StaffService {
                 .userId(staff.getUser() != null? staff.getUser().getUserId() : null)
                 .email(staff.getUser() !=null? staff.getUser().getEmail():null)
                 .departmentId(staff.getDepartment() !=null? staff.getDepartment().getDepartmentId():null)
-                .departmentName(staff.getDepartment() !=null? staff.getDepartment().getDepartmentName() : null)
+                .departmentName(departmentName)
                 .roleName(roleName)
                 .managerId(staff.getManager() != null? staff.getManager().getStaffId() : null)
                 .managerName(staff.getManager() != null? staff.getManager().getName(): null)
                 .build();
+    }
+
+    private String resolveDepartmentName(String roleName) {
+        if (roleName == null) return null;
+        return switch (roleName) {
+            case "NURSE", "HEAD_NURSE" -> "간호부";
+            case "ADMIN", "ADMINISTRATION" -> "원무과";
+            default -> null;
+        };
     }
 
     public Map<String, Object> getDoctor(DepartmentDto departmentDto) {

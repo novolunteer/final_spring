@@ -40,6 +40,7 @@ public class StaffScheduleController {
     public StaffScheduleDetailDto getMyScheduleDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) LocalDate today){
+        System.out.println("=========>"+staffScheduleService.getMyDetail(userDetails.getUserId(), today));
         return staffScheduleService.getMyDetail(userDetails.getUserId(), today);
     }
 

@@ -163,6 +163,10 @@ public class StaffService {
                     .orElse(null);
         }
 
+        String departmentName = staff.getDepartment() != null
+                ? staff.getDepartment().getDepartmentName()
+                : resolveDepartmentName(roleName);
+
         return StaffResponseDto.builder()
                 .staffId(staff.getStaffId())
                 .name(staff.getName())
@@ -172,11 +176,20 @@ public class StaffService {
                 .userId(staff.getUser() != null? staff.getUser().getUserId() : null)
                 .email(staff.getUser() !=null? staff.getUser().getEmail():null)
                 .departmentId(staff.getDepartment() !=null? staff.getDepartment().getDepartmentId():null)
-                .departmentName(staff.getDepartment() !=null? staff.getDepartment().getDepartmentName() : null)
+                .departmentName(departmentName)
                 .roleName(roleName)
                 .managerId(staff.getManager() != null? staff.getManager().getStaffId() : null)
                 .managerName(staff.getManager() != null? staff.getManager().getName(): null)
                 .build();
+    }
+
+    private String resolveDepartmentName(String roleName) {
+        if (roleName == null) return null;
+        return switch (roleName) {
+            case "NURSE", "HEAD_NURSE" -> "간호부";
+            case "ADMIN", "ADMINISTRATION" -> "원무과";
+            default -> null;
+        };
     }
 
     public Map<String, Object> getDoctor(DepartmentDto departmentDto) {

@@ -88,7 +88,6 @@ public class StaffService {
                 .user(user)
                 .department(department)
                 .manager(manager)
-                .position(dto.getPosition())
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
@@ -139,7 +138,6 @@ public class StaffService {
                         .user(user)
                         .department(department)
                         .manager(manager)
-                        .position(dto.getPosition())
                         .name(dto.getName())
                         .phone(dto.getPhone())
                         .address(dto.getAddress())
@@ -183,7 +181,6 @@ public class StaffService {
         return StaffResponseDto.builder()
                 .staffId(staff.getStaffId())
                 .name(staff.getName())
-                .position(staff.getPosition())
                 .phone(staff.getPhone())
                 .address(staff.getAddress())
                 .isActive(staff.getIsActive())
@@ -247,7 +244,6 @@ public class StaffService {
         staff.setUser(user);
         staff.setDepartment(department);
         staff.setManager(manager);
-        staff.setPosition(dto.getPosition());
         staff.setName(dto.getName());
         staff.setPhone(dto.getPhone());
         staff.setAddress(dto.getAddress());

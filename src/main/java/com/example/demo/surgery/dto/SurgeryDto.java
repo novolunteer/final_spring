@@ -18,6 +18,7 @@ public class SurgeryDto {
     private Integer durationHours;
     private String description;
     private SurgeryStatus status;
+    private String name;
 
     public SurgeryDto(Surgery surgery) {
         surgeryId = surgery.getSurgeryId();
@@ -29,5 +30,6 @@ public class SurgeryDto {
         durationHours = (surgery.getEndTime() != null && surgery.getStartTime() != null)
                 ? (int) java.time.Duration.between(surgery.getStartTime(), surgery.getEndTime()).toHours()
                 : null;
+        name=surgery.getPatient().getName();
     }
 }

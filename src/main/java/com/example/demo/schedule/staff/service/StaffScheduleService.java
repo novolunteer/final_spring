@@ -1,5 +1,7 @@
 package com.example.demo.schedule.staff.service;
 
+import com.example.demo.patient.Patient;
+import com.example.demo.patient.PatientRepository;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationRepository;
 import com.example.demo.reservation.ReservationStatus;
@@ -36,6 +38,7 @@ public class StaffScheduleService {
     private final StaffRepository staffRepository;
     private final ReservationRepository reservationRepository;
     private final SurgeryRepository surgeryRepository;
+    private final PatientRepository patientRepository;
 
     // 내 스케줄 조회 (JWT userId 기반)
     public Page<StaffScheduleDto> getMySchedule(Integer userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {

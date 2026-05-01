@@ -1,15 +1,19 @@
 package com.example.demo.schedule.staff.service;
 
-import com.example.demo.schedule.staff.dto.BulkRegisterResultDto;
-import com.example.demo.schedule.staff.dto.BulkStaffScheduleDto;
-import com.example.demo.schedule.staff.dto.SkippedScheduleDto;
-import com.example.demo.schedule.staff.dto.StaffScheduleDto;
+import com.example.demo.reservation.Reservation;
+import com.example.demo.reservation.ReservationRepository;
+import com.example.demo.reservation.ReservationStatus;
+import com.example.demo.reservation.dto.ReservationDto;
+import com.example.demo.schedule.staff.dto.*;
 import com.example.demo.schedule.staff.entity.StaffSchedule;
 import com.example.demo.schedule.staff.entity.StaffScheduleType;
 import com.example.demo.schedule.staff.repository.StaffScheduleRepository;
 import com.example.demo.schedule.staff.repository.StaffScheduleTypeRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
+import com.example.demo.surgery.Surgery;
+import com.example.demo.surgery.SurgeryRepository;
+import com.example.demo.surgery.dto.SurgeryDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +34,8 @@ public class StaffScheduleService {
     private final StaffScheduleRepository staffScheduleRepository;
     private final StaffScheduleTypeRepository staffScheduleTypeRepository;
     private final StaffRepository staffRepository;
+    private final ReservationRepository reservationRepository;
+    private final SurgeryRepository surgeryRepository;
 
     // 내 스케줄 조회 (JWT userId 기반)
     public Page<StaffScheduleDto> getMySchedule(Integer userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
@@ -36,6 +43,32 @@ public class StaffScheduleService {
                 .orElseThrow(() -> new EntityNotFoundException("해당 직원 정보가 없습니다."));
         return staffScheduleRepository.findAllWithFilter(staff.getStaffId(), startDate, endDate, pageable)
                 .map(this::entityToDto);
+    }
+
+    public StaffScheduleDetailDto getMyDetail(Integer userId, LocalDate today){
+        Staff staff = staffRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 직원 정보가 없습니다."));
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+
+        List<Reservation> reservations = reservationRepository.findConfirmedByDoctorAndDate(staff.getStaffId(),
+                ReservationStatus.CONFIRMED, start, end);
+        List<Surgery> surgeries = surgeryRepository.findByDoctorAndDate(staff.getStaffId(), start, end);
+
+        List<ReservationDto> reservationDtoList=new ArrayList<>();
+        for(Reservation s:reservations){
+            reservationDtoList.add(new ReservationDto(s));
+        }
+        List<SurgeryDto> surgeryDtoList=new ArrayList<>();
+        for(Surgery s:surgeries){
+            surgeryDtoList.add(new SurgeryDto(s));
+        }
+
+        StaffScheduleDetailDto staffScheduleDetailDto=new StaffScheduleDetailDto();
+        staffScheduleDetailDto.setReservationDtoList(reservationDtoList);
+        staffScheduleDetailDto.setSurgeryDtoList(surgeryDtoList);
+
+        return staffScheduleDetailDto;
     }
 
     //스케줄 등록

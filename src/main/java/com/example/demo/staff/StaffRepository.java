@@ -69,10 +69,25 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
 
     @Query("""
         select distinct s from Staff s
+        join s.user u
+        join UserRole ur on ur.user = u
+        join ur.role r
+        where r.roleId = :roleId
+            and s.isActive = 'Y'
+            and u.status = 'Y'
+    """)
+    List<Staff> findByRoleId(@Param("roleId") Integer roleId);
+
+    @Query("""
+        select distinct s from Staff s
+        join s.user u
         left join s.department d
+        left join UserRole ur on ur.user = u
+        left join ur.role r
         where (:keyword is null
             or lower(s.name) like lower(concat('%', :keyword, '%'))
             or lower(d.departmentName) like lower(concat('%', :keyword, '%'))
+            or lower(r.roleName) like lower(concat('%', :keyword, '%'))
         )
     """)
     Page<Staff> findAllWithKeyword(@Param("keyword") String keyword, Pageable pageable);

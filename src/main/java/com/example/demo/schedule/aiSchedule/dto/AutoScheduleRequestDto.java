@@ -12,7 +12,7 @@ import java.util.Map;
 @Builder
 //프론트 -> 백 요청
 public class AutoScheduleRequestDto {
-    private Integer departmentId;
+    private Integer policyId;
     private LocalDate startDate;
     private LocalDate endDate;
 

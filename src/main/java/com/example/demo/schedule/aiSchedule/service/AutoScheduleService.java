@@ -38,15 +38,16 @@ public class AutoScheduleService {
 
         // 부서 정책 (근무유형, 최소인원, 제한 규칙)
         DepartmentSchedulePolicyDto policy =
-                schedulePolicyService.getPolicyByDepartment(request.getDepartmentId());
+                schedulePolicyService.getPolicyById(request.getPolicyId());
 
-        // 해당 부서 직원 목록 로드
-        List<Staff> staffList =
-                staffRepository.findByDepartmentDepartmentId(request.getDepartmentId());
+        // 해당 직군 직원 목록 로드 — 의사는 부서로, 간호사/원무과는 roleId로 조회
+        List<Staff> staffList = policy.getDepartmentId() != null
+                ? staffRepository.findByDepartmentDepartmentId(policy.getDepartmentId())
+                : staffRepository.findByRoleId(policy.getRoleId());
 
         // 자연어 추가조건  (ex: "홍길동 5/5 OFF")
         ConditionParseResultDto parsed =
-                conditionParseService.parse(request.getDepartmentId(), request.getExtraCondition());
+                conditionParseService.parse(policy.getDepartmentId(), policy.getRoleId(), request.getExtraCondition());
 
         // AI에 넘길 입력 DTO
         AiScheduleInputDto input = buildInput(request, policy, staffList, parsed);

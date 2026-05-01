@@ -1,6 +1,10 @@
 pipeline {
    agent any
 
+   options {
+       buildDiscarder(logRotate(numToKeepStr: '5'))
+   }
+
    environment {
        ECR_REGISTRY = "143555787778.dkr.ecr.ap-northeast-2.amazonaws.com"
        IMAGE_NAME = "my-project-spring"
@@ -66,6 +70,7 @@ pipeline {
        }
        always {
            sh 'docker image prune -f'
+           cleanWs()
        }
    }
 }

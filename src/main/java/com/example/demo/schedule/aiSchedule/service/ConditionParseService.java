@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class ConditionParseService {
     private final StaffRepository staffRepository;
 
-    public ConditionParseResultDto parse(Integer departmentId, String text) {
+    public ConditionParseResultDto parse(Integer departmentId, Integer roleId, String text) {
         List<AiManualConditionDto> manualConditionList = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
@@ -32,7 +32,9 @@ public class ConditionParseService {
                     .build();
         }
 
-        List<Staff> departmentStaff = staffRepository.findByDepartmentDepartmentId(departmentId);
+        List<Staff> departmentStaff = departmentId != null
+                ? staffRepository.findByDepartmentDepartmentId(departmentId)
+                : staffRepository.findByRoleId(roleId);
         String[] lines = text.split("\\r?\\n");
         Pattern pattern = Pattern.compile(
                 // [이름] + 공백 + [날짜] + 공백 + [근무유형]

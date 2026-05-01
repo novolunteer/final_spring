@@ -11,7 +11,6 @@ public class StaffResponseDto {
 
     private Integer staffId;
     private String name;
-    private String position;
     private String phone;
     private String address;
 
@@ -20,7 +19,7 @@ public class StaffResponseDto {
 
     private Integer departmentId;
     private  String departmentName;
-
+    private String roleName;
     private Integer managerId;
     private String managerName;
     private String isActive;

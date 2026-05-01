@@ -12,8 +12,10 @@ import java.util.Map;
 @Builder
 //DB에 저장된 부서별 기본 정책
 public class DepartmentSchedulePolicyDto {
+    private Integer policyId;
     private Integer departmentId;
     private String departmentName;
+    private Integer roleId;
     private String jobType;
 
     private List<String> shiftTypes;

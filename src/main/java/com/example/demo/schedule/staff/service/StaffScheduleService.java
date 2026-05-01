@@ -10,6 +10,7 @@ import com.example.demo.schedule.staff.repository.StaffScheduleRepository;
 import com.example.demo.schedule.staff.repository.StaffScheduleTypeRepository;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
+import com.example.demo.userRole.UserRoleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class StaffScheduleService {
     private final StaffScheduleRepository staffScheduleRepository;
     private final StaffScheduleTypeRepository staffScheduleTypeRepository;
     private final StaffRepository staffRepository;
+    private final UserRoleRepository userRoleRepository;
 
     // 내 스케줄 조회 (JWT userId 기반)
     public Page<StaffScheduleDto> getMySchedule(Integer userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
@@ -83,7 +85,9 @@ public class StaffScheduleService {
                 .build();
     }
     private void validateDoctorDayRestriction(Staff staff, LocalDate workDate, StaffScheduleType type){
-        if (!"DOCTOR".equalsIgnoreCase(staff.getPosition())) return;
+        boolean isDoctor = userRoleRepository
+                .existsByUser_UserIdAndRole_RoleName(staff.getUser().getUserId(), "DOCTOR");
+        if(!isDoctor) return;
 
         DayOfWeek day=workDate.getDayOfWeek();
 
@@ -109,8 +113,8 @@ public class StaffScheduleService {
                 .typeCode(entity.getStaffScheduleType().getTypeCode())
                 .typeName(entity.getStaffScheduleType().getTypeName())
                 .startTime(entity.getStaffScheduleType().getStartTime())
-                .departmentId(entity.getStaff().getDepartment().getDepartmentId())
-                .departmentName(entity.getStaff().getDepartment().getDepartmentName())
+                .departmentId(entity.getStaff().getDepartment() != null ? entity.getStaff().getDepartment().getDepartmentId() : null)
+                .departmentName(entity.getStaff().getDepartment() != null ? entity.getStaff().getDepartment().getDepartmentName() : null)
                 .status(entity.getStatus())
                 .build();
     }

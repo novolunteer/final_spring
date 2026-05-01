@@ -1,6 +1,7 @@
 package com.example.demo.schedule.aiSchedule.entity;
 
 import com.example.demo.department.Department;
+import com.example.demo.role.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,9 +18,13 @@ public class DepartmentSchedulePolicy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer policyId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = true)
     private Department department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     private Integer maxConsecutiveNight;
     private Boolean blockNightToDay;

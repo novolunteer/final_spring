@@ -16,4 +16,8 @@ public class Role {
 
     @Column(nullable = false)
     private String roleName;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_role_id")
+    private Role parentRole;
 }

@@ -13,8 +13,7 @@ public class StaffUpdateDto {
     private Integer userId;
     private Integer departmentId;
     private Integer managerId;
-
-    private String position;
+    private Integer roleId;
     private String name;
     private String phone;
     private String address;

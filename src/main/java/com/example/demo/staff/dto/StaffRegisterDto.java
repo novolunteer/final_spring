@@ -10,8 +10,7 @@ public class StaffRegisterDto {
     private String password;
     private Integer departmentId;
     private Integer managerId;
-
-    private String position;
+    private Integer roleId;
     private String name;
     private String phone;
     private String address;

@@ -3,7 +3,6 @@ package com.example.demo.staff;
 import com.example.demo.department.Department;
 import com.example.demo.department.DepartmentDto;
 import com.example.demo.department.DepartmentRepository;
-import com.example.demo.role.Role;
 import com.example.demo.role.RoleRepository;
 import com.example.demo.staff.dto.*;
 import com.example.demo.user.User;
@@ -31,34 +30,6 @@ public class StaffService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRoleRepository userRoleRepository;
-
-    private static final Map<String, List<String>> POSITION_ROLE_MAP = Map.ofEntries(
-        Map.entry("INTERN",             List.of("DOCTOR")),
-        Map.entry("SPECIALIST",         List.of("DOCTOR")),
-        Map.entry("HEAD_DOCTOR",        List.of("DOCTOR")),
-        Map.entry("RESIDENT",           List.of("DOCTOR", "RESIDENT")),
-        Map.entry("FELLOW",             List.of("DOCTOR", "FELLOW")),
-        Map.entry("PROFESSOR",          List.of("DOCTOR", "PROFESSOR")),
-        Map.entry("NURSE",              List.of("NURSE")),
-        Map.entry("CHARGE_NURSE",       List.of("NURSE")),
-        Map.entry("DIRECTOR_NURSE",     List.of("NURSE")),
-        Map.entry("HEAD_NURSE",         List.of("NURSE", "HEAD_NURSE")),
-        Map.entry("STAFF",              List.of("STAFF")),
-        Map.entry("ASSISTANT_MANAGER",  List.of("STAFF")),
-        Map.entry("MANAGER",            List.of("STAFF", "MANAGER")),
-        Map.entry("ADMIN",              List.of("ADMIN"))
-    );
-
-    private void saveUserRoles(User user, String position) {
-        userRoleRepository.deleteByUser(user);
-        List<String> roleNames = POSITION_ROLE_MAP.getOrDefault(position, List.of());
-        for (String roleName : roleNames) {
-            Role role = roleRepository.findByRoleName(roleName);
-            if (role != null) {
-                userRoleRepository.save(UserRole.builder().user(user).role(role).build());
-            }
-        }
-    }
 
     //직원등록 (User 동시 생성)
     public Integer register(StaffRegisterDto dto){
@@ -88,7 +59,6 @@ public class StaffService {
                 .user(user)
                 .department(department)
                 .manager(manager)
-                .position(dto.getPosition())
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
@@ -97,9 +67,11 @@ public class StaffService {
 
         Staff savedStaff = staffRepository.save(staff);
 
-        if (dto.getPosition() != null) {
-            saveUserRoles(user, dto.getPosition());
-        }
+        userRoleRepository.save(UserRole.builder()
+                .user(user)
+                .role(roleRepository.findById(dto.getRoleId())
+                        .orElseThrow(()->new RuntimeException("해당 직무가 없습니다")))
+                .build());
 
         return savedStaff.getStaffId();
     }
@@ -139,16 +111,19 @@ public class StaffService {
                         .user(user)
                         .department(department)
                         .manager(manager)
-                        .position(dto.getPosition())
                         .name(dto.getName())
                         .phone(dto.getPhone())
                         .address(dto.getAddress())
                         .isActive(dto.getIsActive())
                         .build();
                 successList.add(staff);
-                if (dto.getPosition() != null) {
-                    saveUserRoles(user, dto.getPosition());
-                }
+
+                userRoleRepository.save(UserRole.builder()
+                        .user(user)
+                        .role(roleRepository.findById(dto.getRoleId())
+                                .orElseThrow(()-> new RuntimeException("해당 직급이 없습니다")))
+                        .build());
+
             }catch (Exception e){
                 failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
                         .row(rowNum)
@@ -180,10 +155,17 @@ public class StaffService {
 
     //Entity->dto
     private StaffResponseDto entityToDto(Staff staff){
+        String roleName = null;
+        if (staff.getUser() != null) {
+            roleName = userRoleRepository.findByUser(staff.getUser())
+                    .stream().findFirst()
+                    .map(ur -> ur.getRole().getRoleName())
+                    .orElse(null);
+        }
+
         return StaffResponseDto.builder()
                 .staffId(staff.getStaffId())
                 .name(staff.getName())
-                .position(staff.getPosition())
                 .phone(staff.getPhone())
                 .address(staff.getAddress())
                 .isActive(staff.getIsActive())
@@ -191,6 +173,7 @@ public class StaffService {
                 .email(staff.getUser() !=null? staff.getUser().getEmail():null)
                 .departmentId(staff.getDepartment() !=null? staff.getDepartment().getDepartmentId():null)
                 .departmentName(staff.getDepartment() !=null? staff.getDepartment().getDepartmentName() : null)
+                .roleName(roleName)
                 .managerId(staff.getManager() != null? staff.getManager().getStaffId() : null)
                 .managerName(staff.getManager() != null? staff.getManager().getName(): null)
                 .build();
@@ -247,14 +230,18 @@ public class StaffService {
         staff.setUser(user);
         staff.setDepartment(department);
         staff.setManager(manager);
-        staff.setPosition(dto.getPosition());
         staff.setName(dto.getName());
         staff.setPhone(dto.getPhone());
         staff.setAddress(dto.getAddress());
         staff.setIsActive(dto.getIsActive());
 
-        if (dto.getPosition() != null) {
-            saveUserRoles(user, dto.getPosition());
+        if (dto.getRoleId() != null) {
+            userRoleRepository.deleteByUser(user);
+            userRoleRepository.save(UserRole.builder()
+                    .user(user)
+                    .role(roleRepository.findById(dto.getRoleId())
+                            .orElseThrow(()-> new RuntimeException("해당 직급이 없습니다")))
+                    .build());
         }
     }
 

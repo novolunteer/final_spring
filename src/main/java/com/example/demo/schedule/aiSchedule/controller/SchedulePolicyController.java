@@ -21,9 +21,9 @@ public class SchedulePolicyController {
     }
 
     // 단건 조회
-    @GetMapping("/{departmentId}")
-    public ResponseEntity<DepartmentSchedulePolicyDto> getPolicy(@PathVariable Integer departmentId) {
-        return ResponseEntity.ok(schedulePolicyService.getPolicyByDepartment(departmentId));
+    @GetMapping("/{policyId}")
+    public ResponseEntity<DepartmentSchedulePolicyDto> getPolicy(@PathVariable Integer policyId) {
+        return ResponseEntity.ok(schedulePolicyService.getPolicyById(policyId));
     }
 
     // 등록
@@ -33,17 +33,17 @@ public class SchedulePolicyController {
     }
 
     // 수정
-    @PutMapping("/{departmentId}")
+    @PutMapping("/{policyId}")
     public ResponseEntity<DepartmentSchedulePolicyDto> updatePolicy(
-            @PathVariable Integer departmentId,
+            @PathVariable Integer policyId,
             @RequestBody DepartmentSchedulePolicyDto dto) {
-        return ResponseEntity.ok(schedulePolicyService.updatePolicy(departmentId, dto));
+        return ResponseEntity.ok(schedulePolicyService.updatePolicy(policyId, dto));
     }
 
     // 비활성화
-    @DeleteMapping("/{departmentId}")
-    public ResponseEntity<Void> deactivatePolicy(@PathVariable Integer departmentId) {
-        schedulePolicyService.deactivatePolicy(departmentId);
+    @DeleteMapping("/{policyId}")
+    public ResponseEntity<Void> deactivatePolicy(@PathVariable Integer policyId) {
+        schedulePolicyService.deactivatePolicy(policyId);
         return ResponseEntity.noContent().build();
     }
 }

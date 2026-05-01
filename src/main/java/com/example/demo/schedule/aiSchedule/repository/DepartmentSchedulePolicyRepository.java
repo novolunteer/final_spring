@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface DepartmentSchedulePolicyRepository extends JpaRepository<DepartmentSchedulePolicy, Integer> {
     Optional<DepartmentSchedulePolicy> findByDepartmentDepartmentId(Integer departmentId);
+    Optional<DepartmentSchedulePolicy> findByRoleRoleId(Integer roleId);
 }

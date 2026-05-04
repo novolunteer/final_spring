@@ -11,12 +11,14 @@ import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.slot.Slot;
 import com.example.demo.slot.SlotRepository;
 import com.example.demo.socialAccount.SocialAccount;
+import com.example.demo.socialAccount.SocialAccountProvider;
 import com.example.demo.socialAccount.SocialAccountRepository;
 import com.example.demo.user.User;
 import com.example.demo.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,91 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
-    private final SlotRepository slotRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public void removeMySocialAccount(Integer userId, String provider){
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
+
+        List<SocialAccount> accounts=socialAccountRepository.findByUser(user);
+        if (accounts == null || accounts.isEmpty() || accounts.size() == 0){
+            throw new RuntimeException("소셜 로그인 계정이 존재하지 않습니다.");
+        }
+
+        if (provider.equals("NAVER")){
+            SocialAccount account=socialAccountRepository.findByUserAndProvider(user, SocialAccountProvider.NAVER)
+                    .orElseThrow(() -> new RuntimeException("네이버 소셜 로그인 계정이 존재하지 않습니다."));
+
+            socialAccountRepository.deleteByUserAndProvider(user, account.getProvider());
+        } else if (provider.equals("KAKAO")) {
+            SocialAccount account=socialAccountRepository.findByUserAndProvider(user, SocialAccountProvider.KAKAO)
+                    .orElseThrow(() -> new RuntimeException("카카오 소셜 로그인 계정이 존재하지 않습니다."));
+
+            socialAccountRepository.deleteByUserAndProvider(user, account.getProvider());
+        }
+    }
+
+    public String checkMyPassword(Integer userId, String password){
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
+
+        String encodedPwd=passwordEncoder.encode(password.trim());
+
+        if (!passwordEncoder.matches(encodedPwd, user.getPassword())){
+            return "false";
+        }
+
+        return "true";
+    }
+
+    public InformationUpdateDto updateMyInformation(Integer userId, InformationUpdateDto dto){
+        User user=userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
+
+        if (dto.getKey().equals("email")){
+            user.setEmail(dto.getValue().trim());
+
+            return InformationUpdateDto.builder()
+                    .key(dto.getKey())
+                    .key(user.getEmail())
+                    .build();
+        }
+
+        if (dto.getKey().equals("password")){
+            String encodedPwd=passwordEncoder.encode(dto.getValue().trim());
+            user.setPassword(encodedPwd);
+
+            return InformationUpdateDto.builder()
+                    .key(dto.getKey())
+                    .build();
+        }
+
+        Patient patient=patientRepository.findByUser_UserId(user.getUserId())
+                .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
+
+        InformationUpdateDto response=new InformationUpdateDto();
+
+        switch (dto.getKey()){
+            case "name":
+                patient.setName(dto.getValue().trim());
+                response.setKey(dto.getKey());
+                response.setValue(patient.getName());
+                break;
+
+            case "phone":
+                patient.setPhone(dto.getValue().trim());
+                response.setKey(dto.getKey());
+                response.setValue(patient.getPhone());
+                break;
+
+            case "address":
+                patient.setAddress(dto.getValue().trim());
+                response.setKey(dto.getKey());
+                response.setValue(patient.getAddress());
+        }
+
+        return response;
+    }
 
     public ReservationCancelDto cancelReservation(Integer userId, ReservationCancelDto dto){
         User user=userRepository.findByUserId(userId)

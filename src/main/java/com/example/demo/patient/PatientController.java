@@ -119,4 +119,67 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/check/password")
+    public ResponseEntity<String> checkPassword(@RequestParam("password") String password,
+                                                 @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try{
+            String result=patientService.checkMyPassword(userId, password);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/information/update")
+    public ResponseEntity<InformationUpdateDto> updateMyInformation(@RequestBody InformationUpdateDto dto,
+                                                                    @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try{
+            InformationUpdateDto response=patientService.updateMyInformation(userId, dto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/remove/social")
+    public ResponseEntity<String> removeMySocialAccount(@RequestParam("provider") String provider,
+                                                        @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try{
+            patientService.removeMySocialAccount(userId, provider);
+            return ResponseEntity.ok("success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

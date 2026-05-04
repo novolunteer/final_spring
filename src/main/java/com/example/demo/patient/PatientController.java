@@ -1,9 +1,6 @@
 package com.example.demo.patient;
 
-import com.example.demo.patient.dto.MyInfoResponse;
-import com.example.demo.patient.dto.MyPaymentResponse;
-import com.example.demo.patient.dto.MyReceptionResponse;
-import com.example.demo.patient.dto.MyReservationResponse;
+import com.example.demo.patient.dto.*;
 import com.example.demo.security.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,10 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/patient")
@@ -37,6 +31,27 @@ public class PatientController {
         try{
             Page<MyReservationResponse> responses=patientService.getMyReservations(userId, status, pageable);
             return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PutMapping("/reservation/cancel")
+    public ResponseEntity<ReservationCancelDto> cancelReservation(@RequestBody ReservationCancelDto dto,
+                                                    @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Integer userId=details.getUserId();
+        if (userId == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try{
+            ReservationCancelDto response=patientService.cancelReservation(userId, dto);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

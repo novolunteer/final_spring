@@ -19,10 +19,6 @@ public class MyInfoResponse {
     private String rrn;
     private String phone;
     private String address;
-    private String gender;
-    private String bloodType;
-    private Float height;
-    private Float weight;
 
     private boolean isLocal;
     private boolean hasSocial;

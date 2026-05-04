@@ -8,6 +8,8 @@ import com.example.demo.reception.ReceptionStatus;
 import com.example.demo.reservation.Reservation;
 import com.example.demo.reservation.ReservationRepository;
 import com.example.demo.reservation.ReservationStatus;
+import com.example.demo.slot.Slot;
+import com.example.demo.slot.SlotRepository;
 import com.example.demo.socialAccount.SocialAccount;
 import com.example.demo.socialAccount.SocialAccountRepository;
 import com.example.demo.user.User;
@@ -30,22 +32,43 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
+    private final SlotRepository slotRepository;
 
-    public void cancelReservation(Integer userId, Integer reservationId){
+    public ReservationCancelDto cancelReservation(Integer userId, ReservationCancelDto dto){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
 
         Patient patient=patientRepository.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
 
-        Reservation reservation=reservationRepository.findByReservationId(reservationId)
+        Reservation reservation=reservationRepository.findByReservationId(dto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("예약이 존재하지 않습니다."));
 
         if (!patient.getPatientId().equals(reservation.getPatient().getPatientId())){
             throw new RuntimeException("환자 정보가 일치하지 않아 예약을 취소할 수 없습니다.");
         }
 
+        if (!ReservationStatus.RECEIVED.equals(reservation.getStatus()) && !ReservationStatus.PENDING.equals(reservation.getStatus())){
+            throw new RuntimeException("취소할 수 없는 상태의 예약입니다.");
+        }
 
+        if (reservation.getStatus().equals(ReservationStatus.PENDING)){
+            if (reservation.getSlot() != null){
+                Slot slot=reservation.getSlot();
+
+                Integer currentPatient=slot.getCurrentPatient();
+                if (currentPatient > 0){
+                    slot.setCurrentPatient(currentPatient - 1);
+                }
+            }
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELED);
+
+        return ReservationCancelDto.builder()
+                .reservationId(reservation.getReservationId())
+                .status(reservation.getStatus().name())
+                .build();
     }
 
     public MyInfoResponse getMyInformation(Integer userId){
@@ -62,10 +85,6 @@ public class PatientService {
                 .rrn(patient.getRrn())
                 .phone(patient.getPhone() != null ? patient.getPhone() : null)
                 .address(patient.getAddress() != null ? patient.getAddress() : null)
-                .gender(patient.getGender() != null ? patient.getGender() : null)
-                .bloodType(patient.getBloodType() != null ? patient.getBloodType() : null)
-                .height(patient.getHeight() != null ? patient.getHeight() : null)
-                .weight(patient.getWeight() != null ? patient.getWeight() : null)
                 .build();
 
         List<SocialAccount> accounts=socialAccountRepository.findByUser(user);

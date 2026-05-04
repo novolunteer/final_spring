@@ -62,9 +62,7 @@ public class PatientService {
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
 
-        String encodedPwd=passwordEncoder.encode(password.trim());
-
-        if (!passwordEncoder.matches(encodedPwd, user.getPassword())){
+        if (!passwordEncoder.matches(password.trim(), user.getPassword())){
             return "false";
         }
 

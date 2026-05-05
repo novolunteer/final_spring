@@ -66,13 +66,39 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
                                                Integer doctorId,
                                                Pageable pageable);
 
-    @Query("""
+    @Query(
+            value = """
         select r
         from Reception r
         where r.reservation.patient = :patient
         and r.status = :status
-    """)
-    Page<Reception> findMyReceptionRecords(Patient patient, ReceptionStatus status, Pageable pageable);
+        order by r.reservation.slot.startTime desc
+    """,
+            countQuery = """
+        select count(r)
+        from Reception r
+        where r.reservation.patient = :patient
+        and r.status = :status
+    """
+    )
+    Page<Reception> findMyReceptionRecordsDesc(Patient patient, ReceptionStatus status, Pageable pageable);
+
+    @Query(
+            value = """
+        select r
+        from Reception r
+        where r.reservation.patient = :patient
+        and r.status = :status
+        order by r.reservation.slot.startTime asc
+    """,
+            countQuery = """
+        select count(r)
+        from Reception r
+        where r.reservation.patient = :patient
+        and r.status = :status
+    """
+    )
+    Page<Reception> findMyReceptionRecordsAsc(Patient patient, ReceptionStatus status, Pageable pageable);
 
     Optional<Reception> findByReceptionId(Integer receptionId);
 }

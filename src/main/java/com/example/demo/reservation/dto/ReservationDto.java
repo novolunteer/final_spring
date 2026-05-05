@@ -26,6 +26,7 @@ public class ReservationDto {
     private LocalDateTime preferredDate;
     private ReservationStatus status;
     private LocalDateTime createdAt;
+    private String name;
 
     public ReservationDto(Reservation reservation){
         reservationId=reservation.getReservationId();
@@ -34,6 +35,7 @@ public class ReservationDto {
         reservationDate=reservation.getSlot().getStartTime();
         status=reservation.getStatus();
         createdAt=reservation.getCreatedAt();
+        name=reservation.getPatient().getName();
     }
 
     public Reservation toEntity(Patient patient, Staff staff){

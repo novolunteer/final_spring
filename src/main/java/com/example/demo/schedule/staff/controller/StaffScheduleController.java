@@ -26,7 +26,7 @@ import java.util.List;
 public class StaffScheduleController {
     private final StaffScheduleService staffScheduleService;
 
-    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE')")
+    @PreAuthorize("hasAnyRole('DOCTOR','NURSE','RESIDENT','FELLOW','PROFESSOR','HEAD_NURSE')")
     @GetMapping("/my")
     public Page<StaffScheduleDto> getMySchedule(
             @AuthenticationPrincipal CustomUserDetails userDetails,

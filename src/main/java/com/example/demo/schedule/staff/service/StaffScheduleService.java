@@ -116,6 +116,10 @@ public class StaffScheduleService {
                 .build();
     }
     private void validateDoctorDayRestriction(Staff staff, LocalDate workDate, StaffScheduleType type){
+        if (staff.getUser() == null) return;
+        boolean isDoctor = staff.getUser().getUserRoles().stream()
+                .anyMatch(ur -> "DOCTOR".equalsIgnoreCase(ur.getRole().getRoleName()));
+        if (!isDoctor) return;
 
         DayOfWeek day=workDate.getDayOfWeek();
 
@@ -141,8 +145,10 @@ public class StaffScheduleService {
                 .typeCode(entity.getStaffScheduleType().getTypeCode())
                 .typeName(entity.getStaffScheduleType().getTypeName())
                 .startTime(entity.getStaffScheduleType().getStartTime())
-                .departmentId(entity.getStaff().getDepartment().getDepartmentId())
-                .departmentName(entity.getStaff().getDepartment().getDepartmentName())
+                .departmentId(entity.getStaff().getDepartment() != null ?
+                        entity.getStaff().getDepartment().getDepartmentId() : null)
+                .departmentName(entity.getStaff().getDepartment() != null ?
+                        entity.getStaff().getDepartment().getDepartmentName() : null)
                 .status(entity.getStatus())
                 .build();
     }

@@ -27,16 +27,33 @@ public class PaymentController {
         if (details == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
                 .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
         if (roles == null || roles.isEmpty()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         try{
             Page<PaymentDto> payments=paymentService.getPaymentList(keyword, pageable, roles);
             return ResponseEntity.ok(payments);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @PostMapping("/api/payment/cash")
+    public ResponseEntity<String> cashPayment(@RequestBody CashPaymentDto dto,
+                                              @AuthenticationPrincipal CustomUserDetails details){
+        if (details == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
+                .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
+        if (roles == null || roles.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try{
+            paymentService.cashPayment(dto, roles);
+            return ResponseEntity.ok("success");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -80,28 +97,6 @@ public class PaymentController {
 
         try{
             paymentService.confirmPayment(dto, roles);
-            return ResponseEntity.ok("success");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @PostMapping("/api/payment/cash")
-    public ResponseEntity<String> cashPayment(@RequestBody CashPaymentDto dto,
-                                              @AuthenticationPrincipal CustomUserDetails details){
-        if (details == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
-                .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
-        if (roles == null || roles.isEmpty()){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        try{
-            paymentService.cashPayment(dto, roles);
             return ResponseEntity.ok("success");
         } catch (Exception e) {
             e.printStackTrace();

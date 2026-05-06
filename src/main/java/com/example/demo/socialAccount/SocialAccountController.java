@@ -1,6 +1,7 @@
 package com.example.demo.socialAccount;
 
 import com.example.demo.security.jwtutil.JWTUtil;
+import com.example.demo.security.redis.RedisService;
 import com.example.demo.socialAccount.dto.*;
 import com.example.demo.user.User;
 import com.example.demo.user.UserDto;
@@ -38,6 +39,7 @@ public class SocialAccountController {
     private String reactUri;
 
     private final SocialAccountService socialAccountService;
+    private final RedisService redisService;
     private final JWTUtil jwtUtil;
 
     @GetMapping("/social/login/kakao/callback")
@@ -49,11 +51,9 @@ public class SocialAccountController {
         if (userInfo == null){
             session.setAttribute("provider", "KAKAO");
             session.setAttribute("providerId", providerId);
-
             response.sendRedirect(kakaoLoginUri);
             return;
         }
-
         User user= (User) userInfo.get("user");
         List<String> roles=user.getUserRoles().stream().map(r -> r.getRole().getRoleName()).toList();
 
@@ -79,9 +79,9 @@ public class SocialAccountController {
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 2);
-
         response.addCookie(refreshCookie);
 
+        redisService.save(user.getUserId(), refreshToken, 120);
         response.sendRedirect(reactUri + "/login?mode=kakaoLogin");
     }
 
@@ -219,6 +219,8 @@ public class SocialAccountController {
         refreshCookie.setMaxAge(60 * 60 * 2);
 
         response.addCookie(refreshCookie);
+
+        redisService.save(user.getUserId(), refreshToken, 120);
 
         //여기서 로그인 어떻게 처리할지 고민해야 함
         response.sendRedirect(reactUri + "/login?mode=naverLogin");

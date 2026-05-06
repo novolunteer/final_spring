@@ -25,13 +25,11 @@ public class BillingController {
         if (details == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
                 .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
         if (roles == null || roles.isEmpty()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         try{
             Page<BillingDto> billings=billingService.getBillingList(keyword, pageable, roles);
             return ResponseEntity.ok(billings);
@@ -40,20 +38,17 @@ public class BillingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
     @PostMapping("/api/billing/total/amount")
     public ResponseEntity<String> insertTotalAmount(@RequestBody BillingDto dto,
                                                     @AuthenticationPrincipal CustomUserDetails details){
         if (details == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         List<String> roles=details.getAuthorities().stream().map(r -> r.toString())
                 .map(role -> role.startsWith("ROLE_") ? role.substring(5):role).toList();
         if (roles == null || roles.isEmpty()){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         try{
             billingService.insertTotalAmount(dto, roles);
             return ResponseEntity.ok("success");

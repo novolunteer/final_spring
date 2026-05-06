@@ -54,6 +54,7 @@ dependencies {
     implementation 'org.springframework.session:spring-session-data-redis'
 
     implementation 'io.projectreactor.netty:reactor-netty'
+    implementation 'org.redisson:redisson:3.27.2'
 }
 
 tasks.named('test') {

@@ -11,6 +11,7 @@ import com.example.demo.reservation.ReservationStatus;
 import com.example.demo.reservation.dto.ReservationDto;
 import com.example.demo.reservation.dto.ReservationResponse;
 import com.example.demo.reservation.dto.ReservationSSEResponse;
+import com.example.demo.reservation.redis.DistributedLock;
 import com.example.demo.slot.Slot;
 import com.example.demo.slot.SlotRepository;
 import com.example.demo.sse.ReservationConfirmedEvent;
@@ -68,6 +69,9 @@ public class ReservationService {
         return reservation.getReservationId();
     }
 
+    @DistributedLock(
+            key = "#reservationDto.doctorId + ':' + #reservationDto.reservationDate"
+    )
     public Integer reservationConfirmed(ReservationDto reservationDto){
         Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -124,6 +128,9 @@ public class ReservationService {
         return reservationDto.getReservationId();
     }
 
+    @DistributedLock(
+            key = "#reservationDto.doctorId + ':' + #reservationDto.reservationDate"
+    )
     public Integer reservationPending(ReservationDto reservationDto){
         Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -216,6 +223,9 @@ public class ReservationService {
                 .map(ReservationResponse::new);
     }
 
+    @DistributedLock(
+            key = "#reservationDto.doctorId + ':' + #reservationDto.reservationDate"
+    )
     public Integer reservationCancel(Integer reservationId){
         Reservation reservation=reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
@@ -234,6 +244,9 @@ public class ReservationService {
         return reservationId;
     }
 
+    @DistributedLock(
+            key = "#reservationDto.doctorId + ':' + #reservationDto.reservationDate"
+    )
     public Integer reservationUpdate(ReservationDto reservationDto){
         Reservation reservation=reservationRepository.findById(reservationDto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Not exist"));

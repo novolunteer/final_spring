@@ -82,7 +82,7 @@ public class SlotService {
 
                 int hourCapacity;
                 if (hourSlots.isEmpty()) {
-                    hourCapacity = 3; // 슬롯 없으면 기본 5명
+                    hourCapacity = 3; // 슬롯 없으면 기본 3명
                 } else {
                     hourCapacity = hourSlots.stream()
                             .mapToInt(s -> s.getMaxPatient() - s.getCurrentPatient())
@@ -187,7 +187,7 @@ public class SlotService {
             String offTypeName = null;
             boolean allOff = !doctors.isEmpty() && doctors.stream().allMatch(doc -> {
                 Integer t = scheduleMap.get(currentDate + "_" + doc.getStaffId());
-                return t != null && t == 3;
+                return t != null && (t == 3 || t == 2 || t ==4);
             });
             if (allOff) {
                 offTypeName = scheduleTypeNameMap.getOrDefault(

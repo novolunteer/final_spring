@@ -85,9 +85,8 @@ public class ChatRoomService {
         if (!result.isEmpty()) {
             List<ChatRoomParticipant> finalParticipants = participantRepository.findByRoom(room);
             for (ChatRoomParticipant p : finalParticipants) {
-                messagingTemplate.convertAndSendToUser(
-                        p.getUser().getUserId().toString(),
-                        "/queue/chat.list",
+                messagingTemplate.convertAndSend(
+                        "/topic/chat.list." + p.getUser().getUserId(),
                         Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
                 );
             }
@@ -131,8 +130,9 @@ public class ChatRoomService {
             roomRepository.delete(room);
             roomRepository.flush();
 
-            messagingTemplate.convertAndSendToUser(
-                    userId.toString(), "/queue/chat.list", Map.of("type","ROOM_LIST_REFRESH")
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.list." + userId,
+                    Map.of("type", "ROOM_LIST_REFRESH")
             );
 
             return LeaveChatRoomResponse.builder().left(true).roomDelete(true).build();
@@ -159,9 +159,8 @@ public class ChatRoomService {
         }
 
         for (Integer targetUserId : targetUserIds) {
-            messagingTemplate.convertAndSendToUser(
-                    targetUserId.toString(),
-                    "/queue/chat.list",
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.list." + targetUserId,
                     Map.of("type", "ROOM_LIST_REFRESH", "roomId", roomId)
             );
         }
@@ -325,8 +324,10 @@ public class ChatRoomService {
         }
 
         for (Integer id:targetUserIds){
-            messagingTemplate.convertAndSendToUser(id.toString(), "/queue/chat.list",
-                    Map.of("type", "ROOM_LIST_REFRESH"));
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.list." + id,
+                    Map.of("type", "ROOM_LIST_REFRESH")
+            );
         }
 
         Long participantCount= 1L + participantIds.size();

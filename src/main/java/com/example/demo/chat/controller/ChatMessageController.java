@@ -41,11 +41,10 @@ public class ChatMessageController {
         try{
             ChatMessageDto message=messageService.deleteMessage(messageId, userId);
 
-            List<Integer> targetUserIds=message.getParticipantIds();
-            for (Integer id:targetUserIds){
-                messagingTemplate.convertAndSendToUser(id.toString(),
-                        "/queue/chat.room." + message.getRoomId() + ".message.update", Map.of("result",message));
-            }
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.room." + message.getRoomId() + ".message.update",
+                    Map.of("result", message)
+            );
 
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {
@@ -72,11 +71,10 @@ public class ChatMessageController {
         try{
             ChatMessageDto message=messageService.editMessage(messageId, request.getContent(), userId);
 
-            List<Integer> targetUserId=message.getParticipantIds();
-            for (Integer id:targetUserId){
-                messagingTemplate.convertAndSendToUser(id.toString(),
-                        "/queue/chat.room." + message.getRoomId() + ".message.update", Map.of("result",message));
-            }
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.room." + message.getRoomId() + ".message.update",
+                    Map.of("result", message)
+            );
 
             return ResponseEntity.ok(Map.of("result", message));
         } catch (Exception e) {

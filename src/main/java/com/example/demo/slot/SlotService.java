@@ -54,7 +54,9 @@ public class SlotService {
             // 스케줄이 있고 OFF(typeId==3)이면 예약 불가, 스케줄 없으면 가예약 가능으로 진행
             if (schedule != null
                     && schedule.getStaffScheduleType() != null
-                    && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+                    &&( schedule.getStaffScheduleType().getScheduleTypeId() == 3 ||
+                    schedule.getStaffScheduleType().getScheduleTypeId() == 2 ||
+                    schedule.getStaffScheduleType().getScheduleTypeId() == 4 )) {
                 String typeName = schedule.getStaffScheduleType().getTypeName();
                 result.add(SlotDayResponse.builder()
                         .date(d.toString())
@@ -82,7 +84,7 @@ public class SlotService {
 
                 int hourCapacity;
                 if (hourSlots.isEmpty()) {
-                    hourCapacity = 3; // 슬롯 없으면 기본 5명
+                    hourCapacity = 3; // 슬롯 없으면 기본 3명
                 } else {
                     hourCapacity = hourSlots.stream()
                             .mapToInt(s -> s.getMaxPatient() - s.getCurrentPatient())
@@ -162,7 +164,7 @@ public class SlotService {
                 Integer typeId = scheduleMap.get(scheduleKey);
 
                 // 스케줄이 있고 OFF(typeId==3)이면 이 의사는 해당 날 제외, 스케줄 없으면 가예약 가능
-                if (typeId != null && typeId == 3) {
+                if (typeId != null && (typeId == 3 || typeId == 2 || typeId == 4)) {
                     continue;
                 }
 
@@ -187,7 +189,7 @@ public class SlotService {
             String offTypeName = null;
             boolean allOff = !doctors.isEmpty() && doctors.stream().allMatch(doc -> {
                 Integer t = scheduleMap.get(currentDate + "_" + doc.getStaffId());
-                return t != null && t == 3;
+                return t != null && (t == 3 || t == 2 || t ==4);
             });
             if (allOff) {
                 offTypeName = scheduleTypeNameMap.getOrDefault(
@@ -284,7 +286,9 @@ public class SlotService {
         StaffSchedule schedule = scheduleRepository.findByStaffAndWorkDate(doctor, date);
         if (schedule != null
                 && schedule.getStaffScheduleType() != null
-                && schedule.getStaffScheduleType().getScheduleTypeId() == 3) {
+                && (schedule.getStaffScheduleType().getScheduleTypeId() == 3 ||
+                schedule.getStaffScheduleType().getScheduleTypeId() == 2 ||
+                schedule.getStaffScheduleType().getScheduleTypeId() == 4) ){
             return result; // OFF면 빈 배열 반환
         }
 

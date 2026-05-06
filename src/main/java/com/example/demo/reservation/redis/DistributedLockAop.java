@@ -25,7 +25,7 @@ public class DistributedLockAop {
     private final RedissonClient redissonClient;
     private final ExpressionParser parser = new SpelExpressionParser();
 
-    @Around("@annotation(com.example.demo.common.lock.DistributedLock)")
+    @Around("@annotation(com.example.demo.reservation.redis.DistributedLock)")
     public Object lock(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
@@ -38,7 +38,7 @@ public class DistributedLockAop {
         try {
             acquired = lock.tryLock(annotation.waitTime(), annotation.leaseTime(), annotation.timeUnit());
             if (!acquired) {
-                throw new IllegalStateException("잠시 후 다시 시도해주세요: " + lockKey);
+                throw new LockAcquisitionFailedException(lockKey);
             }
             log.debug("Lock acquired: {}", lockKey);
             return joinPoint.proceed();

@@ -57,6 +57,8 @@ public interface StaffRepository extends JpaRepository<Staff,Integer> {
         join UserRole ur on ur.user = u
         join ur.role r
         where u.userId != :userId
+            and s.isActive = 'Y'
+            and u.status = 'Y'
             and (
                     :keyword is null or
                         lower(s.name) like lower(concat('%', :keyword, '%')) or

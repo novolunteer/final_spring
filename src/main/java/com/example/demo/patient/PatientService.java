@@ -158,8 +158,10 @@ public class PatientService {
     public MyInfoResponse getMyInformation(Integer userId){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
+
         Patient patient=patientRepository.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
+
         MyInfoResponse response=MyInfoResponse.builder()
                 .userId(user.getUserId())
                 .patientId(patient.getPatientId())
@@ -168,7 +170,9 @@ public class PatientService {
                 .phone(patient.getPhone() != null ? patient.getPhone() : null)
                 .address(patient.getAddress() != null ? patient.getAddress() : null)
                 .build();
+
         List<SocialAccount> accounts=socialAccountRepository.findByUser(user);
+
         if (accounts == null || accounts.isEmpty()){ //소셜 로그인 정보 없음
             response.setEmail(user.getEmail());
             response.setLocal(true);
@@ -192,6 +196,7 @@ public class PatientService {
                 response.setHasSocial(true);
             }
         }
+
         return response;
     }
 
@@ -214,6 +219,19 @@ public class PatientService {
         return getFormattedReservations(patient, reservationStatus, pageable);
     }
 
+    private Page<MyReservationResponse> getFormattedReservations(Patient patient, ReservationStatus status, Pageable pageable){
+        return reservationRepository.findMyReservations(patient, status, pageable).map(r -> MyReservationResponse.builder()
+                .reservationId(r.getReservationId())
+                .doctorId(r.getStaff().getStaffId())
+                .doctorName(r.getStaff().getName())
+                .departmentId(r.getDepartment().getDepartmentId())
+                .departmentName(r.getDepartment().getDepartmentName())
+                .symptom(r.getSymptom())
+                .status(r.getStatus().name())
+                .createdAt(r.getCreatedAt())
+                .build());
+    }
+
     public Page<MyReceptionResponse> getMyReceptions(Integer userId, Pageable pageable, String sort){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
@@ -222,7 +240,6 @@ public class PatientService {
                 .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
 
         Page<Reception> receptions;
-
         if ("DESC".equals(sort)){
             receptions=receptionRepository.findMyReceptionRecordsDesc(patient, ReceptionStatus.COMPLETED, pageable);
         } else {
@@ -240,7 +257,6 @@ public class PatientService {
                         .treatedAt(r.getReservation().getSlot().getStartTime())
                         .build());
     }
-
     public Page<MyPaymentResponse> getMyPaymentList(Integer userId, Integer receptionId, Pageable pageable){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
@@ -263,18 +279,5 @@ public class PatientService {
                         .method(p.getMethod().name())
                         .paidAt(p.getPaymentDatetime())
                         .build());
-    }
-
-    private Page<MyReservationResponse> getFormattedReservations(Patient patient, ReservationStatus status, Pageable pageable){
-        return reservationRepository.findMyReservations(patient, status, pageable).map(r -> MyReservationResponse.builder()
-                .reservationId(r.getReservationId())
-                .doctorId(r.getStaff().getStaffId())
-                .doctorName(r.getStaff().getName())
-                .departmentId(r.getDepartment().getDepartmentId())
-                .departmentName(r.getDepartment().getDepartmentName())
-                .symptom(r.getSymptom())
-                .status(r.getStatus().name())
-                .createdAt(r.getCreatedAt())
-                .build());
     }
 }

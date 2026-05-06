@@ -10,6 +10,7 @@ import com.example.demo.chat.repository.ChatAttachmentRepository;
 import com.example.demo.chat.repository.ChatMessageRepository;
 import com.example.demo.chat.repository.ChatRoomParticipantRepository;
 import com.example.demo.chat.repository.ChatRoomRepository;
+import com.example.demo.role.Role;
 import com.example.demo.staff.Staff;
 import com.example.demo.staff.StaffRepository;
 import com.example.demo.user.User;
@@ -186,21 +187,14 @@ public class ChatRoomService {
                 .stream().map(m -> m.getUser()).toList();
         List<Staff> staffs=staffRepository.findByUserNotIn(users);
 
-        //직원 역할 id 목록
-        List<UserRole> userRoles=userRoleRepository.findTopRoleByUsers(staffs.stream().map(
-                u -> u.getUser()
-        ).toList());
-
-        Map<Integer, String> roles=userRoles.stream().collect(Collectors.toMap(
-                r -> r.getUser().getUserId(),
-                r -> r.getRole().getRoleName()
-        ));
+        //직원 역할 목록
+        List<UserRole> userRoles=userRoleRepository.findByUserIn(staffs.stream().map(Staff::getUser).toList());
 
         List<GetStaffListResponse> responses=staffs.stream().map(u -> GetStaffListResponse.builder()
                 .userId(u.getUser().getUserId())
                 .username(u.getName())
-                .department(u.getDepartment().getDepartmentName())
-                .role(roles.getOrDefault(u.getUser().getUserId(), null)).build()).toList();
+                .department(pickDepartmentName(u, userRoles))
+                .role(pickRoleName(userRoles, u.getUser())).build()).toList();
 
         return responses;
     }
@@ -208,33 +202,65 @@ public class ChatRoomService {
     public List<GetStaffListResponse> getStaffList(Integer userId, String keyword){
         if (keyword != null && keyword.isBlank()) {
             keyword = null;
+        } else if (keyword.trim().equals("간호") || keyword.trim().equals("간호부")){
+            keyword = "NURSE";
+        } else if (keyword.trim().equals("원무") || keyword.trim().equals("원무과")) {
+            keyword = "ADMINISTRATION";
         }
 
         List<Staff> staffs=staffRepository.searchStaff(userId, keyword);
 
-        //직원 역할 id 목록
-        List<UserRole> userRoles=userRoleRepository.findTopRoleByUsers(staffs.stream().map(
-                u -> u.getUser()
-        ).toList());
-
-        Map<Integer, String> roles=userRoles.stream().collect(Collectors.toMap(
-                r -> r.getUser().getUserId(),
-                r -> r.getRole().getRoleName()
-        ));
+        //직원 역할 목록
+        List<UserRole> userRoles=userRoleRepository.findByUserIn(staffs.stream().map(Staff::getUser).toList());
 
         List<GetStaffListResponse> responses=staffs.stream().map(u -> GetStaffListResponse.builder()
                 .userId(u.getUser().getUserId())
                 .username(u.getName())
-                .department(u.getDepartment().getDepartmentName())
-                .role(roles.getOrDefault(u.getUser().getUserId(), null)).build()).toList();
+                .department(pickDepartmentName(u, userRoles))
+                .role(pickRoleName(userRoles, u.getUser())).build()).toList();
 
         return responses;
+    }
+
+    private String pickRoleName(List<UserRole> userRoles, User user){
+        List<String> roles=userRoles.stream().filter(ur -> ur.getUser().equals(user))
+                .map(ur -> ur.getRole().getRoleName()).toList();
+
+        if (roles.contains("DOCTOR")){
+            return roles.stream().filter(r -> !r.equals("DOCTOR"))
+                    .findFirst()
+                    .orElse("DOCTOR");
+        } else if (roles.contains("ADMIN")) {
+            return "ADMIN";
+        } else {
+            if (roles.contains("HEAD_NURSE")){
+                return "HEAD_NURSE";
+            }
+
+            return "NURSE";
+        }
+    }
+
+    private String pickDepartmentName(Staff staff, List<UserRole> userRoles) {
+        if (staff.getDepartment() != null) {
+            return staff.getDepartment().getDepartmentName();
+        }
+
+        List<String> roles = userRoles.stream()
+                .filter(ur -> ur.getUser().equals(staff.getUser()))
+                .map(ur -> ur.getRole().getRoleName())
+                .toList();
+
+        if (roles.contains("ADMIN")) return "원무과";
+        else if (roles.contains("NURSE")) return "간호부";
+        else return "알 수 없음";
     }
 
     public ChatRoomDto createChatRoom(Integer userId, CreateChatRoomRequest request){
         User user=userRepository.findByUserId(userId).orElseThrow(()->new RuntimeException("존재하지 않는 사용자입니다."));
 
         String roomName=null;
+
         String roomType=request.getRoomType();
         if (!"GROUP".equals(roomType) && !"DIRECT".equals(roomType)) {
             throw new RuntimeException("채팅방 타입이 올바르지 않습니다.");

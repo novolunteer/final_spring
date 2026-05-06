@@ -158,10 +158,8 @@ public class PatientService {
     public MyInfoResponse getMyInformation(Integer userId){
         User user=userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
-
         Patient patient=patientRepository.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new RuntimeException("환자 정보가 존재하지 않습니다."));
-
         MyInfoResponse response=MyInfoResponse.builder()
                 .userId(user.getUserId())
                 .patientId(patient.getPatientId())
@@ -170,10 +168,8 @@ public class PatientService {
                 .phone(patient.getPhone() != null ? patient.getPhone() : null)
                 .address(patient.getAddress() != null ? patient.getAddress() : null)
                 .build();
-
         List<SocialAccount> accounts=socialAccountRepository.findByUser(user);
-
-        if (accounts == null || accounts.isEmpty() || accounts.size() == 0){ //소셜 로그인 정보 없음
+        if (accounts == null || accounts.isEmpty()){ //소셜 로그인 정보 없음
             response.setEmail(user.getEmail());
             response.setLocal(true);
         } else {
@@ -183,7 +179,6 @@ public class PatientService {
                         .provider(s.getProvider().name())
                         .createdAt(s.getCreatedAt())
                         .build()).toList();
-
                 response.setSocialAccounts(socialAccounts);
                 response.setOnlySocial(true);
             } else { //일반 회원가입 후 소셜 로그인 연결(소셜 로그인으로만 로그인 가능)
@@ -192,13 +187,11 @@ public class PatientService {
                         .provider(s.getProvider().name())
                         .createdAt(s.getCreatedAt())
                         .build()).toList();
-
                 response.setSocialAccounts(socialAccounts);
                 response.setEmail(user.getEmail());
                 response.setHasSocial(true);
             }
         }
-
         return response;
     }
 
@@ -219,19 +212,6 @@ public class PatientService {
         };
 
         return getFormattedReservations(patient, reservationStatus, pageable);
-    }
-
-    private Page<MyReservationResponse> getFormattedReservations(Patient patient, ReservationStatus status, Pageable pageable){
-        return reservationRepository.findMyReservations(patient, status, pageable).map(r -> MyReservationResponse.builder()
-                .reservationId(r.getReservationId())
-                .doctorId(r.getStaff().getStaffId())
-                .doctorName(r.getStaff().getName())
-                .departmentId(r.getDepartment().getDepartmentId())
-                .departmentName(r.getDepartment().getDepartmentName())
-                .symptom(r.getSymptom())
-                .status(r.getStatus().name())
-                .createdAt(r.getCreatedAt())
-                .build());
     }
 
     public Page<MyReceptionResponse> getMyReceptions(Integer userId, Pageable pageable, String sort){
@@ -275,8 +255,6 @@ public class PatientService {
             throw new RuntimeException("환자 정보가 일치하지 않아 결제 내역에 접근할 수 없습니다.");
         }
 
-
-
         return paymentRepository.findByBilling_Reception(reception, pageable)
                 .map(p -> MyPaymentResponse.builder()
                         .billingId(p.getBilling().getBillingId())
@@ -285,5 +263,18 @@ public class PatientService {
                         .method(p.getMethod().name())
                         .paidAt(p.getPaymentDatetime())
                         .build());
+    }
+
+    private Page<MyReservationResponse> getFormattedReservations(Patient patient, ReservationStatus status, Pageable pageable){
+        return reservationRepository.findMyReservations(patient, status, pageable).map(r -> MyReservationResponse.builder()
+                .reservationId(r.getReservationId())
+                .doctorId(r.getStaff().getStaffId())
+                .doctorName(r.getStaff().getName())
+                .departmentId(r.getDepartment().getDepartmentId())
+                .departmentName(r.getDepartment().getDepartmentName())
+                .symptom(r.getSymptom())
+                .status(r.getStatus().name())
+                .createdAt(r.getCreatedAt())
+                .build());
     }
 }

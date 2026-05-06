@@ -49,10 +49,9 @@ public class ChatWebSocketController {
 
         List<Integer> targetUserIds=saveMessage.getParticipantIds();
         for (Integer id : targetUserIds){
-            messagingTemplate.convertAndSendToUser(
-                    id.toString(),
-                    "/queue/chat.list",
-                    Map.of("type", "ROOM_LIST_REFRESH")
+            messagingTemplate.convertAndSend(
+                    "/topic/chat.list." + id,
+                    Map.of("type", "ROOM_LIST_REFRESH", "roomId", request.getRoomId())
             );
         }
     }

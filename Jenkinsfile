@@ -52,8 +52,11 @@ pipeline {
                withAWS(credentials: 'aws-credentials', region: "${AWS_REGION}") {
                    sh '''
                        aws eks update-kubeconfig --region ap-northeast-2 --name my-cluster
-                       kubectl rollout restart deployment spring
-                       kubectl rollout status deployment spring
+
+                       kubectl set image deployment/spring \
+                           spring=$ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+
+                       kubectl rollout status deployment/spring --timeout=300s
                    '''
                }
            }

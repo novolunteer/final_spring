@@ -2,6 +2,8 @@ package com.example.demo.staff.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -13,7 +15,7 @@ public class StaffUpdateDto {
     private Integer userId;
     private Integer departmentId;
     private Integer managerId;
-    private Integer roleId;
+    private List<Integer> roleIds;
     private String name;
     private String phone;
     private String address;

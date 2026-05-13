@@ -2,6 +2,8 @@ package com.example.demo.staff.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,5 +18,5 @@ public class StaffBulkUploadRequestDto {
     private String address;
     private Integer managerId;
     private String isActive;
-    private Integer roleId;
+    private List<Integer> roleIds;
 }

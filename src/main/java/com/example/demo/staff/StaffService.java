@@ -67,11 +67,16 @@ public class StaffService {
 
         Staff savedStaff = staffRepository.save(staff);
 
-        userRoleRepository.save(UserRole.builder()
-                .user(user)
-                .role(roleRepository.findById(dto.getRoleId())
-                        .orElseThrow(()->new RuntimeException("해당 직무가 없습니다")))
-                .build());
+        if (dto.getRoleIds() == null || dto.getRoleIds().isEmpty()) {
+            throw new RuntimeException("직무(roleIds)는 최소 1개 이상 필요합니다.");
+        }
+        for (Integer roleId : dto.getRoleIds()) {
+            userRoleRepository.save(UserRole.builder()
+                    .user(user)
+                    .role(roleRepository.findById(roleId)
+                            .orElseThrow(() -> new RuntimeException("해당 직무가 없습니다: " + roleId)))
+                    .build());
+        }
 
         return savedStaff.getStaffId();
     }
@@ -118,11 +123,16 @@ public class StaffService {
                         .build();
                 successList.add(staff);
 
-                userRoleRepository.save(UserRole.builder()
-                        .user(user)
-                        .role(roleRepository.findById(dto.getRoleId())
-                                .orElseThrow(()-> new RuntimeException("해당 직급이 없습니다")))
-                        .build());
+                if (dto.getRoleIds() == null || dto.getRoleIds().isEmpty()) {
+                    throw new RuntimeException("직급(roleIds)는 최소 1개 이상 필요합니다.");
+                }
+                for (Integer roleId : dto.getRoleIds()) {
+                    userRoleRepository.save(UserRole.builder()
+                            .user(user)
+                            .role(roleRepository.findById(roleId)
+                                    .orElseThrow(() -> new RuntimeException("해당 직급이 없습니다: " + roleId)))
+                            .build());
+                }
 
             }catch (Exception e){
                 failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
@@ -252,13 +262,15 @@ public class StaffService {
         staff.setAddress(dto.getAddress());
         staff.setIsActive(dto.getIsActive());
 
-        if (dto.getRoleId() != null) {
+        if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
             userRoleRepository.deleteByUser(user);
-            userRoleRepository.save(UserRole.builder()
-                    .user(user)
-                    .role(roleRepository.findById(dto.getRoleId())
-                            .orElseThrow(()-> new RuntimeException("해당 직급이 없습니다")))
-                    .build());
+            for (Integer roleId : dto.getRoleIds()) {
+                userRoleRepository.save(UserRole.builder()
+                        .user(user)
+                        .role(roleRepository.findById(roleId)
+                                .orElseThrow(() -> new RuntimeException("해당 직급이 없습니다: " + roleId)))
+                        .build());
+            }
         }
     }
 

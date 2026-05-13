@@ -55,6 +55,20 @@ public class AutoScheduleService {
         // Python AI 서버 호출
         AiScheduleResultDto result = callAiServer(input);
 
+        // BLOCK 조건(OFF/LEAVE/EDUCATION)은 AI가 배정에서 제외만 하고 결과에 포함하지 않으므로 직접 추가
+        if (parsed.getManualConditionList() != null) {
+            for (AiManualConditionDto condition : parsed.getManualConditionList()) {
+                if ("BLOCK".equals(condition.getMode())) {
+                    Map<String, Object> entry = new HashMap<>();
+                    entry.put("staffId", condition.getStaffId());
+                    entry.put("staffName", condition.getStaffName());
+                    entry.put("workDate", condition.getWorkDate());
+                    entry.put("shiftType", condition.getType());
+                    result.getAssignments().add(entry);
+                }
+            }
+        }
+
         // 파싱 경고가 있으면 결과 경고에 합치기
         if (parsed.getWarnings() != null) {
             result.getWarnings().addAll(parsed.getWarnings());

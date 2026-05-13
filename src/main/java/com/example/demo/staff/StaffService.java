@@ -10,10 +10,13 @@ import com.example.demo.user.UserRepository;
 import com.example.demo.userRole.UserRole;
 import com.example.demo.userRole.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -30,6 +33,10 @@ public class StaffService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRoleRepository userRoleRepository;
+
+    @Autowired
+    @Lazy
+    private StaffService self;
 
     //직원등록 (User 동시 생성)
     public Integer register(StaffRegisterDto dto){
@@ -82,77 +89,76 @@ public class StaffService {
     }
 
     //직원엑셀 일괄등록
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public StaffBulkUploadResponseDto bulkUpload(List<StaffBulkUploadRequestDto> requestList){
-        List<Staff> successList = new ArrayList<>();
-        List<StaffBulkUploadResponseDto.FailDetail> failList=new ArrayList<>();
+        int successCount = 0;
+        List<StaffBulkUploadResponseDto.FailDetail> failList = new ArrayList<>();
 
-        for(int i =0; i<requestList.size(); i++){
-            StaffBulkUploadRequestDto dto=requestList.get(i);
-            int rowNum = i +1;
-
-            try{
-                if (userRepository.existsByEmail(dto.getEmail())) {
-                    throw new RuntimeException("이미 사용 중인 이메일입니다: " + dto.getEmail());
-                }
-
-                // User 저장 전에 부서/담당자 먼저 검증
-                Department department = departmentRepository.findByDepartmentName(dto.getDeptName())
-                        .orElseThrow(() -> new RuntimeException("존재하지 않는 부서명입니다"));
-
-                Staff manager = null;
-                if (dto.getManagerId() != null) {
-                    manager = staffRepository.findById(dto.getManagerId())
-                            .orElseThrow(() -> new RuntimeException("존재하지 않는 담당자입니다"));
-                }
-
-                // 검증 통과 후 User 저장
-                User user = userRepository.save(User.builder()
-                        .email(dto.getEmail())
-                        .password(passwordEncoder.encode(dto.getPassword()))
-                        .status("Y")
-                        .build());
-
-                Staff staff = Staff.builder()
-                        .user(user)
-                        .department(department)
-                        .manager(manager)
-                        .name(dto.getName())
-                        .phone(dto.getPhone())
-                        .address(dto.getAddress())
-                        .isActive(dto.getIsActive())
-                        .build();
-                successList.add(staff);
-
-                if (dto.getRoleIds() == null || dto.getRoleIds().isEmpty()) {
-                    throw new RuntimeException("직급(roleIds)는 최소 1개 이상 필요합니다.");
-                }
-                for (Integer roleId : dto.getRoleIds()) {
-                    userRoleRepository.save(UserRole.builder()
-                            .user(user)
-                            .role(roleRepository.findById(roleId)
-                                    .orElseThrow(() -> new RuntimeException("해당 직급이 없습니다: " + roleId)))
-                            .build());
-                }
-
-            }catch (Exception e){
+        for (int i = 0; i < requestList.size(); i++) {
+            StaffBulkUploadRequestDto dto = requestList.get(i);
+            int rowNum = i + 1;
+            try {
+                self.processOneBulkRow(dto);
+                successCount++;
+            } catch (Exception e) {
                 failList.add(StaffBulkUploadResponseDto.FailDetail.builder()
                         .row(rowNum)
                         .userId(dto.getEmail() != null ? dto.getEmail() : "-")
                         .name(dto.getName())
                         .reason(e.getMessage())
-                        .build()
-                );
+                        .build());
             }
         }
-        //정상행만 일괄저장
-        if(!successList.isEmpty()){
-            staffRepository.saveAll(successList);
-        }
+
         return StaffBulkUploadResponseDto.builder()
-                .successCount(successList.size())
+                .successCount(successCount)
                 .failCount(failList.size())
                 .failDetails(failList)
                 .build();
+    }
+
+    // 행 하나를 독립 트랜잭션으로 처리 — 실패해도 다른 행에 영향 없음
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processOneBulkRow(StaffBulkUploadRequestDto dto) {
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("이미 사용 중인 이메일입니다: " + dto.getEmail());
+        }
+
+        Department department = departmentRepository.findByDepartmentName(dto.getDeptName())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 부서명입니다"));
+
+        Staff manager = null;
+        if (dto.getManagerId() != null) {
+            manager = staffRepository.findById(dto.getManagerId())
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 담당자입니다"));
+        }
+
+        User user = userRepository.save(User.builder()
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .status("Y")
+                .build());
+
+        staffRepository.save(Staff.builder()
+                .user(user)
+                .department(department)
+                .manager(manager)
+                .name(dto.getName())
+                .phone(dto.getPhone())
+                .address(dto.getAddress())
+                .isActive(dto.getIsActive())
+                .build());
+
+        if (dto.getRoleIds() == null || dto.getRoleIds().isEmpty()) {
+            throw new RuntimeException("직급(roleIds)는 최소 1개 이상 필요합니다.");
+        }
+        for (Integer roleId : dto.getRoleIds()) {
+            userRoleRepository.save(UserRole.builder()
+                    .user(user)
+                    .role(roleRepository.findById(roleId)
+                            .orElseThrow(() -> new RuntimeException("해당 직급이 없습니다: " + roleId)))
+                    .build());
+        }
     }
 
     //전체조회 (페이징 + 키워드 검색)

@@ -17,6 +17,8 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     JOIN r.reservation v
     JOIN v.slot s
     JOIN v.patient p
+    WHERE s.startTime BETWEEN :start AND :end
+    AND (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
     ORDER BY s.startTime ASC
     """)
     Page<Reception> findTodayReception(

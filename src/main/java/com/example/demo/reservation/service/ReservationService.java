@@ -105,7 +105,8 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
         reservationRepository.save(reservation);
-        receptionService.receptionInsert(reservation);
+        int a=receptionService.receptionInsert(reservation);
+        System.out.println(a);
 
         Integer userId=staff.getUser().getUserId();
 

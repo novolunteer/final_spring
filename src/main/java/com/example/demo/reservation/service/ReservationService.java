@@ -224,7 +224,7 @@ public class ReservationService {
     }
 
     @DistributedLock(
-            key = "#reservationDto.doctorId + ':' + #reservationDto.reservationDate"
+            key = "#reservationId"
     )
     public Integer reservationCancel(Integer reservationId){
         Reservation reservation=reservationRepository.findById(reservationId)

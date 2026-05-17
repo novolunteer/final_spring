@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MedicalRecordRepository extends JpaRepository<MedicalRecord,Integer> {
-    Page<MedicalRecord> findAllByPatientAndMedicalRecordStatus(Patient patient, MedicalRecordStatus medicalRecordStatus, Pageable pageable);
+    Page<MedicalRecord> findAllByPatientAndMedicalRecordStatusOrderByCreateAtDesc(Patient patient, MedicalRecordStatus medicalRecordStatus, Pageable pageable);
 
     List<MedicalRecord> findTop4ByPatient_PatientIdAndMedicalRecordStatusOrderByCreateAtDesc(Integer patientPatientId, MedicalRecordStatus medicalRecordStatus);
 

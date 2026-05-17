@@ -90,10 +90,10 @@ public class StaffScheduleController {
         return ResponseEntity.ok().build();
     }
 
-    //다른직원 같은 스케줄 일괄등록
-    @PostMapping("/bulk_register")
-    public ResponseEntity<BulkRegisterResultDto> bulkRegister(@RequestBody  BulkStaffScheduleDto dto){
-        BulkRegisterResultDto result= staffScheduleService.bulkRegister(dto);
-        return ResponseEntity.ok(result);
-    }
+    // //다른직원 같은 스케줄 일괄등록
+    // @PostMapping("/bulk_register")
+    // public ResponseEntity<BulkRegisterResultDto> bulkRegister(@RequestBody  BulkStaffScheduleDto dto){
+    //     BulkRegisterResultDto result= staffScheduleService.bulkRegister(dto);
+    //     return ResponseEntity.ok(result);
+    // }
 }

@@ -53,7 +53,7 @@ public class MedicalRecordService {
         Staff doctor=staffRepository.findByUser(user)
                 .orElseThrow(()->new RuntimeException("Not exist"));
 
-        return receptionRepository.findTodayReceptionWaiting(start,end,status,doctor.getStaffId(),pageable)
+        return receptionRepository.findAllByPatientAndMedicalRecordStatusOrderByCreateAtDesc(start,end,status,doctor.getStaffId(),pageable)
                 .map(ReceptionResponse::new);
     }
 
@@ -70,7 +70,7 @@ public class MedicalRecordService {
         Patient patient=patientRepository.findById(patientId)
                 .orElseThrow(() -> new RuntimeException("Not exist"));
 
-        return medicalRecordRepository.findAllByPatientAndMedicalRecordStatus(patient, status, pageable)
+        return medicalRecordRepository.findAllByPatientAndMedicalRecordStatusOrderByCreateAtDesc(patient, status, pageable)
                 .map(MedicalRecordResponse::new);
     }
 

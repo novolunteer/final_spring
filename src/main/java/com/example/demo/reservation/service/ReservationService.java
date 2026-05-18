@@ -165,7 +165,6 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.PENDING);
 
         reservationRepository.save(reservation);
-        receptionService.receptionInsert(reservation);
 
         return reservationDto.getReservationId();
     }

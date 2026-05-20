@@ -171,7 +171,7 @@ public class ReservationService {
 
     public Page<ReservationResponse> reservationList(String name,
                                                      Pageable pageable){
-        return reservationRepository.findByStatusAndPatient_NameContainingOrderByCreatedAtDesc(ReservationStatus.RECEIVED, name, pageable)
+        return reservationRepository.findByStatusAndPatient_NameContainingOrderByCreatedAt(ReservationStatus.RECEIVED, name, pageable)
                 .map(ReservationResponse::new);
     }
 

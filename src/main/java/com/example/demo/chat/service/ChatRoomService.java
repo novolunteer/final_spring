@@ -200,7 +200,7 @@ public class ChatRoomService {
     }
 
     public List<GetStaffListResponse> getStaffList(Integer userId, String keyword){
-        if (keyword == null && keyword.isBlank()) {
+        if (keyword == null || keyword.isBlank()) {
             keyword = null;
         } else if (keyword.trim().equals("간호") || keyword.trim().equals("간호부")){
             keyword = "NURSE";

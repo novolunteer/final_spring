@@ -57,7 +57,7 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
         AND (
             (:status IS NOT NULL AND r.status = :status)
             OR
-            (:status IS NULL AND r.status <> 'PENDING')
+            (:status IS NULL AND r.status NOT IN ('PENDING', 'CANCELED'))
         )
         ORDER BY sl.startTime ASC
         """)

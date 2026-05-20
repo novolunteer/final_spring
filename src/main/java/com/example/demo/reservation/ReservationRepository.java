@@ -58,4 +58,8 @@ public interface ReservationRepository extends JpaRepository<Reservation,Integer
     );
 
     Optional<Reservation> findByReservationId(Integer reservationId);
+
+     Page<Reservation> findByStatusAndPatient_NameContainingOrderByCreatedAtDesc(
+        ReservationStatus status, String name, Pageable pageable
+    );
 }

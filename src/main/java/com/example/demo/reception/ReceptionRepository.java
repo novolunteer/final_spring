@@ -19,6 +19,7 @@ public interface ReceptionRepository extends JpaRepository<Reception,Integer> {
     JOIN v.patient p
     WHERE s.startTime BETWEEN :start AND :end
     AND (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+    AND v.status NOT IN ('CANCELLED')
     ORDER BY s.startTime ASC
     """)
     Page<Reception> findTodayReception(

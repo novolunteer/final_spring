@@ -28,7 +28,7 @@ public class ReceptionController {
     @PatchMapping("/api/reception/status")
     public Integer receptionStatus(@RequestParam Integer receptionId,
                                    @RequestParam ReceptionStatus status){
-        if(status.equals(ReceptionStatus.CONSULTING)){
+        if(status.equals(ReceptionStatus.RECEIVED)){
             return receptionService.receptionConsulting(receptionId);
         }else{
             return receptionService.receptionCompleted(receptionId);
